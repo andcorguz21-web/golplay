@@ -8,7 +8,7 @@ type Booking = {
   id: number;
   date: string;
   hour: string;
-  fieldName: string | null;
+  fieldName: string;
 };
 
 export default function AdminBookings() {
@@ -24,7 +24,7 @@ export default function AdminBookings() {
         id,
         date,
         hour,
-        fields:field_id (
+        fields:field_id!inner (
           name
         )
       `)
@@ -35,15 +35,12 @@ export default function AdminBookings() {
       return;
     }
 
-    // 🔒 NORMALIZAR DATOS (CLAVE)
+    // 🔒 Datos ya garantizados por INNER JOIN
     const normalized: Booking[] = data.map((b: any) => ({
       id: b.id,
       date: b.date,
       hour: b.hour,
-      fieldName:
-        b.fields && Array.isArray(b.fields) && b.fields.length > 0
-          ? b.fields[0].name
-          : null,
+      fieldName: b.fields[0].name,
     }));
 
     setBookings(normalized);
@@ -78,7 +75,13 @@ export default function AdminBookings() {
   return (
     <main style={{ padding: 20 }}>
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        }}
+      >
         <h1>Reservas</h1>
 
         <button
@@ -105,7 +108,7 @@ export default function AdminBookings() {
         <tbody>
           {bookings.map((b) => (
             <tr key={b.id}>
-              <td>{b.fieldName ?? '—'}</td>
+              <td>{b.fieldName}</td>
               <td>{b.date}</td>
               <td>{b.hour}</td>
               <td>
