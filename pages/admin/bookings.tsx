@@ -35,12 +35,12 @@ export default function AdminBookings() {
       return;
     }
 
-    // 🔒 Datos ya garantizados por INNER JOIN
+    // 🔑 fields ES UN OBJETO, NO UN ARRAY
     const normalized: Booking[] = data.map((b: any) => ({
       id: b.id,
       date: b.date,
       hour: b.hour,
-      fieldName: b.fields[0].name,
+      fieldName: b.fields.name,
     }));
 
     setBookings(normalized);
