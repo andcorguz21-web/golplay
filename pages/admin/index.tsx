@@ -27,7 +27,7 @@ type Booking = {
   fields: {
     name: string;
     price: number;
-  } | null;
+  }[] | null;
 };
 
 export default function AdminDashboard() {
@@ -60,11 +60,13 @@ export default function AdminDashboard() {
       const r: Record<string, number> = {};
 
       data.forEach((b: Booking) => {
-        if (!b.fields) return;
+        if (!b.fields || !b.fields[0]) return;
+
+        const field = b.fields[0];
 
         d[b.date] = (d[b.date] || 0) + 1;
-        f[b.fields.name] = (f[b.fields.name] || 0) + 1;
-        r[b.date] = (r[b.date] || 0) + b.fields.price;
+        f[field.name] = (f[field.name] || 0) + 1;
+        r[b.date] = (r[b.date] || 0) + field.price;
       });
 
       setByDay(build(d, 'Reservas por día', '#16a34a'));
@@ -83,7 +85,6 @@ export default function AdminDashboard() {
 
   return (
     <main style={{ padding: 20 }}>
-      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <h1>Dashboard</h1>
         <button
