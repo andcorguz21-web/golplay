@@ -29,7 +29,7 @@ type Booking = {
   fields: {
     name: string;
     price: number;
-  }[] | null;
+  }[];
 };
 
 export default function AdminDashboard() {
@@ -38,13 +38,6 @@ export default function AdminDashboard() {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [chartData, setChartData] = useState<any>(null);
-
-  // 🔴 DEBUG CLAVE: verificar sesión real
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      console.log('SESSION_ACTUAL', data.session);
-    });
-  }, []);
 
   useEffect(() => {
     if (checking) return;
@@ -56,25 +49,22 @@ export default function AdminDashboard() {
           id,
           date,
           hour,
-          fields:field_id (
+          fields:field_id!inner (
             name,
             price
           )
         `);
 
       if (error || !data) {
-        console.error('ERROR FETCH BOOKINGS', error);
+        console.error('ERROR FETCH DASHBOARD', error);
         return;
       }
-
-      console.log('BOOKINGS DATA', data); // 👈 debug adicional
 
       setBookings(data);
 
       const byDay: Record<string, number> = {};
 
       data.forEach((b) => {
-        if (!b.fields || !b.fields[0]) return;
         byDay[b.date] = (byDay[b.date] || 0) + 1;
       });
 
@@ -97,7 +87,6 @@ export default function AdminDashboard() {
     let csv = 'Fecha,Hora,Cancha,Precio\n';
 
     bookings.forEach((b) => {
-      if (!b.fields || !b.fields[0]) return;
       csv += `${b.date},${b.hour},${b.fields[0].name},${b.fields[0].price}\n`;
     });
 
