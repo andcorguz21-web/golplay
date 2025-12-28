@@ -10,7 +10,7 @@ type Booking = {
   hour: string;
   fields: {
     name: string;
-  }[];
+  }[] | null;
 };
 
 export default function AdminBookings() {
@@ -26,7 +26,7 @@ export default function AdminBookings() {
         id,
         date,
         hour,
-        fields:field_id!inner (
+        fields:field_id (
           name
         )
       `)
@@ -83,7 +83,7 @@ export default function AdminBookings() {
       </div>
 
       {/* TABLA */}
-      <table border={1} cellPadding={8} cellSpacing={0}>
+      <table border={1} cellPadding={8} cellSpacing={0} width="100%">
         <thead>
           <tr>
             <th>Cancha</th>
@@ -96,7 +96,11 @@ export default function AdminBookings() {
         <tbody>
           {bookings.map((b) => (
             <tr key={b.id}>
-              <td>{b.fields[0].name}</td>
+              <td>
+                {b.fields && b.fields.length > 0
+                  ? b.fields[0].name
+                  : '—'}
+              </td>
               <td>{b.date}</td>
               <td>{b.hour}</td>
               <td>
