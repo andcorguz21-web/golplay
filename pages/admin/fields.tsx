@@ -14,15 +14,16 @@ export default function AdminFields() {
   const [fields, setFields] = useState<Field[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const loadFields = async () => {
     const { data, error } = await supabase
       .from('fields')
-      .select('*')
+      .select('id, name, price')
       .order('name');
 
     if (error) {
-      console.error(error);
+      console.error('ERROR CARGANDO CANCHAS', error);
       return;
     }
 
@@ -34,12 +35,25 @@ export default function AdminFields() {
   }, []);
 
   const createField = async () => {
-    if (!name || !price) return;
+    if (!name.trim() || !price) {
+      alert('Nombre y precio son obligatorios');
+      return;
+    }
 
-    await supabase.from('fields').insert({
-      name,
+    setLoading(true);
+
+    const { error } = await supabase.from('fields').insert({
+      name: name.trim(),
       price: Number(price),
     });
+
+    setLoading(false);
+
+    if (error) {
+      alert('Error creando la cancha');
+      console.error(error);
+      return;
+    }
 
     setName('');
     setPrice('');
@@ -47,8 +61,19 @@ export default function AdminFields() {
   };
 
   const deleteField = async (id: number) => {
-    if (!confirm('¿Eliminar cancha?')) return;
-    await supabase.from('fields').delete().eq('id', id);
+    if (!confirm('¿Eliminar esta cancha?')) return;
+
+    const { error } = await supabase
+      .from('fields')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert('Error eliminando la cancha');
+      console.error(error);
+      return;
+    }
+
     loadFields();
   };
 
@@ -56,22 +81,33 @@ export default function AdminFields() {
     <main style={{ padding: 20 }}>
       <h1>Canchas</h1>
 
-      <input
-        placeholder="Nombre"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <input
-        type="number"
-        placeholder="Precio"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
-      <button onClick={createField}>Crear</button>
+      <div style={{ marginBottom: 20 }}>
+        <input
+          placeholder="Nombre"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+
+        <input
+          type="number"
+          placeholder="Precio"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          style={{ marginLeft: 8 }}
+        />
+
+        <button
+          onClick={createField}
+          disabled={loading}
+          style={{ marginLeft: 8 }}
+        >
+          {loading ? 'Creando...' : 'Crear'}
+        </button>
+      </div>
 
       <ul>
         {fields.map((f) => (
-          <li key={f.id}>
+          <li key={f.id} style={{ marginBottom: 6 }}>
             {f.name} – ₡{f.price}
             <button
               onClick={() => deleteField(f.id)}
