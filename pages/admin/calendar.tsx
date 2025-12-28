@@ -24,8 +24,13 @@ function CalendarPage() {
   const [ready, setReady] = useState(false);
   const [fields, setFields] = useState<Field[]>([]);
   const [fieldId, setFieldId] = useState<number | null>(null);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
+
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [selectedHour, setSelectedHour] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // ======================
   // AUTH (CLIENT ONLY)
@@ -46,32 +51,67 @@ function CalendarPage() {
   useEffect(() => {
     if (!ready) return;
 
-    supabase.from('fields').select('id,name').then(({ data }) => {
-      if (data && data.length > 0) {
-        setFields(data);
-        setFieldId(data[0].id);
-      }
-    });
+    supabase
+      .from('fields')
+      .select('id, name')
+      .order('name')
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setFields(data);
+          setFieldId(data[0].id);
+        }
+      });
   }, [ready]);
 
   // ======================
   // LOAD BOOKINGS
   // ======================
-  useEffect(() => {
+  const loadBookings = async () => {
     if (!fieldId) return;
 
-    supabase
+    const { data } = await supabase
       .from('bookings')
       .select('hour')
       .eq('field_id', fieldId)
-      .eq('date', date)
-      .then(({ data }) => {
-        setBookings(data || []);
-      });
+      .eq('date', date);
+
+    setBookings(data || []);
+  };
+
+  useEffect(() => {
+    loadBookings();
   }, [fieldId, date]);
 
   const isReserved = (hour: string) =>
     bookings.some((b) => b.hour === hour);
+
+  // ======================
+  // CREATE BOOKING
+  // ======================
+  const createBooking = async () => {
+    if (!fieldId || !selectedHour) return;
+
+    setLoading(true);
+
+    const { error } = await supabase
+      .from('bookings')
+      .insert({
+        field_id: fieldId,
+        date,
+        hour: selectedHour,
+      });
+
+    if (error) {
+      alert('❌ Error creando la reserva');
+      console.error(error);
+      setLoading(false);
+      return;
+    }
+
+    await loadBookings();
+    setSelectedHour(null);
+    setLoading(false);
+  };
 
   if (!ready) {
     return <p style={{ padding: 20 }}>Cargando calendario…</p>;
@@ -81,6 +121,7 @@ function CalendarPage() {
     <main style={{ padding: 20 }}>
       <h1>Calendario por cancha</h1>
 
+      {/* CONTROLES */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
         <select
           value={fieldId ?? ''}
@@ -96,11 +137,15 @@ function CalendarPage() {
         <input
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => {
+            setDate(e.target.value);
+            setSelectedHour(null);
+          }}
         />
       </div>
 
-      <table border={1} cellPadding={10}>
+      {/* CALENDAR */}
+      <table border={1} cellPadding={10} cellSpacing={0}>
         <thead>
           <tr>
             <th>Hora</th>
@@ -108,19 +153,61 @@ function CalendarPage() {
           </tr>
         </thead>
         <tbody>
-          {HOURS.map((h) => (
-            <tr
-              key={h}
-              style={{
-                backgroundColor: isReserved(h) ? '#fee2e2' : '#dcfce7',
-              }}
-            >
-              <td>{h}</td>
-              <td>{isReserved(h) ? 'Reservado' : 'Disponible'}</td>
-            </tr>
-          ))}
+          {HOURS.map((h) => {
+            const reserved = isReserved(h);
+            const selected = selectedHour === h;
+
+            return (
+              <tr
+                key={h}
+                onClick={() => {
+                  if (reserved || loading) return;
+                  setSelectedHour(h);
+                }}
+                style={{
+                  cursor: reserved ? 'not-allowed' : 'pointer',
+                  backgroundColor: reserved
+                    ? '#fee2e2'
+                    : selected
+                    ? '#bbf7d0'
+                    : '#dcfce7',
+                }}
+              >
+                <td>{h}</td>
+                <td>
+                  {reserved
+                    ? 'Reservado'
+                    : selected
+                    ? 'Seleccionado'
+                    : 'Disponible'}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+
+      {/* CONFIRMACION */}
+      {selectedHour && (
+        <div style={{ marginTop: 20 }}>
+          <p>
+            Reservar <strong>{selectedHour}</strong> el día{' '}
+            <strong>{date}</strong>
+          </p>
+
+          <button onClick={createBooking} disabled={loading}>
+            {loading ? 'Reservando…' : 'Confirmar reserva'}
+          </button>
+
+          <button
+            onClick={() => setSelectedHour(null)}
+            style={{ marginLeft: 10 }}
+            disabled={loading}
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
     </main>
   );
 }
