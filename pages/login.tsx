@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -14,15 +15,11 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (!error) {
-        await supabase.auth.getSession(); // 👈 CLAVE
-        router.push('/admin');
-      }      
+    // 1️⃣ Login
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
       setError('Credenciales incorrectas');
@@ -30,29 +27,35 @@ export default function LoginPage() {
       return;
     }
 
-    // ✅ Esperar a que Supabase setee la sesión
-    setTimeout(() => {
-      router.replace('/admin');
-    }, 300);
+    // 2️⃣ FORZAR carga de sesión (CLAVE)
+    await supabase.auth.getSession();
+
+    // 3️⃣ Redirigir al admin
+    router.replace('/admin');
   };
 
   return (
-    <main style={{ padding: 40 }}>
+    <main style={{ padding: 40, maxWidth: 400 }}>
       <h1>Login Admin</h1>
 
       <form onSubmit={handleLogin}>
         <input
+          type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-        /><br />
+          required
+        />
+        <br />
 
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-        /><br />
+          required
+        />
+        <br />
 
         <button type="submit" disabled={loading}>
           {loading ? 'Ingresando...' : 'Ingresar'}
