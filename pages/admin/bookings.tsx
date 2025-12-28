@@ -10,7 +10,7 @@ type Booking = {
   hour: string;
   fields: {
     name: string;
-  } | null;
+  }[] | null;
 };
 
 export default function AdminBookings() {
@@ -34,7 +34,7 @@ export default function AdminBookings() {
         `)
         .order('date', { ascending: false });
 
-      setBookings(data || []);
+      setBookings((data as Booking[]) || []);
     };
 
     fetchBookings();
@@ -70,7 +70,7 @@ export default function AdminBookings() {
           {bookings.map((b) => (
             <tr key={b.id}>
               <td>{b.id}</td>
-              <td>{b.fields?.name}</td>
+              <td>{b.fields?.[0]?.name}</td>
               <td>{b.date}</td>
               <td>{b.hour}</td>
             </tr>
