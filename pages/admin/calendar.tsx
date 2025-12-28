@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 
 type Field = {
@@ -8,7 +9,6 @@ type Field = {
 };
 
 type Booking = {
-  date: string;
   hour: string;
 };
 
@@ -18,78 +18,62 @@ const HOURS = [
   '18:00','19:00','20:00','21:00','22:00',
 ];
 
-export default function AdminCalendar() {
+function CalendarPage() {
   const router = useRouter();
 
-  const [sessionReady, setSessionReady] = useState(false);
+  const [ready, setReady] = useState(false);
   const [fields, setFields] = useState<Field[]>([]);
-  const [selectedField, setSelectedField] = useState<number | null>(null);
+  const [fieldId, setFieldId] = useState<number | null>(null);
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [date, setDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
 
   // ======================
-  // GUARD SIMPLE (PRODUCCIÓN SAFE)
+  // AUTH (CLIENT ONLY)
   // ======================
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) {
         router.replace('/login');
       } else {
-        setSessionReady(true);
+        setReady(true);
       }
     });
   }, [router]);
 
   // ======================
-  // CARGAR CANCHAS
+  // LOAD FIELDS
   // ======================
   useEffect(() => {
-    if (!sessionReady) return;
+    if (!ready) return;
 
-    supabase
-      .from('fields')
-      .select('id, name')
-      .order('name')
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setFields(data);
-          setSelectedField(data[0].id);
-        }
-      });
-  }, [sessionReady]);
+    supabase.from('fields').select('id,name').then(({ data }) => {
+      if (data && data.length > 0) {
+        setFields(data);
+        setFieldId(data[0].id);
+      }
+    });
+  }, [ready]);
 
   // ======================
-  // CARGAR RESERVAS
+  // LOAD BOOKINGS
   // ======================
   useEffect(() => {
-    if (!sessionReady || !selectedField) return;
+    if (!fieldId) return;
 
     supabase
       .from('bookings')
-      .select('date, hour')
-      .eq('field_id', selectedField)
+      .select('hour')
+      .eq('field_id', fieldId)
       .eq('date', date)
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(error);
-          return;
-        }
-
+      .then(({ data }) => {
         setBookings(data || []);
       });
-  }, [sessionReady, selectedField, date]);
+  }, [fieldId, date]);
 
   const isReserved = (hour: string) =>
     bookings.some((b) => b.hour === hour);
 
-  if (!sessionReady) {
+  if (!ready) {
     return <p style={{ padding: 20 }}>Cargando calendario…</p>;
   }
 
@@ -97,11 +81,10 @@ export default function AdminCalendar() {
     <main style={{ padding: 20 }}>
       <h1>Calendario por cancha</h1>
 
-      {/* CONTROLES */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
         <select
-          value={selectedField ?? ''}
-          onChange={(e) => setSelectedField(Number(e.target.value))}
+          value={fieldId ?? ''}
+          onChange={(e) => setFieldId(Number(e.target.value))}
         >
           {fields.map((f) => (
             <option key={f.id} value={f.id}>
@@ -117,8 +100,7 @@ export default function AdminCalendar() {
         />
       </div>
 
-      {/* CALENDARIO */}
-      <table border={1} cellPadding={10} cellSpacing={0}>
+      <table border={1} cellPadding={10}>
         <thead>
           <tr>
             <th>Hora</th>
@@ -126,23 +108,24 @@ export default function AdminCalendar() {
           </tr>
         </thead>
         <tbody>
-          {HOURS.map((hour) => {
-            const reserved = isReserved(hour);
-
-            return (
-              <tr
-                key={hour}
-                style={{
-                  backgroundColor: reserved ? '#fee2e2' : '#dcfce7',
-                }}
-              >
-                <td>{hour}</td>
-                <td>{reserved ? 'Reservado' : 'Disponible'}</td>
-              </tr>
-            );
-          })}
+          {HOURS.map((h) => (
+            <tr
+              key={h}
+              style={{
+                backgroundColor: isReserved(h) ? '#fee2e2' : '#dcfce7',
+              }}
+            >
+              <td>{h}</td>
+              <td>{isReserved(h) ? 'Reservado' : 'Disponible'}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </main>
   );
 }
+
+// 🚨 CLAVE PARA VERCEL: DESACTIVAR SSR
+export default dynamic(() => Promise.resolve(CalendarPage), {
+  ssr: false,
+});

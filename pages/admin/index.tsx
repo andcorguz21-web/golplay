@@ -24,14 +24,14 @@ ChartJS.register(
   Legend
 );
 
-type Booking = {
-  date: string;
-  hour: string;
-  fields: {
-    name: string;
-    price: number;
-  }[];
-};
+// ======================
+// NORMALIZADOR CLAVE
+// ======================
+function normalizeField(f: any) {
+  if (!f) return null;
+  if (Array.isArray(f)) return f[0] ?? null;
+  return f;
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -39,9 +39,9 @@ export default function AdminDashboard() {
   const [ready, setReady] = useState(false);
   const [charts, setCharts] = useState<any>(null);
 
-  // =========================
+  // ======================
   // AUTH SIMPLE (PROD SAFE)
-  // =========================
+  // ======================
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) {
@@ -52,9 +52,9 @@ export default function AdminDashboard() {
     });
   }, [router]);
 
-  // =========================
-  // LOAD & BUILD METRICS
-  // =========================
+  // ======================
+  // LOAD DATA + METRICS
+  // ======================
   useEffect(() => {
     if (!ready) return;
 
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
       `)
       .then(({ data, error }) => {
         if (error || !data) {
-          console.error(error);
+          console.error('DASHBOARD ERROR', error);
           return;
         }
 
@@ -78,37 +78,23 @@ export default function AdminDashboard() {
         const byField: Record<string, number> = {};
         const revenueByField: Record<string, number> = {};
         const byHour: Record<string, number> = {};
-        const byWeekDay: Record<string, number> = {};
         let totalRevenue = 0;
 
-        data.forEach((b: Booking) => {
-          const field = b.fields?.[0];
+        data.forEach((b: any) => {
+          const field = normalizeField(b.fields);
           if (!field) return;
 
-          // reservas por día
           byDay[b.date] = (byDay[b.date] || 0) + 1;
-
-          // reservas por cancha
           byField[field.name] = (byField[field.name] || 0) + 1;
-
-          // ingresos por cancha
           revenueByField[field.name] =
             (revenueByField[field.name] || 0) + field.price;
-
-          // horas pico
           byHour[b.hour] = (byHour[b.hour] || 0) + 1;
-
-          // día de la semana
-          const day = new Date(b.date).toLocaleDateString('es-CR', {
-            weekday: 'long',
-          });
-          byWeekDay[day] = (byWeekDay[day] || 0) + 1;
 
           totalRevenue += field.price;
         });
 
         setCharts({
-          reservationsByDay: {
+          byDay: {
             labels: Object.keys(byDay),
             datasets: [
               {
@@ -119,7 +105,7 @@ export default function AdminDashboard() {
             ],
           },
 
-          reservationsByField: {
+          byField: {
             labels: Object.keys(byField),
             datasets: [
               {
@@ -141,24 +127,13 @@ export default function AdminDashboard() {
             ],
           },
 
-          reservationsByHour: {
+          byHour: {
             labels: Object.keys(byHour),
             datasets: [
               {
                 label: 'Reservas por hora',
                 data: Object.values(byHour),
                 backgroundColor: '#9333ea',
-              },
-            ],
-          },
-
-          reservationsByWeekDay: {
-            labels: Object.keys(byWeekDay),
-            datasets: [
-              {
-                label: 'Reservas por día de la semana',
-                data: Object.values(byWeekDay),
-                backgroundColor: '#0ea5e9',
               },
             ],
           },
@@ -211,22 +186,31 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* GRID */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-          gap: 30,
-          marginTop: 30,
-        }}
-      >
-        <Bar data={charts.reservationsByDay} />
-        <Bar data={charts.reservationsByField} />
+      {/* GRAFICOS SEPARADOS */}
+      <section style={{ marginTop: 30 }}>
+        <h3>Reservas por día</h3>
+        <Bar data={charts.byDay} />
+      </section>
+
+      <section>
+        <h3>Reservas por cancha</h3>
+        <Bar data={charts.byField} />
+      </section>
+
+      <section>
+        <h3>Ingresos por cancha</h3>
         <Bar data={charts.revenueByField} />
-        <Bar data={charts.reservationsByHour} />
-        <Bar data={charts.reservationsByWeekDay} />
+      </section>
+
+      <section>
+        <h3>Reservas por hora</h3>
+        <Bar data={charts.byHour} />
+      </section>
+
+      <section>
+        <h3>Distribución de ingresos</h3>
         <Pie data={charts.revenueDistribution} />
-      </div>
+      </section>
     </main>
   );
 }
