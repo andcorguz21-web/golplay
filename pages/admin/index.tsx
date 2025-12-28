@@ -40,6 +40,12 @@ export default function AdminDashboard() {
   const [chartData, setChartData] = useState<any>(null);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      console.log('SESSION ACTUAL:', data.session);
+    });
+  }, []);
+  
+  useEffect(() => {
     if (checking) return;
 
     const fetchData = async () => {
