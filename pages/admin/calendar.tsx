@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
-import { useAdminGuard } from '@/lib/useAdminGuard';
 
 type Field = {
   id: number;
@@ -19,8 +19,9 @@ const HOURS = [
 ];
 
 export default function AdminCalendar() {
-  useAdminGuard();
+  const router = useRouter();
 
+  const [sessionReady, setSessionReady] = useState(false);
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedField, setSelectedField] = useState<number | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -29,39 +30,68 @@ export default function AdminCalendar() {
   );
 
   // ======================
+  // GUARD SIMPLE (PRODUCCIÓN SAFE)
+  // ======================
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.replace('/login');
+      } else {
+        setSessionReady(true);
+      }
+    });
+  }, [router]);
+
+  // ======================
   // CARGAR CANCHAS
   // ======================
   useEffect(() => {
+    if (!sessionReady) return;
+
     supabase
       .from('fields')
       .select('id, name')
       .order('name')
-      .then(({ data }) => {
-        if (data) {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        if (data && data.length > 0) {
           setFields(data);
-          setSelectedField(data[0]?.id ?? null);
+          setSelectedField(data[0].id);
         }
       });
-  }, []);
+  }, [sessionReady]);
 
   // ======================
   // CARGAR RESERVAS
   // ======================
   useEffect(() => {
-    if (!selectedField) return;
+    if (!sessionReady || !selectedField) return;
 
     supabase
       .from('bookings')
       .select('date, hour')
       .eq('field_id', selectedField)
       .eq('date', date)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          return;
+        }
+
         setBookings(data || []);
       });
-  }, [selectedField, date]);
+  }, [sessionReady, selectedField, date]);
 
   const isReserved = (hour: string) =>
     bookings.some((b) => b.hour === hour);
+
+  if (!sessionReady) {
+    return <p style={{ padding: 20 }}>Cargando calendario…</p>;
+  }
 
   return (
     <main style={{ padding: 20 }}>
@@ -88,7 +118,7 @@ export default function AdminCalendar() {
       </div>
 
       {/* CALENDARIO */}
-      <table border={1} cellPadding={10}>
+      <table border={1} cellPadding={10} cellSpacing={0}>
         <thead>
           <tr>
             <th>Hora</th>
@@ -103,13 +133,11 @@ export default function AdminCalendar() {
               <tr
                 key={hour}
                 style={{
-                  background: reserved ? '#fee2e2' : '#dcfce7',
+                  backgroundColor: reserved ? '#fee2e2' : '#dcfce7',
                 }}
               >
                 <td>{hour}</td>
-                <td>
-                  {reserved ? 'Reservado' : 'Disponible'}
-                </td>
+                <td>{reserved ? 'Reservado' : 'Disponible'}</td>
               </tr>
             );
           })}
