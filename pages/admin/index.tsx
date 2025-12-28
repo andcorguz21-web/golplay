@@ -39,12 +39,13 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [chartData, setChartData] = useState<any>(null);
 
+  // 🔴 DEBUG CLAVE: verificar sesión real
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      console.log('SESSION ACTUAL:', data.session);
+      console.log('SESSION_ACTUAL', data.session);
     });
   }, []);
-  
+
   useEffect(() => {
     if (checking) return;
 
@@ -62,9 +63,11 @@ export default function AdminDashboard() {
         `);
 
       if (error || !data) {
-        console.error(error);
+        console.error('ERROR FETCH BOOKINGS', error);
         return;
       }
+
+      console.log('BOOKINGS DATA', data); // 👈 debug adicional
 
       setBookings(data);
 
