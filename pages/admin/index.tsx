@@ -26,10 +26,8 @@ type Booking = {
   id: number;
   date: string;
   hour: string;
-  fields: {
-    name: string;
-    price: number;
-  };
+  fieldName: string;
+  price: number;
 };
 
 export default function AdminDashboard() {
@@ -65,7 +63,16 @@ export default function AdminDashboard() {
         return;
       }
 
-      setBookings(data);
+      // 🔒 NORMALIZAR DATA (CLAVE PARA TYPESCRIPT)
+      const normalized: Booking[] = data.map((b: any) => ({
+        id: b.id,
+        date: b.date,
+        hour: b.hour,
+        fieldName: b.fields.name,
+        price: b.fields.price,
+      }));
+
+      setBookings(normalized);
 
       // ======================
       // AGREGACIONES
@@ -76,16 +83,13 @@ export default function AdminDashboard() {
       const revenueField: Record<string, number> = {};
       const byHour: Record<string, number> = {};
 
-      data.forEach((b) => {
-        const fieldName = b.fields.name;
-        const price = b.fields.price;
-
+      normalized.forEach((b) => {
         byDay[b.date] = (byDay[b.date] || 0) + 1;
-        byField[fieldName] = (byField[fieldName] || 0) + 1;
+        byField[b.fieldName] = (byField[b.fieldName] || 0) + 1;
 
-        revenueDay[b.date] = (revenueDay[b.date] || 0) + price;
-        revenueField[fieldName] =
-          (revenueField[fieldName] || 0) + price;
+        revenueDay[b.date] = (revenueDay[b.date] || 0) + b.price;
+        revenueField[b.fieldName] =
+          (revenueField[b.fieldName] || 0) + b.price;
 
         byHour[b.hour] = (byHour[b.hour] || 0) + 1;
       });
@@ -157,13 +161,13 @@ export default function AdminDashboard() {
   // ======================
   const totalBookings = bookings.length;
   const totalRevenue = bookings.reduce(
-    (sum, b) => sum + b.fields.price,
+    (sum, b) => sum + b.price,
     0
   );
 
   const topField = Object.entries(
     bookings.reduce((acc: any, b) => {
-      acc[b.fields.name] = (acc[b.fields.name] || 0) + 1;
+      acc[b.fieldName] = (acc[b.fieldName] || 0) + 1;
       return acc;
     }, {})
   ).sort((a, b) => b[1] - a[1])[0]?.[0];
@@ -172,7 +176,7 @@ export default function AdminDashboard() {
     let csv = 'Fecha,Hora,Cancha,Precio\n';
 
     bookings.forEach((b) => {
-      csv += `${b.date},${b.hour},${b.fields.name},${b.fields.price}\n`;
+      csv += `${b.date},${b.hour},${b.fieldName},${b.price}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -198,13 +202,7 @@ export default function AdminDashboard() {
   return (
     <main style={{ padding: 20 }}>
       {/* HEADER */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: 20,
-        }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <h1>Dashboard</h1>
 
         <div>
@@ -222,7 +220,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'flex', gap: 20, marginBottom: 30 }}>
+      <div style={{ display: 'flex', gap: 20, margin: '20px 0' }}>
         <div>📅 Reservas: {totalBookings}</div>
         <div>💰 Ingresos: ₡{totalRevenue}</div>
         <div>🏆 Top cancha: {topField}</div>
