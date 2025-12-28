@@ -23,7 +23,9 @@ ChartJS.register(
 );
 
 type Booking = {
+  id: number;
   date: string;
+  hour: string;
   fields: {
     name: string;
     price: number;
@@ -34,96 +36,95 @@ export default function AdminDashboard() {
   const { checking } = useAdminGuard();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [byDay, setByDay] = useState<any>(null);
-  const [byField, setByField] = useState<any>(null);
-  const [revenueDay, setRevenueDay] = useState<any>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [chartData, setChartData] = useState<any>(null);
 
   useEffect(() => {
     if (checking) return;
 
     const fetchData = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('bookings')
         .select(`
+          id,
           date,
+          hour,
           fields:field_id (
             name,
             price
           )
         `);
 
-      if (!data) return;
+      if (error || !data) {
+        console.error(error);
+        return;
+      }
 
-      const d: Record<string, number> = {};
-      const f: Record<string, number> = {};
-      const r: Record<string, number> = {};
+      setBookings(data);
 
-      data.forEach((b: Booking) => {
+      const byDay: Record<string, number> = {};
+
+      data.forEach((b) => {
         if (!b.fields || !b.fields[0]) return;
-
-        const field = b.fields[0];
-
-        d[b.date] = (d[b.date] || 0) + 1;
-        f[field.name] = (f[field.name] || 0) + 1;
-        r[b.date] = (r[b.date] || 0) + field.price;
+        byDay[b.date] = (byDay[b.date] || 0) + 1;
       });
 
-      setByDay(build(d, 'Reservas por día', '#16a34a'));
-      setByField(build(f, 'Reservas por cancha', '#2563eb'));
-      setRevenueDay(build(r, 'Ingresos por día (₡)', '#f59e0b'));
-
-      setLoading(false);
+      setChartData({
+        labels: Object.keys(byDay),
+        datasets: [
+          {
+            label: 'Reservas por día',
+            data: Object.values(byDay),
+            backgroundColor: '#16a34a',
+          },
+        ],
+      });
     };
 
     fetchData();
   }, [checking]);
 
-  if (checking || loading) {
-    return <p style={{ padding: 20 }}>Cargando dashboard...</p>;
+  const exportCSV = () => {
+    let csv = 'Fecha,Hora,Cancha,Precio\n';
+
+    bookings.forEach((b) => {
+      if (!b.fields || !b.fields[0]) return;
+      csv += `${b.date},${b.hour},${b.fields[0].name},${b.fields[0].price}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dashboard.csv';
+    a.click();
+  };
+
+  if (checking || !chartData) {
+    return <p style={{ padding: 20 }}>Cargando dashboard…</p>;
   }
 
   return (
     <main style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <h1>Dashboard</h1>
-        <button
-          onClick={async () => {
-            await logout();
-            router.replace('/login');
-          }}
-          style={{ background: 'red', color: 'white' }}
-        >
-          Salir
-        </button>
+
+        <div>
+          <button onClick={exportCSV}>Exportar CSV</button>
+          <button
+            onClick={async () => {
+              await logout();
+              router.push('/login');
+            }}
+            style={{ marginLeft: 10 }}
+          >
+            Salir
+          </button>
+        </div>
       </div>
 
-      <Section title="Reservas por día" data={byDay} />
-      <Section title="Reservas por cancha" data={byField} />
-      <Section title="Ingresos por día" data={revenueDay} />
+      <Bar data={chartData} />
     </main>
   );
-}
-
-function Section({ title, data }: any) {
-  return (
-    <section style={{ marginTop: 40 }}>
-      <h2>{title}</h2>
-      <Bar data={data} />
-    </section>
-  );
-}
-
-function build(obj: Record<string, number>, label: string, color: string) {
-  const keys = Object.keys(obj).sort();
-  return {
-    labels: keys,
-    datasets: [
-      {
-        label,
-        data: keys.map((k) => obj[k]),
-        backgroundColor: color,
-      },
-    ],
-  };
 }

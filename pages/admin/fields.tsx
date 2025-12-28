@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 import { useAdminGuard } from '@/lib/useAdminGuard';
-import { logout } from '@/lib/logout';
 
 type Field = {
   id: number;
@@ -11,70 +9,76 @@ type Field = {
 };
 
 export default function AdminFields() {
-  const { checking } = useAdminGuard();
-  const router = useRouter();
+  useAdminGuard();
 
   const [fields, setFields] = useState<Field[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
 
   const loadFields = async () => {
-    const { data } = await supabase.from('fields').select('*').order('name');
+    const { data, error } = await supabase
+      .from('fields')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     setFields(data || []);
   };
 
   useEffect(() => {
-    if (!checking) loadFields();
-  }, [checking]);
+    loadFields();
+  }, []);
 
-  if (checking) return <p style={{ padding: 20 }}>Cargando...</p>;
+  const createField = async () => {
+    if (!name || !price) return;
+
+    await supabase.from('fields').insert({
+      name,
+      price: Number(price),
+    });
+
+    setName('');
+    setPrice('');
+    loadFields();
+  };
+
+  const deleteField = async (id: number) => {
+    if (!confirm('¿Eliminar cancha?')) return;
+    await supabase.from('fields').delete().eq('id', id);
+    loadFields();
+  };
 
   return (
     <main style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <h1>Canchas</h1>
-        <button
-          onClick={async () => {
-            await logout();
-            router.replace('/login');
-          }}
-          style={{ background: 'red', color: 'white' }}
-        >
-          Salir
-        </button>
-      </div>
+      <h1>Canchas</h1>
 
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          await supabase.from('fields').insert({
-            name,
-            price: Number(price),
-          });
-          setName('');
-          setPrice('');
-          loadFields();
-        }}
-        style={{ marginTop: 20 }}
-      >
-        <input
-          placeholder="Nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          type="number"
-          placeholder="Precio"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
-        <button type="submit">Crear</button>
-      </form>
+      <input
+        placeholder="Nombre"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <input
+        type="number"
+        placeholder="Precio"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+      />
+      <button onClick={createField}>Crear</button>
 
-      <ul style={{ marginTop: 20 }}>
+      <ul>
         {fields.map((f) => (
           <li key={f.id}>
             {f.name} – ₡{f.price}
+            <button
+              onClick={() => deleteField(f.id)}
+              style={{ marginLeft: 10 }}
+            >
+              Eliminar
+            </button>
           </li>
         ))}
       </ul>
