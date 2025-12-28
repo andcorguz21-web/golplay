@@ -8,9 +8,7 @@ type Booking = {
   id: number;
   date: string;
   hour: string;
-  fields: {
-    name: string;
-  }[] | null;
+  fieldName: string | null;
 };
 
 export default function AdminBookings() {
@@ -37,7 +35,18 @@ export default function AdminBookings() {
       return;
     }
 
-    setBookings(data);
+    // 🔒 NORMALIZAR DATOS (CLAVE)
+    const normalized: Booking[] = data.map((b: any) => ({
+      id: b.id,
+      date: b.date,
+      hour: b.hour,
+      fieldName:
+        b.fields && Array.isArray(b.fields) && b.fields.length > 0
+          ? b.fields[0].name
+          : null,
+    }));
+
+    setBookings(normalized);
   };
 
   useEffect(() => {
@@ -96,11 +105,7 @@ export default function AdminBookings() {
         <tbody>
           {bookings.map((b) => (
             <tr key={b.id}>
-              <td>
-                {b.fields && b.fields.length > 0
-                  ? b.fields[0].name
-                  : '—'}
-              </td>
+              <td>{b.fieldName ?? '—'}</td>
               <td>{b.date}</td>
               <td>{b.hour}</td>
               <td>
