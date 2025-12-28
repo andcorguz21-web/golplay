@@ -15,9 +15,14 @@ export default function LoginPage() {
     setError('');
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+        email,
+        password,
+      });
+      
+      if (!error) {
+        await supabase.auth.getSession(); // 👈 CLAVE
+        router.push('/admin');
+      }      
 
     if (error) {
       setError('Credenciales incorrectas');
