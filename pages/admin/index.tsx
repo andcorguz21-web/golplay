@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
-import { useAdminGuard } from '@/lib/useAdminGuard';
 import { logout } from '@/lib/logout';
 
 import {
@@ -9,193 +8,184 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+
+import { Bar, Pie } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
   Tooltip,
   Legend
 );
 
 type Booking = {
-  id: number;
   date: string;
   hour: string;
-  fieldName: string;
-  price: number;
+  fields: {
+    name: string;
+    price: number;
+  }[];
 };
 
 export default function AdminDashboard() {
-  const { checking } = useAdminGuard();
   const router = useRouter();
 
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [ready, setReady] = useState(false);
+  const [charts, setCharts] = useState<any>(null);
 
-  const [byDayData, setByDayData] = useState<any>(null);
-  const [byFieldData, setByFieldData] = useState<any>(null);
-  const [revenueByDay, setRevenueByDay] = useState<any>(null);
-  const [revenueByField, setRevenueByField] = useState<any>(null);
-  const [byHourData, setByHourData] = useState<any>(null);
-
+  // =========================
+  // AUTH SIMPLE (PROD SAFE)
+  // =========================
   useEffect(() => {
-    if (checking) return;
-
-    const fetchData = async () => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          date,
-          hour,
-          fields:field_id!inner (
-            name,
-            price
-          )
-        `);
-
-      if (error || !data) {
-        console.error('ERROR FETCH DASHBOARD', error);
-        return;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.replace('/login');
+      } else {
+        setReady(true);
       }
-
-      // 🔒 NORMALIZAR DATA (CLAVE PARA TYPESCRIPT)
-      const normalized: Booking[] = data.map((b: any) => ({
-        id: b.id,
-        date: b.date,
-        hour: b.hour,
-        fieldName: b.fields.name,
-        price: b.fields.price,
-      }));
-
-      setBookings(normalized);
-
-      // ======================
-      // AGREGACIONES
-      // ======================
-      const byDay: Record<string, number> = {};
-      const byField: Record<string, number> = {};
-      const revenueDay: Record<string, number> = {};
-      const revenueField: Record<string, number> = {};
-      const byHour: Record<string, number> = {};
-
-      normalized.forEach((b) => {
-        byDay[b.date] = (byDay[b.date] || 0) + 1;
-        byField[b.fieldName] = (byField[b.fieldName] || 0) + 1;
-
-        revenueDay[b.date] = (revenueDay[b.date] || 0) + b.price;
-        revenueField[b.fieldName] =
-          (revenueField[b.fieldName] || 0) + b.price;
-
-        byHour[b.hour] = (byHour[b.hour] || 0) + 1;
-      });
-
-      // ======================
-      // DATASETS
-      // ======================
-      setByDayData({
-        labels: Object.keys(byDay),
-        datasets: [
-          {
-            label: 'Reservas por día',
-            data: Object.values(byDay),
-            backgroundColor: '#16a34a',
-          },
-        ],
-      });
-
-      setByFieldData({
-        labels: Object.keys(byField),
-        datasets: [
-          {
-            label: 'Reservas por cancha',
-            data: Object.values(byField),
-            backgroundColor: '#2563eb',
-          },
-        ],
-      });
-
-      setRevenueByDay({
-        labels: Object.keys(revenueDay),
-        datasets: [
-          {
-            label: 'Ingresos por día (₡)',
-            data: Object.values(revenueDay),
-            backgroundColor: '#22c55e',
-          },
-        ],
-      });
-
-      setRevenueByField({
-        labels: Object.keys(revenueField),
-        datasets: [
-          {
-            label: 'Ingresos por cancha (₡)',
-            data: Object.values(revenueField),
-            backgroundColor: '#f97316',
-          },
-        ],
-      });
-
-      setByHourData({
-        labels: Object.keys(byHour),
-        datasets: [
-          {
-            label: 'Reservas por hora',
-            data: Object.values(byHour),
-            backgroundColor: '#7c3aed',
-          },
-        ],
-      });
-    };
-
-    fetchData();
-  }, [checking]);
-
-  // ======================
-  // KPIs
-  // ======================
-  const totalBookings = bookings.length;
-  const totalRevenue = bookings.reduce(
-    (sum, b) => sum + b.price,
-    0
-  );
-
-  const topField = Object.entries(
-    bookings.reduce((acc: any, b) => {
-      acc[b.fieldName] = (acc[b.fieldName] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b[1] - a[1])[0]?.[0];
-
-  const exportCSV = () => {
-    let csv = 'Fecha,Hora,Cancha,Precio\n';
-
-    bookings.forEach((b) => {
-      csv += `${b.date},${b.hour},${b.fieldName},${b.price}\n`;
     });
+  }, [router]);
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+  // =========================
+  // LOAD & BUILD METRICS
+  // =========================
+  useEffect(() => {
+    if (!ready) return;
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dashboard.csv';
-    a.click();
-  };
+    supabase
+      .from('bookings')
+      .select(`
+        date,
+        hour,
+        fields:field_id (
+          name,
+          price
+        )
+      `)
+      .then(({ data, error }) => {
+        if (error || !data) {
+          console.error(error);
+          return;
+        }
 
-  if (
-    checking ||
-    !byDayData ||
-    !byFieldData ||
-    !revenueByDay ||
-    !revenueByField ||
-    !byHourData
-  ) {
+        const byDay: Record<string, number> = {};
+        const byField: Record<string, number> = {};
+        const revenueByField: Record<string, number> = {};
+        const byHour: Record<string, number> = {};
+        const byWeekDay: Record<string, number> = {};
+        let totalRevenue = 0;
+
+        data.forEach((b: Booking) => {
+          const field = b.fields?.[0];
+          if (!field) return;
+
+          // reservas por día
+          byDay[b.date] = (byDay[b.date] || 0) + 1;
+
+          // reservas por cancha
+          byField[field.name] = (byField[field.name] || 0) + 1;
+
+          // ingresos por cancha
+          revenueByField[field.name] =
+            (revenueByField[field.name] || 0) + field.price;
+
+          // horas pico
+          byHour[b.hour] = (byHour[b.hour] || 0) + 1;
+
+          // día de la semana
+          const day = new Date(b.date).toLocaleDateString('es-CR', {
+            weekday: 'long',
+          });
+          byWeekDay[day] = (byWeekDay[day] || 0) + 1;
+
+          totalRevenue += field.price;
+        });
+
+        setCharts({
+          reservationsByDay: {
+            labels: Object.keys(byDay),
+            datasets: [
+              {
+                label: 'Reservas por día',
+                data: Object.values(byDay),
+                backgroundColor: '#16a34a',
+              },
+            ],
+          },
+
+          reservationsByField: {
+            labels: Object.keys(byField),
+            datasets: [
+              {
+                label: 'Reservas por cancha',
+                data: Object.values(byField),
+                backgroundColor: '#2563eb',
+              },
+            ],
+          },
+
+          revenueByField: {
+            labels: Object.keys(revenueByField),
+            datasets: [
+              {
+                label: 'Ingresos por cancha (₡)',
+                data: Object.values(revenueByField),
+                backgroundColor: '#f59e0b',
+              },
+            ],
+          },
+
+          reservationsByHour: {
+            labels: Object.keys(byHour),
+            datasets: [
+              {
+                label: 'Reservas por hora',
+                data: Object.values(byHour),
+                backgroundColor: '#9333ea',
+              },
+            ],
+          },
+
+          reservationsByWeekDay: {
+            labels: Object.keys(byWeekDay),
+            datasets: [
+              {
+                label: 'Reservas por día de la semana',
+                data: Object.values(byWeekDay),
+                backgroundColor: '#0ea5e9',
+              },
+            ],
+          },
+
+          revenueDistribution: {
+            labels: Object.keys(revenueByField),
+            datasets: [
+              {
+                label: 'Distribución de ingresos',
+                data: Object.values(revenueByField),
+                backgroundColor: [
+                  '#16a34a',
+                  '#2563eb',
+                  '#f59e0b',
+                  '#9333ea',
+                  '#0ea5e9',
+                ],
+              },
+            ],
+          },
+
+          totalRevenue,
+        });
+      });
+  }, [ready]);
+
+  if (!ready || !charts) {
     return <p style={{ padding: 20 }}>Cargando dashboard…</p>;
   }
 
@@ -206,32 +196,37 @@ export default function AdminDashboard() {
         <h1>Dashboard</h1>
 
         <div>
-          <button onClick={exportCSV}>Exportar CSV</button>
+          <strong style={{ marginRight: 20 }}>
+            Ingresos totales: ₡{charts.totalRevenue}
+          </strong>
+
           <button
             onClick={async () => {
               await logout();
               router.push('/login');
             }}
-            style={{ marginLeft: 10 }}
           >
             Salir
           </button>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'flex', gap: 20, margin: '20px 0' }}>
-        <div>📅 Reservas: {totalBookings}</div>
-        <div>💰 Ingresos: ₡{totalRevenue}</div>
-        <div>🏆 Top cancha: {topField}</div>
+      {/* GRID */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+          gap: 30,
+          marginTop: 30,
+        }}
+      >
+        <Bar data={charts.reservationsByDay} />
+        <Bar data={charts.reservationsByField} />
+        <Bar data={charts.revenueByField} />
+        <Bar data={charts.reservationsByHour} />
+        <Bar data={charts.reservationsByWeekDay} />
+        <Pie data={charts.revenueDistribution} />
       </div>
-
-      {/* GRÁFICOS */}
-      <Bar data={byDayData} />
-      <Bar data={byFieldData} />
-      <Bar data={revenueByDay} />
-      <Bar data={revenueByField} />
-      <Bar data={byHourData} />
     </main>
   );
 }
