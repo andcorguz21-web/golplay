@@ -17,6 +17,10 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar, Pie } from 'react-chartjs-2';
 
+/* ===================== */
+/* CHART REGISTER */
+/* ===================== */
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -44,41 +48,71 @@ function normalizeField(f: any) {
 const barOptions = {
   responsive: true,
   plugins: {
-    legend: { display: false },
+    legend: {
+      display: false,
+    },
     datalabels: {
       color: '#111827',
-      anchor: 'end',
-      align: 'top',
-      font: { weight: '600', size: 12 },
+      anchor: 'end' as const,
+      align: 'top' as const,
+      font: {
+        weight: 'bold' as const,
+        size: 12,
+      },
+      formatter: (value: number) => value,
     },
   },
   scales: {
     x: {
-      grid: { display: false },
-      ticks: { color: '#374151', font: { size: 12 } },
+      grid: {
+        display: false,
+      },
+      ticks: {
+        color: '#374151',
+        font: {
+          size: 12,
+        },
+      },
     },
     y: {
-      display: false,
-      grid: { display: false },
+      grid: {
+        display: false,
+      },
+      ticks: {
+        display: true,
+        stepSize: 1,
+        color: '#6b7280',
+        font: {
+          size: 12,
+        },
+      },
     },
   },
 };
 
 const pieOptions = {
+  responsive: true,
   plugins: {
     legend: {
       position: 'bottom' as const,
-      labels: { boxWidth: 12, font: { size: 12 } },
+      labels: {
+        boxWidth: 12,
+        font: {
+          size: 12,
+        },
+      },
     },
     datalabels: {
-      color: '#fff',
-      font: { weight: '600', size: 12 },
+      color: '#ffffff',
+      font: {
+        weight: 'bold' as const,
+        size: 13,
+      },
       formatter: (value: number, ctx: any) => {
-        const total = ctx.chart.data.datasets[0].data.reduce(
-          (a: number, b: number) => a + b,
-          0
-        );
-        return `${((value / total) * 100).toFixed(1)}%`;
+        const data = ctx.chart.data.datasets[0].data;
+        const total = data.reduce((a: number, b: number) => a + b, 0);
+        const percentage = ((value / total) * 100).toFixed(1);
+        return `${percentage}%`;
       },
     },
   },
@@ -132,6 +166,7 @@ export default function AdminDashboard() {
     const byField: Record<string, number> = {};
     const byHour: Record<string, number> = {};
     const revenueByField: Record<string, number> = {};
+
     let totalRevenue = 0;
 
     data.forEach((b: any) => {
@@ -166,17 +201,23 @@ export default function AdminDashboard() {
 
       byDay: {
         labels: Object.keys(byDay),
-        datasets: [{ data: Object.values(byDay), backgroundColor: '#16a34a' }],
+        datasets: [
+          { data: Object.values(byDay), backgroundColor: '#16a34a' },
+        ],
       },
 
       byField: {
         labels: Object.keys(byField),
-        datasets: [{ data: Object.values(byField), backgroundColor: '#2563eb' }],
+        datasets: [
+          { data: Object.values(byField), backgroundColor: '#2563eb' },
+        ],
       },
 
       byHour: {
         labels: Object.keys(byHour),
-        datasets: [{ data: Object.values(byHour), backgroundColor: '#9333ea' }],
+        datasets: [
+          { data: Object.values(byHour), backgroundColor: '#9333ea' },
+        ],
       },
 
       revenueDistribution: {
@@ -229,9 +270,7 @@ export default function AdminDashboard() {
       <main style={{ background: '#f9fafb', minHeight: '100vh', padding: 32 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-          {/* ===================== */}
-          {/* FILTROS BONITOS */}
-          {/* ===================== */}
+          {/* FILTROS */}
           <section
             style={{
               background: 'white',
@@ -245,17 +284,8 @@ export default function AdminDashboard() {
               flexWrap: 'wrap',
             }}
           >
-            <FilterInput
-              label="Desde"
-              value={fromDate}
-              onChange={setFromDate}
-            />
-
-            <FilterInput
-              label="Hasta"
-              value={toDate}
-              onChange={setToDate}
-            />
+            <FilterInput label="Desde" value={fromDate} onChange={setFromDate} />
+            <FilterInput label="Hasta" value={toDate} onChange={setToDate} />
 
             <button
               onClick={exportCSV}
@@ -312,7 +342,7 @@ export default function AdminDashboard() {
             </ChartCard>
           </div>
 
-          {/* ÚLTIMAS */}
+          {/* ÚLTIMAS RESERVAS */}
           <ChartCard title="Últimas reservas">
             <table width="100%">
               <thead>
@@ -342,7 +372,7 @@ export default function AdminDashboard() {
 }
 
 /* ===================== */
-/* UI */
+/* UI HELPERS */
 /* ===================== */
 
 function FilterInput({
