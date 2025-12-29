@@ -24,9 +24,7 @@ function CalendarPage() {
   const [ready, setReady] = useState(false);
   const [fields, setFields] = useState<Field[]>([]);
   const [fieldId, setFieldId] = useState<number | null>(null);
-  const [date, setDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
@@ -55,7 +53,11 @@ function CalendarPage() {
       .from('fields')
       .select('id, name')
       .order('name')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          return;
+        }
         if (data && data.length > 0) {
           setFields(data);
           setFieldId(data[0].id);
@@ -69,17 +71,24 @@ function CalendarPage() {
   const loadBookings = async () => {
     if (!fieldId) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('bookings')
       .select('hour')
       .eq('field_id', fieldId)
       .eq('date', date);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     setBookings(data || []);
   };
 
   useEffect(() => {
     loadBookings();
+    // limpiar selección al cambiar filtros
+    setSelectedHour(null);
   }, [fieldId, date]);
 
   const isReserved = (hour: string) =>
@@ -102,9 +111,17 @@ function CalendarPage() {
       });
 
     if (error) {
-      alert('❌ Error creando la reserva');
+      // 🔒 MANEJO DE CONCURRENCIA (UNIQUE CONSTRAINT)
+      if (error.code === '23505') {
+        alert('⚠️ Esa hora acaba de ser reservada por otro usuario.');
+      } else {
+        alert('❌ Error creando la reserva');
+      }
       console.error(error);
       setLoading(false);
+      // refrescar por si otro usuario ganó la carrera
+      await loadBookings();
+      setSelectedHour(null);
       return;
     }
 
@@ -126,6 +143,7 @@ function CalendarPage() {
         <select
           value={fieldId ?? ''}
           onChange={(e) => setFieldId(Number(e.target.value))}
+          disabled={loading}
         >
           {fields.map((f) => (
             <option key={f.id} value={f.id}>
@@ -137,10 +155,8 @@ function CalendarPage() {
         <input
           type="date"
           value={date}
-          onChange={(e) => {
-            setDate(e.target.value);
-            setSelectedHour(null);
-          }}
+          onChange={(e) => setDate(e.target.value)}
+          disabled={loading}
         />
       </div>
 
@@ -187,7 +203,7 @@ function CalendarPage() {
         </tbody>
       </table>
 
-      {/* CONFIRMACION */}
+      {/* CONFIRMACIÓN */}
       {selectedHour && (
         <div style={{ marginTop: 20 }}>
           <p>
