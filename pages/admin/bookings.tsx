@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
-import { useAdminGuard } from '@/lib/useAdminGuard';
-import { logout } from '@/lib/logout';
+import AdminHeader from '@/components/ui/admin/AdminHeader';
 
 type Booking = {
   id: number;
@@ -12,13 +11,17 @@ type Booking = {
 };
 
 export default function AdminBookings() {
-  const { checking } = useAdminGuard();
   const router = useRouter();
-
   const [bookings, setBookings] = useState<Booking[]>([]);
 
-  const loadBookings = async () => {
-    const { data, error } = await supabase
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) router.replace('/login');
+    });
+  }, [router]);
+
+  useEffect(() => {
+    supabase
       .from('bookings')
       .select(`
         id,
@@ -28,106 +31,87 @@ export default function AdminBookings() {
           name
         )
       `)
-      .order('date', { ascending: false });
-
-    if (error || !data) {
-      console.error('ERROR CARGANDO RESERVAS', error);
-      return;
-    }
-
-    // 🔑 fields ES UN OBJETO, NO UN ARRAY
-    const normalized: Booking[] = data.map((b: any) => ({
-      id: b.id,
-      date: b.date,
-      hour: b.hour,
-      fieldName: b.fields.name,
-    }));
-
-    setBookings(normalized);
-  };
-
-  useEffect(() => {
-    if (checking) return;
-    loadBookings();
-  }, [checking]);
-
-  const deleteBooking = async (id: number) => {
-    if (!confirm('¿Eliminar esta reserva?')) return;
-
-    const { error } = await supabase
-      .from('bookings')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      alert('Error eliminando la reserva');
-      console.error(error);
-      return;
-    }
-
-    loadBookings();
-  };
-
-  if (checking) {
-    return <p style={{ padding: 20 }}>Cargando reservas…</p>;
-  }
+      .order('date', { ascending: false })
+      .then(({ data }) => {
+        setBookings(
+          (data || []).map((b: any) => ({
+            id: b.id,
+            date: formatDate(b.date),
+            hour: b.hour,
+            fieldName: b.fields.name,
+          }))
+        );
+      });
+  }, []);
 
   return (
-    <main style={{ padding: 20 }}>
-      {/* HEADER */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: 20,
-        }}
-      >
-        <h1>Reservas</h1>
+    <>
+      <AdminHeader />
 
-        <button
-          onClick={async () => {
-            await logout();
-            router.push('/login');
-          }}
-        >
-          Salir
-        </button>
-      </div>
+      <main style={{ background: '#f9fafb', minHeight: '100vh', padding: 32 }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 26, marginBottom: 24 }}>Reservas</h1>
 
-      {/* TABLA */}
-      <table border={1} cellPadding={8} cellSpacing={0} width="100%">
-        <thead>
-          <tr>
-            <th>Cancha</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 20,
+              boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+              overflow: 'hidden',
+            }}
+          >
+            <table width="100%" cellPadding={16}>
+              <thead style={{ background: '#f9fafb' }}>
+                <tr style={{ textAlign: 'left', fontSize: 13, color: '#6b7280' }}>
+                  <th>Cancha</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map((b) => (
+                  <tr key={b.id} style={{ borderTop: '1px solid #e5e7eb' }}>
+                    <td>{b.fieldName}</td>
+                    <td>{b.date}</td>
+                    <td>{b.hour}</td>
+                    <td>
+                      <span
+                        style={{
+                          background: '#dcfce7',
+                          color: '#166534',
+                          padding: '4px 10px',
+                          borderRadius: 999,
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
+                        Confirmada
+                      </span>
+                    </td>
+                  </tr>
+                ))}
 
-        <tbody>
-          {bookings.map((b) => (
-            <tr key={b.id}>
-              <td>{b.fieldName}</td>
-              <td>{b.date}</td>
-              <td>{b.hour}</td>
-              <td>
-                <button onClick={() => deleteBooking(b.id)}>
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-
-          {bookings.length === 0 && (
-            <tr>
-              <td colSpan={4} style={{ textAlign: 'center' }}>
-                No hay reservas registradas
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </main>
+                {bookings.length === 0 && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: 30 }}>
+                      No hay reservas
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </>
   );
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString('es-CR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
 }

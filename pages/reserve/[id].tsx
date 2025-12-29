@@ -36,6 +36,17 @@ const RULES = [
   'Cuidar las instalaciones',
 ];
 
+/* ✅ FORMATO DE FECHA EN ESPAÑOL */
+const formatDateSpanish = (dateStr: string) => {
+  const date = new Date(dateStr + 'T00:00:00');
+
+  return date.toLocaleDateString('es-CR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
 export default function ReserveField() {
   const router = useRouter();
   const { id } = router.query;
@@ -50,18 +61,15 @@ export default function ReserveField() {
 
   const [isMobile, setIsMobile] = useState(false);
 
-  // 📱 Detectar mobile
+  /* 📱 Detectar mobile */
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 🔄 Cargar cancha
+  /* 🔄 Cargar cancha */
   useEffect(() => {
     if (!id) return;
 
@@ -76,7 +84,7 @@ export default function ReserveField() {
       });
   }, [id]);
 
-  // 🔄 Cargar horas ocupadas
+  /* 🔄 Cargar horas ocupadas */
   useEffect(() => {
     if (!id || !date) return;
 
@@ -90,6 +98,7 @@ export default function ReserveField() {
       });
   }, [id, date]);
 
+  /* ✅ Reservar */
   const handleReserve = async () => {
     if (!date || !hour) return;
 
@@ -191,7 +200,7 @@ export default function ReserveField() {
             </section>
           </div>
 
-          {/* CTA LATERAL (DESKTOP) */}
+          {/* CTA DESKTOP */}
           {!isMobile && (
             <aside
               style={{
@@ -259,6 +268,15 @@ export default function ReserveField() {
                 </div>
               )}
 
+              {/* ✅ RESUMEN CON FECHA BONITA */}
+              {date && hour && (
+                <div style={{ marginTop: 16, fontSize: 14, color: '#374151' }}>
+                  <p><strong>Fecha:</strong> {formatDateSpanish(date)}</p>
+                  <p><strong>Hora:</strong> {hour}</p>
+                  <p><strong>Total:</strong> ₡{field.price}</p>
+                </div>
+              )}
+
               <button
                 onClick={handleReserve}
                 disabled={!date || !hour}
@@ -281,59 +299,6 @@ export default function ReserveField() {
             </aside>
           )}
         </div>
-
-        {/* CTA MOBILE */}
-        {isMobile && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              backgroundColor: 'white',
-              borderTop: '1px solid #e5e7eb',
-              padding: 16,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              zIndex: 100,
-            }}
-          >
-            <div>
-              <p style={{ fontSize: 16, fontWeight: 600 }}>
-                ₡{field.price}
-                <span style={{ fontSize: 13, color: '#6b7280' }}>
-                  {' '}
-                  / hora
-                </span>
-              </p>
-
-              {date && hour && (
-                <p style={{ fontSize: 13, color: '#6b7280' }}>
-                  {date} · {hour}
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={handleReserve}
-              disabled={!date || !hour}
-              style={{
-                padding: '12px 18px',
-                borderRadius: 12,
-                border: 'none',
-                backgroundColor:
-                  date && hour ? '#16a34a' : '#9ca3af',
-                color: 'white',
-                fontSize: 15,
-                cursor:
-                  date && hour ? 'pointer' : 'not-allowed',
-              }}
-            >
-              Reservar
-            </button>
-          </div>
-        )}
       </main>
     </>
   );
