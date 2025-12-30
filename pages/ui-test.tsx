@@ -1,16 +1,27 @@
-import { Page } from '@/components/ui/page';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import dynamic from 'next/dynamic';
+
+const MapView = dynamic(
+  () => import('@/components/ui/map/MapView'),
+  { ssr: false }
+);
 
 export default function UITest() {
+  const fields = [
+    {
+      id: 1,
+      name: 'Cancha Test',
+      price: 12000,
+      lat: 9.933,
+      lng: -84.083,
+    },
+  ];
+
   return (
-    <Page title="GolPlay UI Test">
-      <Card>
-        <p style={{ marginBottom: 12 }}>
-          Esto ya se ve como una plataforma seria.
-        </p>
-        <Button>Acción principal</Button>
-      </Card>
-    </Page>
+    <div style={{ height: '100vh' }}>
+      <MapView
+        fields={fields}
+        onSelect={(id) => alert(`Cancha ${id}`)}
+      />
+    </div>
   );
 }
