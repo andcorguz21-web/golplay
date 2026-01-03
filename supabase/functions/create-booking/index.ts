@@ -1,50 +1,40 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer";
 
-// =====================
-// INIT SUPABASE CLIENT (SERVICE ROLE)
-// =====================
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-// =====================
-// HELPERS
-// =====================
-function json(body: any, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
-// =====================
-// EDGE FUNCTION
-// =====================
+const LOGO_URL =
+  "https://ofypdowhedbbfzkoxeul.supabase.co/storage/v1/object/public/assets/logo-golplay.svg";
+
 serve(async (req) => {
-  try {
-    // 🔹 SOLO POST
-    if (req.method !== "POST") {
-      return json({ ok: false, error: "Method not allowed" }, 405);
-    }
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
+  try {
     const { email, field_id, date, hour } = await req.json();
 
-    // =====================
-    // 1️⃣ VALIDACIÓN BÁSICA
-    // =====================
     if (!email || !field_id || !date || !hour) {
-      return json(
-        { ok: false, error: "Missing required fields" },
-        400
+      return new Response(
+        JSON.stringify({ ok: false, error: "Datos incompletos" }),
+        { status: 400, headers: corsHeaders }
       );
     }
 
-    // =====================
-    // 2️⃣ VERIFICAR DISPONIBILIDAD
-    // =====================
-    const { data: existingBooking } = await supabase
+    /* ===================== */
+    /* VERIFICAR DISPONIBILIDAD */
+    /* ===================== */
+    const { data: existing } = await supabase
       .from("bookings")
       .select("id")
       .eq("field_id", field_id)
@@ -53,81 +43,188 @@ serve(async (req) => {
       .eq("status", "active")
       .maybeSingle();
 
-    if (existingBooking) {
-      return json(
-        { ok: false, error: "Horario no disponible" },
-        409
+    if (existing) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Horario no disponible" }),
+        { status: 409, headers: corsHeaders }
       );
     }
 
-    // =====================
-    // 3️⃣ BUSCAR O CREAR USUARIO
-    // =====================
-    let userId: string;
+    /* ===================== */
+    /* OBTENER CANCHA */
+    /* ===================== */
+    const { data: field } = await supabase
+      .from("fields")
+      .select("name, price, owner_email")
+      .eq("id", field_id)
+      .single();
 
-    // Buscar usuario por email
-    const { data: userList } =
-      await supabase.auth.admin.listUsers({
+    const fieldName = field?.name ?? `Cancha ${field_id}`;
+    const priceCRC = field?.price
+      ? `₡${Number(field.price).toLocaleString("es-CR")}`
+      : "—";
+    const ownerEmail = field?.owner_email;
+
+    /* ===================== */
+    /* CREAR RESERVA */
+    /* ===================== */
+    const { data: booking, error } = await supabase
+      .from("bookings")
+      .insert({
+        field_id,
+        date,
+        hour,
         email,
+        status: "active",
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    /* ===================== */
+    /* ENVIAR CORREOS (NO BLOQUEANTE) */
+    /* ===================== */
+    try {
+      const transporter = nodemailer.createTransport({
+        host: Deno.env.get("SMTP_HOST"),
+        port: Number(Deno.env.get("SMTP_PORT")),
+        secure: false,
+        auth: {
+          user: Deno.env.get("SMTP_USER"),
+          pass: Deno.env.get("SMTP_PASS"),
+        },
       });
 
-    if (userList.users.length > 0) {
-      // Usuario existe
-      userId = userList.users[0].id;
-    } else {
-      // Crear usuario SIN password
-      const { data: newUser, error: createError } =
-        await supabase.auth.admin.createUser({
-          email,
-          email_confirm: true,
+      /* ===== CLIENTE ===== */
+      await transporter.sendMail({
+        from: `"GolPlay ⚽" <${Deno.env.get("SMTP_USER")}>`,
+        to: email,
+        subject: "✅ Reserva confirmada - GolPlay",
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:20px;padding:32px;box-shadow:0 12px 30px rgba(0,0,0,0.08)">
+
+    <div style="text-align:center;margin-bottom:24px">
+      <img src="${LOGO_URL}" alt="GolPlay" style="height:56px" />
+    </div>
+
+    <h2 style="margin:0 0 6px;color:#111827;font-size:24px">
+      ⚽ Reserva confirmada
+    </h2>
+
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px">
+      Tu cancha ya está reservada. Estos son los detalles:
+    </p>
+
+    <div style="background:#f9fafb;border-radius:16px;padding:20px">
+      <p><strong>🏟️ Cancha:</strong> ${fieldName}</p>
+      <p><strong>📅 Fecha:</strong> ${date}</p>
+      <p><strong>⏰ Hora:</strong> ${hour}</p>
+      <p><strong>💳 Total:</strong> ${priceCRC}</p>
+    </div>
+
+    <p style="margin-top:24px;color:#6b7280;font-size:14px">
+      Llegá al menos 10 minutos antes para disfrutar sin contratiempos.
+    </p>
+
+    <div style="margin-top:32px;text-align:center;color:#9ca3af;font-size:13px">
+      GolPlay © ${new Date().getFullYear()}
+    </div>
+
+  </div>
+</body>
+</html>
+        `,
+      });
+
+      /* ===== ADMIN ===== */
+      await transporter.sendMail({
+        from: `"GolPlay ⚽" <${Deno.env.get("SMTP_USER")}>`,
+        to: Deno.env.get("ADMIN_EMAIL")!,
+        subject: "📢 Nueva reserva recibida",
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:20px;padding:32px;box-shadow:0 12px 30px rgba(0,0,0,0.08)">
+
+    <div style="text-align:center;margin-bottom:24px">
+      <img src="${LOGO_URL}" alt="GolPlay" style="height:48px" />
+    </div>
+
+    <h2 style="margin:0 0 6px;color:#111827;font-size:22px">
+      📢 Nueva reserva
+    </h2>
+
+    <div style="background:#f9fafb;border-radius:16px;padding:20px">
+      <p><strong>👤 Cliente:</strong> ${email}</p>
+      <p><strong>🏟️ Cancha:</strong> ${fieldName}</p>
+      <p><strong>📅 Fecha:</strong> ${date}</p>
+      <p><strong>⏰ Hora:</strong> ${hour}</p>
+      <p><strong>💳 Total:</strong> ${priceCRC}</p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+      });
+
+      /* ===== OWNER ===== */
+      if (ownerEmail) {
+        await transporter.sendMail({
+          from: `"GolPlay ⚽" <${Deno.env.get("SMTP_USER")}>`,
+          to: ownerEmail,
+          subject: "📢 Nueva reserva en tu cancha - GolPlay",
+          html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:20px;padding:32px;box-shadow:0 12px 30px rgba(0,0,0,0.08)">
+
+    <div style="text-align:center;margin-bottom:24px">
+      <img src="${LOGO_URL}" alt="GolPlay" style="height:48px" />
+    </div>
+
+    <h2 style="color:#111827;font-size:22px">
+      ⚽ Nueva reserva en tu cancha
+    </h2>
+
+    <div style="background:#f9fafb;border-radius:16px;padding:20px">
+      <p><strong>🏟️ Cancha:</strong> ${fieldName}</p>
+      <p><strong>👤 Cliente:</strong> ${email}</p>
+      <p><strong>📅 Fecha:</strong> ${date}</p>
+      <p><strong>⏰ Hora:</strong> ${hour}</p>
+      <p><strong>💳 Total:</strong> ${priceCRC}</p>
+    </div>
+
+    <p style="margin-top:24px;color:#6b7280;font-size:14px">
+      Ingresá a GolPlay para administrar tus reservas.
+    </p>
+  </div>
+</body>
+</html>
+          `,
         });
-
-      if (createError || !newUser.user) {
-        throw createError;
       }
-
-      userId = newUser.user.id;
-
-      // Crear profile
-      await supabase.from("profiles").insert({
-        id: userId,
-        role: "user",
-      });
+    } catch (mailError) {
+      console.error("EMAIL ERROR (NO BLOCKING):", mailError);
     }
 
-    // =====================
-    // 4️⃣ CREAR RESERVA
-    // =====================
-    const { data: booking, error: bookingError } =
-      await supabase
-        .from("bookings")
-        .insert({
-          field_id,
-          date,
-          hour,
-          user_id: userId,
-          status: "active",
-        })
-        .select()
-        .single();
-
-    if (bookingError) {
-      throw bookingError;
-    }
-
-    // =====================
-    // 5️⃣ RESPUESTA OK
-    // =====================
-    return json({
-      ok: true,
-      booking_id: booking.id,
-      message: "Reserva creada correctamente",
-    });
-  } catch (err: any) {
-    console.error(err);
-    return json(
-      { ok: false, error: "Error interno" },
-      500
+    /* ===================== */
+    /* RESPUESTA OK */
+    /* ===================== */
+    return new Response(
+      JSON.stringify({ ok: true, booking_id: booking.id }),
+      { status: 200, headers: corsHeaders }
+    );
+  } catch (err) {
+    console.error("CREATE BOOKING ERROR:", err);
+    return new Response(
+      JSON.stringify({ ok: false, error: "Error interno" }),
+      { status: 500, headers: corsHeaders }
     );
   }
 });

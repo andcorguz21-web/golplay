@@ -15,10 +15,11 @@ const HOURS = [
   '18:00','19:00','20:00','21:00','22:00',
 ];
 
-export default function DailyCalendar() {
-  const today = new Date().toISOString().split('T')[0];
+type Props = {
+  selectedDate: string;
+};
 
-  const [date, setDate] = useState(today);
+export default function DailyCalendar({ selectedDate }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selected, setSelected] = useState<Booking | null>(null);
 
@@ -26,6 +27,8 @@ export default function DailyCalendar() {
   // LOAD BOOKINGS
   // ======================
   useEffect(() => {
+    if (!selectedDate) return;
+
     supabase
       .from('bookings')
       .select(`
@@ -36,7 +39,7 @@ export default function DailyCalendar() {
           name
         )
       `)
-      .eq('date', date)
+      .eq('date', selectedDate)
       .then(({ data, error }) => {
         if (error || !data) {
           console.error(error);
@@ -54,7 +57,7 @@ export default function DailyCalendar() {
 
         setBookings(normalized);
       });
-  }, [date]);
+  }, [selectedDate]);
 
   const deleteBooking = async (id: number) => {
     await supabase.from('bookings').delete().eq('id', id);
@@ -66,38 +69,18 @@ export default function DailyCalendar() {
     <>
       {/* HEADER */}
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 12 }}>
+        <h2 style={{ fontSize: 22, marginBottom: 6 }}>
           Vista diaria
         </h2>
 
-        {/* DATE PICKER AIRBNB STYLE */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 12,
-            backgroundColor: 'white',
-            padding: '12px 18px',
-            borderRadius: 14,
-            boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
-          }}
-        >
-          <span style={{ fontSize: 14, color: '#6b7280' }}>
-            Día
-          </span>
-
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            style={{
-              border: 'none',
-              outline: 'none',
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
-          />
-        </div>
+        <p style={{ fontSize: 14, color: '#6b7280' }}>
+          {new Date(selectedDate).toLocaleDateString('es-CR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })}
+        </p>
       </div>
 
       {/* DAILY GRID (MISMO ESTILO WEEK) */}
@@ -120,11 +103,7 @@ export default function DailyCalendar() {
             borderBottom: '1px solid #e5e7eb',
           }}
         >
-          {new Date(date).toLocaleDateString('es-CR', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-          })}
+          Reservas
         </div>
 
         {/* GRID */}

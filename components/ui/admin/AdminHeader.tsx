@@ -15,7 +15,8 @@ export default function AdminHeader() {
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        backgroundColor: 'white',
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(10px)',
         borderBottom: '1px solid #e5e7eb',
       }}
     >
@@ -23,10 +24,12 @@ export default function AdminHeader() {
         style={{
           maxWidth: 1200,
           margin: '0 auto',
-          padding: '16px 24px',
+          padding: '18px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
         }}
       >
         {/* LOGO */}
@@ -39,10 +42,17 @@ export default function AdminHeader() {
             display: 'flex',
             alignItems: 'center',
             gap: 8,
+            color: '#111827',
           }}
         >
           GolPlay
-          <span style={{ fontSize: 13, color: '#6b7280' }}>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: '#6b7280',
+            }}
+          >
             Admin
           </span>
         </div>
@@ -59,17 +69,22 @@ export default function AdminHeader() {
           <NavItem label="Canchas" path="/admin/fields" />
           <NavItem label="Reservas" path="/admin/bookings" />
           <NavItem label="Calendario" path="/admin/calendar" />
+          <NavItem label="Pagos" path="/admin/payments" />
 
           <button
             onClick={handleLogout}
             style={{
-              marginLeft: 16,
+              marginLeft: 20,
               padding: '8px 14px',
               borderRadius: 10,
               border: '1px solid #e5e7eb',
               backgroundColor: '#f9fafb',
               cursor: 'pointer',
               fontSize: 14,
+              fontWeight: 500,
+              color: '#111827',
+              fontFamily:
+                '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
             }}
           >
             Salir
@@ -80,7 +95,9 @@ export default function AdminHeader() {
   );
 }
 
-/* ---------- Helpers ---------- */
+/* ===================== */
+/* NAV ITEM */
+/* ===================== */
 
 function NavItem({
   label,
@@ -101,11 +118,14 @@ function NavItem({
         cursor: 'pointer',
         fontSize: 14,
         fontWeight: active ? 600 : 500,
+        lineHeight: 1.4,
         color: active ? '#111827' : '#6b7280',
         paddingBottom: 4,
         borderBottom: active
           ? '2px solid #16a34a'
           : '2px solid transparent',
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
       }}
     >
       {label}
