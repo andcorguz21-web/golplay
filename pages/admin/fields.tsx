@@ -305,6 +305,18 @@ const image: CSSProperties = {
   background: 'url(https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=800&q=60) center/cover',
 };
 
+/* ✅ ÚNICO AJUSTE */
+const blockedBadge: CSSProperties = {
+  display: 'inline-block',
+  marginTop: 6,
+  padding: '4px 10px',
+  borderRadius: 999,
+  fontSize: 12,
+  background: '#dc2626',
+  color: 'white',
+  fontWeight: 600,
+};
+
 const overlay: CSSProperties = {
   position: 'fixed',
   inset: 0,
