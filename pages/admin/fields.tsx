@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/router';
 import AdminHeader from '@/components/ui/admin/AdminHeader';
@@ -243,9 +243,6 @@ export default function AdminFields() {
         </div>
       </main>
 
-      {/* ===================== */}
-      {/* MODAL */}
-      {/* ===================== */}
       {showModal && (
         <div style={overlay}>
           <div style={modal}>
@@ -427,7 +424,7 @@ const blockedBadge = {
   fontWeight: 600,
 };
 
-const overlay = {
+const overlay: CSSProperties = {
   position: 'fixed',
   inset: 0,
   background: 'rgba(0,0,0,.4)',
@@ -437,7 +434,7 @@ const overlay = {
   zIndex: 100,
 };
 
-const modal = {
+const modal: CSSProperties = {
   background: 'white',
   borderRadius: 24,
   padding: 28,
