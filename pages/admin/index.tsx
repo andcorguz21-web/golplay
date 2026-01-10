@@ -1,5 +1,3 @@
-/* PÉGALO COMPLETO, REEMPLAZA TODO ADMIN INDEX */
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
@@ -246,7 +244,7 @@ export default function AdminDashboard() {
                 )}
               </FilterItem>
 
-              {/* CANCHAS (CUSTOM SELECT) */}
+              {/* CANCHAS */}
               <FilterItem label="Canchas">
                 <div style={{ position: 'relative' }}>
                   <button
@@ -473,15 +471,15 @@ const stat = { background: '#fff', padding: 22, borderRadius: 18 };
 const card = { background: '#fff', padding: 24, borderRadius: 18 };
 
 /* ===================== */
-/* 🎯 FINAL BUG-FREE CHART OPTIONS */
+/* CHART OPTIONS */
 const barOptions = {
   responsive: true,
   plugins: {
     legend: { display: false },
     datalabels: {
       color: '#111827',
-      anchor: 'end',
-      align: 'end',
+      anchor: (ctx: any) => 'end',
+      align: (ctx: any) => 'end',
       font: (ctx: any) => ({
         weight: 'bold',
         size: 11,
@@ -513,4 +511,3 @@ const pieOptions = {
     },
   },
 };
-
