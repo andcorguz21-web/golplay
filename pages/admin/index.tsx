@@ -1,3 +1,5 @@
+/* PÉGALO COMPLETO, REEMPLAZA TODO ADMIN INDEX */
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
@@ -471,16 +473,19 @@ const stat = { background: '#fff', padding: 22, borderRadius: 18 };
 const card = { background: '#fff', padding: 24, borderRadius: 18 };
 
 /* ===================== */
-/* CHART OPTIONS */
+/* 🎯 FINAL BUG-FREE CHART OPTIONS */
 const barOptions = {
   responsive: true,
   plugins: {
     legend: { display: false },
     datalabels: {
       color: '#111827',
-      anchor: 'end' as const,
-      align: 'end' as const,
-      font: { weight: 'bold', size: 11 },
+      anchor: 'end',
+      align: 'end',
+      font: (ctx: any) => ({
+        weight: 'bold',
+        size: 11,
+      }),
     },
   },
   scales: {
@@ -491,10 +496,13 @@ const barOptions = {
 
 const pieOptions = {
   plugins: {
-    legend: { position: 'bottom' as const },
+    legend: { position: 'bottom' },
     datalabels: {
       color: '#fff',
-      font: { weight: 'bold', size: 12 },
+      font: (ctx: any) => ({
+        weight: 'bold',
+        size: 12,
+      }),
       formatter: (v: number, ctx: any) => {
         const total = ctx.chart.data.datasets[0].data.reduce(
           (a: number, b: number) => a + b,
@@ -505,3 +513,4 @@ const pieOptions = {
     },
   },
 };
+
