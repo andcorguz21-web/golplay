@@ -478,8 +478,8 @@ const barOptions = {
     legend: { display: false },
     datalabels: {
       color: '#111827',
-      anchor: 'end',
-      align: 'top',
+      anchor: 'end' as const,
+      align: 'end' as const,
       font: { weight: 'bold', size: 11 },
     },
   },
@@ -491,7 +491,7 @@ const barOptions = {
 
 const pieOptions = {
   plugins: {
-    legend: { position: 'bottom' },
+    legend: { position: 'bottom' as const },
     datalabels: {
       color: '#fff',
       font: { weight: 'bold', size: 12 },
