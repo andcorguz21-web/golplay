@@ -17,6 +17,7 @@ import {
 
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar, Pie } from 'react-chartjs-2';
+import type { ChartOptions } from 'chart.js';
 import * as XLSX from 'xlsx';
 
 /* ===================== */
@@ -133,7 +134,7 @@ export default function AdminDashboard() {
         revenueByField[field.name] =
           (revenueByField[field.name] || 0) + field.price;
 
-        totalRevenue += field.price;
+        totalRevenue += field.price ?? 0;
       });
 
       setCharts({
@@ -244,7 +245,7 @@ export default function AdminDashboard() {
                 )}
               </FilterItem>
 
-              {/* CANCHAS */}
+              {/* CANCHAS (CUSTOM SELECT) */}
               <FilterItem label="Canchas">
                 <div style={{ position: 'relative' }}>
                   <button
@@ -472,35 +473,29 @@ const card = { background: '#fff', padding: 24, borderRadius: 18 };
 
 /* ===================== */
 /* CHART OPTIONS */
-const barOptions = {
+const barOptions: ChartOptions<'bar'> = {
   responsive: true,
   plugins: {
     legend: { display: false },
     datalabels: {
       color: '#111827',
-      anchor: (ctx: any) => 'end',
-      align: (ctx: any) => 'end',
-      font: (ctx: any) => ({
-        weight: 'bold',
-        size: 11,
-      }),
+      anchor: 'end',
+      align: 'end',
+      font: { weight: 'bold', size: 11 },
     },
   },
   scales: {
     x: { grid: { display: false } },
     y: { display: false },
   },
-};
+} satisfies ChartOptions<'bar'>;
 
-const pieOptions = {
+const pieOptions: ChartOptions<'pie'> = {
   plugins: {
     legend: { position: 'bottom' },
     datalabels: {
       color: '#fff',
-      font: (ctx: any) => ({
-        weight: 'bold',
-        size: 12,
-      }),
+      font: { weight: 'bold', size: 12 },
       formatter: (v: number, ctx: any) => {
         const total = ctx.chart.data.datasets[0].data.reduce(
           (a: number, b: number) => a + b,
@@ -510,4 +505,4 @@ const pieOptions = {
       },
     },
   },
-};
+} satisfies ChartOptions<'pie'>;
