@@ -72,7 +72,7 @@ export default function Header() {
       <header style={header}>
         <div style={headWrap}>
           <div style={logo} onClick={() => router.push('/')}>
-            <Image src="/logo-golplay.svg" alt="GolPlay" width={120} height={55} />
+            <Image src="/logo-golplay.svg" alt="GolPlay" width={120} height={100} />
           </div>
 
           {/* Search pill */}
@@ -231,7 +231,7 @@ const sheetContent = {
 const title = { fontSize: 18, fontWeight: 600, marginBottom: 16 };
 
 const input = {
-  width: '100%',
+  width: '65%',
   padding: 14,
   borderRadius: 12,
   border: '1px solid #ddd',

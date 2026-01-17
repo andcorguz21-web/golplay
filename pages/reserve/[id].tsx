@@ -22,7 +22,7 @@ const HOURS = [
   '18:00','19:00','20:00','21:00','22:00',
 ]
 
-const IMAGES = [
+const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=1200&q=60',
   'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1200&q=60',
   'https://images.unsplash.com/photo-1509027572446-af8401acfdc3?auto=format&fit=crop&w=1200&q=60',
@@ -35,32 +35,57 @@ export default function ReserveField() {
   const fieldId = Number(router.query.id)
 
   const [field, setField] = useState<Field | null>(null)
+  const [images, setImages] = useState<string[]>([])
+  const [activeImage, setActiveImage] = useState(0)
+
   const [loading, setLoading] = useState(true)
   const [date, setDate] = useState<Date | undefined>()
   const [hour, setHour] = useState('')
   const [bookedHours, setBookedHours] = useState<string[]>([])
-  const [activeImage, setActiveImage] = useState(0)
 
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [sending, setSending] = useState(false)
 
-  /* LOAD FIELD */
+  /* ===================== */
+  /* LOAD FIELD + IMAGES */
+  /* ===================== */
   useEffect(() => {
     if (!fieldId) return
 
-    supabase
-      .from('fields')
-      .select('id, name, price')
-      .eq('id', fieldId)
-      .single()
-      .then(({ data }) => {
-        if (data) setField(data)
+    const load = async () => {
+      const { data, error } = await supabase
+        .from('fields_with_images')
+        .select('*')
+        .eq('id', fieldId)
+
+      if (error || !data || data.length === 0) {
         setLoading(false)
+        return
+      }
+
+      setField({
+        id: data[0].id,
+        name: data[0].name,
+        price: Number(data[0].price),
       })
+
+      const imgs = data
+        .map((row: any) => row.url)
+        .filter(Boolean)
+
+      setImages(imgs.length ? imgs : FALLBACK_IMAGES)
+      setLoading(false)
+    }
+
+    load()
   }, [fieldId])
 
+  /* ===================== */
   /* LOAD BOOKED HOURS */
+  /* ===================== */
   useEffect(() => {
     if (!fieldId || !date) return
     const iso = date.toISOString().split('T')[0]
@@ -74,9 +99,11 @@ export default function ReserveField() {
       .then(({ data }) => setBookedHours((data || []).map((b) => b.hour)))
   }, [fieldId, date])
 
+  /* ===================== */
   /* CONFIRM RESERVATION */
-  const confirmReserve = async (emailToUse: string) => {
-    if (!date || !hour) return
+  /* ===================== */
+  const confirmReserve = async () => {
+    if (!date || !hour || !email || !name || !phone) return
     setSending(true)
 
     try {
@@ -89,7 +116,9 @@ export default function ReserveField() {
             apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           },
           body: JSON.stringify({
-            email: emailToUse,
+            email,
+            name,
+            phone,
             field_id: fieldId,
             date: date.toISOString().split('T')[0],
             hour,
@@ -109,12 +138,9 @@ export default function ReserveField() {
     }
   }
 
-  const handleReserve = async () => {
+  const handleReserve = () => {
     if (!date || !hour) return
-
-    const { data } = await supabase.auth.getUser()
-    if (data.user?.email) confirmReserve(data.user.email)
-    else setShowEmailModal(true)
+    setShowEmailModal(true)
   }
 
   if (loading || !field) {
@@ -137,13 +163,13 @@ export default function ReserveField() {
             <div
               style={{
                 ...styles.mainImage,
-                backgroundImage: `url(${IMAGES[activeImage]})`,
+                backgroundImage: `url(${images[activeImage]})`,
               }}
             />
 
-            {/* MOBILE THUMBNAILS SCROLL */}
+            {/* ADVANCED GALLERY (Paso 6) */}
             <div style={styles.thumbs}>
-              {IMAGES.map((img, i) => (
+              {images.map((img, i) => (
                 <div
                   key={i}
                   onClick={() => setActiveImage(i)}
@@ -163,7 +189,7 @@ export default function ReserveField() {
             <p style={styles.price}>{formatCRC(field.price)} por hora</p>
           </div>
 
-          {/* RIGHT SIDEBAR (moves below on mobile) */}
+          {/* RIGHT */}
           <aside style={styles.card}>
             <DayPicker
               mode="single"
@@ -215,7 +241,7 @@ export default function ReserveField() {
         </div>
       </main>
 
-      {/* EMAIL MODAL */}
+      {/* EMAIL MODAL (SIN CAMBIOS) */}
       {showEmailModal && (
         <div style={styles.modalBg}>
           <div style={styles.modal}>
@@ -223,6 +249,22 @@ export default function ReserveField() {
             <p style={styles.modalText}>
               Te enviaremos los detalles al correo
             </p>
+
+            <input
+              type="text"
+              placeholder="Tu nombre completo"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={styles.input}
+            />
+
+            <input
+              type="tel"
+              placeholder="Teléfono"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              style={styles.input}
+            />
 
             <input
               type="email"
@@ -233,8 +275,8 @@ export default function ReserveField() {
             />
 
             <button
-              onClick={() => confirmReserve(email)}
-              disabled={!email || sending}
+              onClick={confirmReserve}
+              disabled={!email || !name || !phone || sending}
               style={{
                 ...styles.confirmBtn,
                 background: sending ? '#9ca3af' : '#16a34a',
@@ -256,20 +298,15 @@ export default function ReserveField() {
   )
 }
 
-/* ===== MOBILE-FIRST STYLES ===== */
+/* ===== STYLES (SIN CAMBIOS) ===== */
 const styles: any = {
-  page: {
-    background: '#f7f7f7',
-    padding: '20px 12px',
-  },
+  page: { background: '#f7f7f7', padding: '20px 12px' },
   wrapper: {
     maxWidth: 1100,
     margin: '0 auto',
     display: 'grid',
     gridTemplateColumns: '1fr',
     gap: 30,
-
-    /* Desktop */
     ...(typeof window === 'undefined'
       ? {}
       : window.innerWidth > 880 && {
@@ -302,7 +339,6 @@ const styles: any = {
   },
   title: { fontSize: 22, fontWeight: 600 },
   price: { color: '#6b7280', marginBottom: 10 },
-
   card: {
     background: 'white',
     borderRadius: 20,
@@ -332,8 +368,6 @@ const styles: any = {
     marginTop: 22,
     cursor: 'pointer',
   },
-
-  /* ===== MODAL ===== */
   modalBg: {
     position: 'fixed',
     inset: 0,
@@ -354,7 +388,7 @@ const styles: any = {
   modalTitle: { fontSize: 20, fontWeight: 600, marginBottom: 8 },
   modalText: { fontSize: 14, color: '#6b7280', marginBottom: 16 },
   input: {
-    width: '100%',
+    width: '93%',
     padding: 14,
     borderRadius: 14,
     border: '1px solid #e5e7eb',

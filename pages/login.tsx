@@ -140,7 +140,7 @@ const card: React.CSSProperties = {
   maxWidth: 420,
   background: 'white',
   borderRadius: 24,
-  padding: 32,
+  padding: 100,
   boxShadow: '0 15px 35px rgba(0,0,0,0.12)',
 };
 
