@@ -197,24 +197,29 @@ const deleteGalleryImage = async (img: FieldImage) => {
 
   const saveField = async () => {
     if (!name || !price) return;
-
+  
     const payload = {
       name,
       price: Number(price),
-      type,
-      description,
-      imageUrl,
-      features,
-      hours,
+      description: description ?? '',
+      features: Array.isArray(features) ? features : [],
+      hours: Array.isArray(hours) ? hours : [],
     };
-
-    editingId
+  
+    const { error } = editingId
       ? await supabase.from('fields').update(payload).eq('id', editingId)
       : await supabase.from('fields').insert(payload);
-
+  
+    if (error) {
+      console.error('SAVE FIELD ERROR:', error);
+      alert(error.message);
+      return;
+    }
+  
     resetForm();
     loadFields();
-  };
+  };  
+  
 
   const resetForm = () => {
     setEditingId(null);
@@ -400,6 +405,10 @@ const deleteGalleryImage = async (img: FieldImage) => {
               <Input label="Nombre" value={name} onChange={setName} />
               <Input label="Precio por hora" type="number" value={price} onChange={setPrice} />
               <Select label="Tipo" value={type} onChange={setType} options={['Fútbol 5','Fútbol 7','Fútbol 11','Tenis','Padel']} />
+            </Section>
+
+            <Section title="Ubicacion">
+              <Options values={['San Jose','Cartago','Heredia','Alajuela','Puntarenas','Limon','Guanacaste']} selected={features} onToggle={(v: string) => toggle(v, features, setFeatures)} />
             </Section>
 
             <Section title="Descripción">

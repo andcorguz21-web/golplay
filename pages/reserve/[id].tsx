@@ -14,13 +14,10 @@ type Field = {
   id: number
   name: string
   price: number
+  description: string | null
+  features: string[] | null
+  hours: string[] | null
 }
-
-const HOURS = [
-  '08:00','09:00','10:00','11:00','12:00',
-  '13:00','14:00','15:00','16:00','17:00',
-  '18:00','19:00','20:00','21:00','22:00',
-]
 
 const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=1200&q=60',
@@ -49,9 +46,7 @@ export default function ReserveField() {
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState(false)
 
-  /* ===================== */
   /* LOAD FIELD + IMAGES */
-  /* ===================== */
   useEffect(() => {
     if (!fieldId) return
 
@@ -70,12 +65,12 @@ export default function ReserveField() {
         id: data[0].id,
         name: data[0].name,
         price: Number(data[0].price),
+        description: data[0].description,
+        features: data[0].features,
+        hours: data[0].hours,
       })
 
-      const imgs = data
-        .map((row: any) => row.url)
-        .filter(Boolean)
-
+      const imgs = data.map((r: any) => r.url).filter(Boolean)
       setImages(imgs.length ? imgs : FALLBACK_IMAGES)
       setLoading(false)
     }
@@ -83,9 +78,7 @@ export default function ReserveField() {
     load()
   }, [fieldId])
 
-  /* ===================== */
   /* LOAD BOOKED HOURS */
-  /* ===================== */
   useEffect(() => {
     if (!fieldId || !date) return
     const iso = date.toISOString().split('T')[0]
@@ -99,9 +92,6 @@ export default function ReserveField() {
       .then(({ data }) => setBookedHours((data || []).map((b) => b.hour)))
   }, [fieldId, date])
 
-  /* ===================== */
-  /* CONFIRM RESERVATION */
-  /* ===================== */
   const confirmReserve = async () => {
     if (!date || !hour || !email || !name || !phone) return
     setSending(true)
@@ -138,11 +128,6 @@ export default function ReserveField() {
     }
   }
 
-  const handleReserve = () => {
-    if (!date || !hour) return
-    setShowEmailModal(true)
-  }
-
   if (loading || !field) {
     return (
       <>
@@ -158,8 +143,8 @@ export default function ReserveField() {
 
       <main style={styles.page}>
         <div style={styles.wrapper}>
-          {/* LEFT IMAGE + DATA */}
-          <div style={styles.left}>
+          {/* LEFT */}
+          <div>
             <div
               style={{
                 ...styles.mainImage,
@@ -167,7 +152,6 @@ export default function ReserveField() {
               }}
             />
 
-            {/* ADVANCED GALLERY (Paso 6) */}
             <div style={styles.thumbs}>
               {images.map((img, i) => (
                 <div
@@ -187,23 +171,46 @@ export default function ReserveField() {
 
             <h1 style={styles.title}>{field.name}</h1>
             <p style={styles.price}>{formatCRC(field.price)} por hora</p>
+
+            {field.description && (
+              <p style={styles.description}>{field.description}</p>
+            )}
+
+            {field.features && field.features.length > 0 && (
+              <div>
+                <h3 style={styles.featuresTitle}>Características adicionales:</h3>
+                <div style={styles.featuresGrid}>
+                  {field.features.map((f) => (
+                    <div key={f} style={styles.featurePill}>
+                      ✅ {f}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* RIGHT */}
           <aside style={styles.card}>
-            <DayPicker
-              mode="single"
-              selected={date}
-              onSelect={(d) => {
-                setDate(d)
-                setHour('')
-              }}
-            />
+          <DayPicker
+  mode="single"
+  selected={date}
+  disabled={{ before: new Date() }}   // 👈 BLOQUEA FECHAS PASADAS
+  onSelect={(d) => {
+    setDate(d)
+    setHour('')
+  }}
+/>
+
 
             {date && (
               <div style={{ marginTop: 20 }}>
                 <div style={styles.hoursGrid}>
-                  {HOURS.map((h) => {
+                {(field.hours || [])
+  .slice()
+  .sort((a, b) => a.localeCompare(b))
+  .map((h) => {
+
                     const disabled = bookedHours.includes(h)
                     const active = hour === h
 
@@ -228,66 +235,58 @@ export default function ReserveField() {
             )}
 
             <button
-              onClick={handleReserve}
+              onClick={() => setShowEmailModal(true)}
               disabled={!date || !hour || sending}
               style={{
                 ...styles.reserveBtn,
                 background: sending ? '#9ca3af' : '#16a34a',
               }}
             >
-              {sending ? 'Reservando…' : 'Reservar'}
+              Reservar
             </button>
           </aside>
         </div>
       </main>
 
-      {/* EMAIL MODAL (SIN CAMBIOS) */}
+      {/* MODAL MEJORADO */}
       {showEmailModal && (
         <div style={styles.modalBg}>
-          <div style={styles.modal}>
+          <div style={styles.modalCard}>
             <h3 style={styles.modalTitle}>Confirmá tu reserva</h3>
-            <p style={styles.modalText}>
-              Te enviaremos los detalles al correo
+            <p style={styles.modalSubtitle}>
+              Completá tus datos para finalizar la reserva
             </p>
 
             <input
-              type="text"
-              placeholder="Tu nombre completo"
+              placeholder="Nombre completo"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={styles.input}
+              style={styles.modalInput}
             />
-
             <input
-              type="tel"
               placeholder="Teléfono"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              style={styles.input}
+              style={styles.modalInput}
             />
-
             <input
-              type="email"
-              placeholder="correo@ejemplo.com"
+              placeholder="Correo electrónico"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
+              style={styles.modalInput}
             />
 
             <button
               onClick={confirmReserve}
-              disabled={!email || !name || !phone || sending}
-              style={{
-                ...styles.confirmBtn,
-                background: sending ? '#9ca3af' : '#16a34a',
-              }}
+              disabled={sending}
+              style={styles.modalConfirm}
             >
               {sending ? 'Confirmando…' : 'Confirmar reserva'}
             </button>
 
             <button
               onClick={() => setShowEmailModal(false)}
-              style={styles.cancelBtn}
+              style={styles.modalCancel}
             >
               Cancelar
             </button>
@@ -298,23 +297,35 @@ export default function ReserveField() {
   )
 }
 
-/* ===== STYLES (SIN CAMBIOS) ===== */
+/* ===== STYLES ===== */
 const styles: any = {
-  page: { background: '#f7f7f7', padding: '20px 12px' },
+  page: {
+    background: '#f7f7f7',
+    padding: '20px 12px',
+  },
+
+  /* ===== GRID PRINCIPAL ===== */
   wrapper: {
     maxWidth: 1100,
     margin: '0 auto',
     display: 'grid',
-    gridTemplateColumns: '1fr',
+    gridTemplateColumns: '1fr', // 📱 MOBILE por defecto
     gap: 30,
-    ...(typeof window === 'undefined'
-      ? {}
-      : window.innerWidth > 880 && {
-          gridTemplateColumns: '2fr 1fr',
-          padding: '0 20px',
-        }),
   },
-  left: { width: '100%' },
+
+  /* 🖥️ DESKTOP */
+  '@media (min-width: 1024px)': {
+    wrapper: {
+      gridTemplateColumns: '2fr 1fr',
+      alignItems: 'start',
+    },
+  },
+
+  left: {
+    width: '100%',
+  },
+
+  /* ===== GALERÍA ===== */
   mainImage: {
     width: '100%',
     height: 240,
@@ -323,12 +334,15 @@ const styles: any = {
     backgroundPosition: 'center',
     marginBottom: 12,
   },
+
   thumbs: {
     display: 'flex',
     gap: 10,
     overflowX: 'auto',
     paddingBottom: 6,
+    marginBottom: 14,
   },
+
   thumb: {
     minWidth: 80,
     height: 60,
@@ -337,26 +351,45 @@ const styles: any = {
     cursor: 'pointer',
     flexShrink: 0,
   },
-  title: { fontSize: 22, fontWeight: 600 },
-  price: { color: '#6b7280', marginBottom: 10 },
+
+  title: {
+    fontSize: 22,
+    fontWeight: 600,
+    marginBottom: 6,
+  },
+
+  price: {
+    color: '#6b7280',
+    marginBottom: 10,
+  },
+
+  /* ===== CARD DERECHA ===== */
   card: {
     background: 'white',
     borderRadius: 20,
     padding: 20,
     boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+    position: 'sticky',
+    top: 20,
   },
+
+  /* ===== HORAS ===== */
   hoursGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill,minmax(90px,1fr))',
+    gridTemplateColumns: 'repeat(3, 1fr)', // ✅ máximo 3 columnas
     gap: 8,
   },
+
   hourBtn: {
     padding: '8px 0',
     borderRadius: 999,
     border: '1px solid #e5e7eb',
     fontWeight: 500,
     fontSize: 14,
+    background: 'white',
+    cursor: 'pointer',
   },
+
   reserveBtn: {
     width: '100%',
     padding: 14,
@@ -368,6 +401,8 @@ const styles: any = {
     marginTop: 22,
     cursor: 'pointer',
   },
+
+  /* ===== MODAL ===== */
   modalBg: {
     position: 'fixed',
     inset: 0,
@@ -378,6 +413,7 @@ const styles: any = {
     padding: 20,
     zIndex: 1000,
   },
+
   modal: {
     background: '#fff',
     borderRadius: 20,
@@ -385,16 +421,28 @@ const styles: any = {
     width: '100%',
     maxWidth: 420,
   },
-  modalTitle: { fontSize: 20, fontWeight: 600, marginBottom: 8 },
-  modalText: { fontSize: 14, color: '#6b7280', marginBottom: 16 },
+
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 600,
+    marginBottom: 8,
+  },
+
+  modalText: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 16,
+  },
+
   input: {
-    width: '93%',
+    width: '100%',
     padding: 14,
     borderRadius: 14,
     border: '1px solid #e5e7eb',
     marginBottom: 16,
     fontSize: 15,
   },
+
   confirmBtn: {
     width: '100%',
     padding: 14,
@@ -404,6 +452,7 @@ const styles: any = {
     fontSize: 16,
     fontWeight: 600,
   },
+
   cancelBtn: {
     width: '100%',
     padding: 12,
