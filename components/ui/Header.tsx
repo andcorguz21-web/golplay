@@ -5,25 +5,30 @@ import dynamic from 'next/dynamic'
 import { supabase } from '@/lib/supabase'
 
 const DayPicker = dynamic(
-  () => import('react-day-picker').then((mod) => mod.DayPicker),
+  () => import('react-day-picker').then((m) => m.DayPicker),
   { ssr: false }
 )
+
+const HOURS = [
+  '08:00','09:00','10:00','11:00','12:00',
+  '13:00','14:00','15:00','16:00','17:00',
+  '18:00','19:00','20:00','21:00','22:00',
+]
 
 export default function Header() {
   const router = useRouter()
 
   const [logged, setLogged] = useState(false)
   const [fields, setFields] = useState<any[]>([])
-  const [field, setField] = useState<any>(null)
+  const [query, setQuery] = useState('')
+  const [selectedField, setSelectedField] = useState<any>(null)
+
   const [date, setDate] = useState<Date | undefined>()
   const [hour, setHour] = useState<string | null>(null)
-  const [open, setOpen] = useState<'field' | 'date' | 'hour' | null>(null)
 
-  const HOURS = [
-    '08:00','09:00','10:00','11:00','12:00',
-    '13:00','14:00','15:00','16:00','17:00',
-    '18:00','19:00','20:00','21:00','22:00',
-  ]
+  const [openField, setOpenField] = useState(false)
+  const [openDate, setOpenDate] = useState(false)
+  const [openHour, setOpenHour] = useState(false)
 
   /* AUTH */
   useEffect(() => {
@@ -32,7 +37,7 @@ export default function Header() {
     })
   }, [])
 
-  /* FIELDS */
+  /* LOAD FIELDS */
   useEffect(() => {
     supabase
       .from('fields')
@@ -43,241 +48,214 @@ export default function Header() {
   }, [])
 
   const search = () => {
-    router.push({
-      pathname: '/',
-      query: {
-        field: field?.id,
-        date: date?.toISOString().split('T')[0],
-        hour,
-      },
-    })
-    setOpen(null)
+    if (selectedField) {
+      router.push(`/reserve/${selectedField.id}`)
+    } else {
+      router.push('/')
+    }
   }
 
   return (
     <>
-      {/* HEADER */}
-      <header style={styles.header}>
-        <div style={styles.wrap}>
-          {/* LOGO */}
+      {/* ===== TOP BAR ===== */}
+      <header style={styles.topBar}>
+        <div style={styles.topInner}>
           <div style={styles.logo} onClick={() => router.push('/')}>
-            <Image src="/logo-golplay.svg" alt="GolPlay" width={36} height={36} />
-            <span style={styles.brand}></span>
+            <Image src="/logo-golplay.svg" alt="GolPlay" width={120} height={80} />
           </div>
 
-          {/* FILTER BAR */}
-          <div style={styles.filters}>
-            <button style={styles.filter} onClick={() => setOpen('field')}>
-              <span className="label">Cancha</span>
-              <span className="value">{field?.name || 'Elegí una cancha'}</span>
+          {logged ? (
+            <button style={styles.secondaryBtn} onClick={() => router.push('/admin')}>
+              Mi negocio
             </button>
-
-            <button style={styles.filter} onClick={() => setOpen('date')}>
-              <span className="label">Fecha</span>
-              <span className="value">
-                {date ? date.toLocaleDateString() : 'Seleccionar'}
-              </span>
+          ) : (
+            <button style={styles.primaryBtn} onClick={() => router.push('/login')}>
+              Ingresar
             </button>
-
-            <button style={styles.filter} onClick={() => setOpen('hour')}>
-              <span className="label">Hora</span>
-              <span className="value">{hour || 'Seleccionar'}</span>
-            </button>
-
-            <button
-              style={styles.searchBtn}
-              disabled={!field || !date || !hour}
-              onClick={search}
-            >
-              Buscar
-            </button>
-          </div>
-
-          {/* ACTIONS */}
-          <div style={styles.actions}>
-            <button style={styles.publish} onClick={() => router.push('/admin')}>
-              Publicar cancha
-            </button>
-
-            {logged ? (
-              <button style={styles.secondary} onClick={() => router.push('/admin')}>
-                Mi negocio
-              </button>
-            ) : (
-              <button style={styles.primary} onClick={() => router.push('/login')}>
-                Ingresar
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </header>
 
-      {/* DROPDOWNS */}
-      {open && (
-        <div style={styles.overlay} onClick={() => setOpen(null)}>
-          <div style={styles.dropdown} onClick={(e) => e.stopPropagation()}>
-            {open === 'field' &&
-              fields.map((f) => (
-                <div
-                  key={f.id}
-                  style={styles.option}
-                  onClick={() => {
-                    setField(f)
-                    setOpen(null)
-                  }}
-                >
-                  {f.name}
-                </div>
-              ))}
+      {/* ===== SEARCH BAR ===== */}
+      <div style={styles.searchWrapper}>
+        <div style={styles.searchBar}>
 
-            {open === 'date' && (
-              <DayPicker
-                mode="single"
-                selected={date}
-                disabled={{ before: new Date() }}
-                onSelect={(d) => {
-                  setDate(d)
-                  setOpen(null)
-                }}
-              />
-            )}
-
-            {open === 'hour' && (
-              <div style={styles.hours}>
-                {HOURS.map((h) => (
-                  <div
-                    key={h}
-                    style={{
-                      ...styles.hour,
-                      background: hour === h ? '#16a34a' : '#f3f4f6',
-                      color: hour === h ? 'white' : '#111',
-                    }}
-                    onClick={() => {
-                      setHour(h)
-                      setOpen(null)
-                    }}
-                  >
-                    {h}
-                  </div>
-                ))}
-              </div>
-            )}
+          <div style={styles.searchItem} onClick={() => setOpenField(true)}>
+            <span style={styles.searchLabel}>⚽️🏀🎾</span>
+            <span style={styles.searchValue}>
+              {selectedField?.name || '.. ¿Dónde?'}
+            </span>
           </div>
+
+          <div style={styles.divider} />
+
+          <div style={styles.searchItem} onClick={() => setOpenDate(true)}>
+            <span style={styles.searchLabel}>📆</span>
+            <span style={styles.searchValue}>
+              {date ? date.toLocaleDateString('es-CR') : '.. ¿Cuándo?'}
+            </span>
+          </div>
+
+          <div style={styles.divider} />
+
+          <div style={styles.searchItem} onClick={() => setOpenHour(true)}>
+            <span style={styles.searchLabel}>🕣</span>
+            <span style={styles.searchValue}>
+              {hour || '.. Hora'}
+            </span>
+          </div>
+
+          <button style={styles.searchBtn} onClick={search}>🔍</button>
         </div>
+      </div>
+
+      {/* ===== MODAL CANCHA ===== */}
+      {openField && (
+        <Modal onClose={() => setOpenField(false)}>
+          <h3 style={styles.modalTitle}>Seleccioná la cancha</h3>
+          <input
+            placeholder="Buscar cancha..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            style={styles.modalInput}
+          />
+          {fields
+            .filter(f => f.name.toLowerCase().includes(query.toLowerCase()))
+            .map(f => (
+              <div
+                key={f.id}
+                style={styles.listItem}
+                onClick={() => {
+                  setSelectedField(f)
+                  setOpenField(false)
+                }}
+              >
+                {f.name}
+              </div>
+            ))}
+        </Modal>
       )}
+
+{/* ===== MODAL FECHA ===== */}
+{openDate && (
+  <Modal onClose={() => setOpenDate(false)}>
+    <h3 style={styles.modalTitle}>Elegí la fecha</h3>
+
+    <div style={styles.calendarCard}>
+      <DayPicker
+        mode="single"
+        selected={date}
+        disabled={{ before: new Date() }}
+        onSelect={(d) => {
+          setDate(d)
+          setHour(null)
+          setOpenDate(false)
+        }}
+      />
+    </div>
+  </Modal>
+)}
+
+
+      {/* ===== MODAL HORA ===== */}
+      {openHour && (
+        <Modal onClose={() => setOpenHour(false)}>
+          <h3 style={styles.modalTitle}>Elegí la hora</h3>
+          <div style={styles.hourGrid}>
+            {HOURS.map(h => (
+              <div
+                key={h}
+                style={{
+                  ...styles.hourItem,
+                  background: hour === h ? '#16a34a' : '#f3f4f6',
+                  color: hour === h ? 'white' : '#111',
+                }}
+                onClick={() => {
+                  setHour(h)
+                  setOpenHour(false)
+                }}
+              >
+                {h}
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* ===== CALENDAR GLOBAL STYLES ===== */}
+      <style jsx global>{`
+        .rdp-caption {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+          font-weight: 600;
+          font-size: 14px;
+        }
+
+        .rdp-nav_button {
+          border-radius: 999px;
+          background: #f3f4f6;
+          border: none;
+          width: 36px;
+          height: 36px;
+          cursor: pointer;
+        }
+
+        .rdp-nav_button:hover {
+          background: #e5e7eb;
+        }
+      `}</style>
     </>
   )
 }
 
-/* ================= STYLES ================= */
+/* ===== MODAL ===== */
+function Modal({ children, onClose }: any) {
+  return (
+    <div style={styles.modalBg} onClick={onClose}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
+/* ===== STYLES ===== */
 const styles: any = {
-  header: {
-    position: 'sticky',
-    top: 0,
-    zIndex: 50,
-    background: 'white',
-    borderBottom: '1px solid #e5e7eb',
-  },
-  wrap: {
-    maxWidth: 1280,
-    margin: '0 auto',
-    padding: '12px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16,
-  },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    cursor: 'pointer',
-  },
-  brand: { fontWeight: 700, fontSize: 18 },
+  topBar: { position: 'sticky', top: 0, zIndex: 100, background: 'white', borderBottom: '1px solid #eee' },
+  topInner: { maxWidth: 1280, margin: '0 auto', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  logo: { cursor: 'pointer' },
 
-  filters: {
-    display: 'flex',
-    alignItems: 'center',
-    border: '1px solid #e5e7eb',
-    borderRadius: 999,
-    overflow: 'hidden',
-    background: '#fff',
-  },
-  filter: {
-    padding: '10px 14px',
-    border: 'none',
-    background: 'transparent',
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    minWidth: 140,
-  },
-  searchBtn: {
-    padding: '0 20px',
-    background: '#16a34a',
-    color: 'white',
-    border: 'none',
-    height: 42,
-    cursor: 'pointer',
-    fontWeight: 600,
-  },
+  primaryBtn: { padding: '8px 16px', borderRadius: 999, background: '#16a34a', color: 'white', border: 'none', fontWeight: 600 },
+  secondaryBtn: { padding: '8px 16px', borderRadius: 999, border: '1px solid #e5e7eb', background: 'white' },
 
-  actions: { display: 'flex', gap: 10 },
-  publish: {
-    border: '1px solid #16a34a',
-    color: '#16a34a',
-    background: 'white',
-    borderRadius: 999,
-    padding: '8px 14px',
-    cursor: 'pointer',
-  },
-  primary: {
-    background: '#16a34a',
-    color: 'white',
-    border: 'none',
-    borderRadius: 999,
-    padding: '8px 14px',
-    cursor: 'pointer',
-  },
-  secondary: {
-    background: 'white',
-    border: '1px solid #ddd',
-    borderRadius: 999,
-    padding: '8px 14px',
-    cursor: 'pointer',
-  },
+  searchWrapper: { position: 'sticky', top: 64, background: 'white', padding: '12px 16px', zIndex: 90, boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
+  searchBar: { maxWidth: 900, margin: '0 auto', borderRadius: 999, border: '1px solid #e5e7eb', padding: 10, display: 'flex', alignItems: 'center', gap: 8 },
+  searchItem: { flex: 1, cursor: 'pointer' },
+  searchLabel: { fontSize: 11, color: '#6b7280' },
+  searchValue: { fontSize: 14, fontWeight: 500 },
+  divider: { width: 1, height: 32, background: '#e5e7eb' },
 
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.3)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    paddingTop: 90,
-    zIndex: 1000,
-  },
-  dropdown: {
-    background: 'white',
+  searchBtn: { width: 44, height: 44, borderRadius: '50%', border: 'none', background: '#16a34a', color: 'white', fontSize: 18 },
+
+  modalBg: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 },
+  modal: { background: 'white', borderRadius: 20, padding: 24, width: '90%', maxWidth: 420 },
+
+  modalTitle: { fontSize: 18, fontWeight: 600, marginBottom: 12 },
+  modalInput: { width: '100%', padding: 14, borderRadius: 14, border: '1px solid #e5e7eb', marginBottom: 14 },
+  listItem: { padding: 14, borderRadius: 14, border: '1px solid #f0f0f0', marginBottom: 8, cursor: 'pointer' },
+
+  hourGrid: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 },
+  hourItem: { padding: 14, borderRadius: 14, textAlign: 'center', cursor: 'pointer', fontWeight: 500 },
+
+  dayPill: { width: 42, height: 42, borderRadius: 999, border: 'none', fontWeight: 500, fontSize: 14 },
+
+  calendarCard: {
     borderRadius: 16,
-    padding: 16,
-    width: 360,
+    padding: 8,
   },
-  option: {
-    padding: 12,
-    borderRadius: 10,
-    cursor: 'pointer',
-  },
-  hours: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3,1fr)',
-    gap: 10,
-  },
-  hour: {
-    padding: 12,
-    borderRadius: 12,
-    textAlign: 'center',
-    cursor: 'pointer',
-  },
+  
+  
 }
