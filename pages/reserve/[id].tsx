@@ -34,6 +34,7 @@ export default function ReserveField() {
   const [field, setField] = useState<Field | null>(null)
   const [images, setImages] = useState<string[]>([])
   const [activeImage, setActiveImage] = useState(0)
+  const [isDesktop, setIsDesktop] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [date, setDate] = useState<Date | undefined>()
@@ -46,17 +47,25 @@ export default function ReserveField() {
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState(false)
 
+  /* ===== RESPONSIVE ===== */
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   /* LOAD FIELD + IMAGES */
   useEffect(() => {
     if (!fieldId) return
 
     const load = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('fields_with_images')
         .select('*')
         .eq('id', fieldId)
 
-      if (error || !data || data.length === 0) {
+      if (!data || data.length === 0) {
         setLoading(false)
         return
       }
@@ -96,36 +105,31 @@ export default function ReserveField() {
     if (!date || !hour || !email || !name || !phone) return
     setSending(true)
 
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-booking`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          },
-          body: JSON.stringify({
-            email,
-            name,
-            phone,
-            field_id: fieldId,
-            date: date.toISOString().split('T')[0],
-            hour,
-          }),
-        }
-      )
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-booking`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        },
+        body: JSON.stringify({
+          email,
+          name,
+          phone,
+          field_id: fieldId,
+          date: date.toISOString().split('T')[0],
+          hour,
+        }),
+      }
+    )
 
-      const data = await res.json()
-      setSending(false)
-      setShowEmailModal(false)
+    const data = await res.json()
+    setSending(false)
+    setShowEmailModal(false)
 
-      if (!res.ok || !data.ok) return alert(data?.error || 'No se pudo reservar')
-      router.push('/?reserva=ok')
-    } catch {
-      setSending(false)
-      alert('Error de conexión')
-    }
+    if (!res.ok || !data.ok) return alert('No se pudo reservar')
+    router.push('/?reserva=ok')
   }
 
   if (loading || !field) {
@@ -142,7 +146,12 @@ export default function ReserveField() {
       <Header />
 
       <main style={styles.page}>
-        <div style={styles.wrapper}>
+        <div
+          style={{
+            ...styles.wrapper,
+            gridTemplateColumns: isDesktop ? '2fr 1fr' : '1fr',
+          }}
+        >
           {/* LEFT */}
           <div>
             <div
@@ -177,70 +186,58 @@ export default function ReserveField() {
             )}
 
             {field.features && field.features.length > 0 && (
-              <div>
-                <h3 style={styles.featuresTitle}>Características adicionales:</h3>
+              <>
+                <h3 style={styles.featuresTitle}>Características</h3>
                 <div style={styles.featuresGrid}>
                   {field.features.map((f) => (
-                    <div key={f} style={styles.featurePill}>
-                      ✅ {f}
-                    </div>
+                    <span key={f} style={styles.featurePill}>
+                      {f}
+                    </span>
                   ))}
                 </div>
-              </div>
+              </>
             )}
           </div>
 
           {/* RIGHT */}
           <aside style={styles.card}>
-          <DayPicker
-  mode="single"
-  selected={date}
-  disabled={{ before: new Date() }}   // 👈 BLOQUEA FECHAS PASADAS
-  onSelect={(d) => {
-    setDate(d)
-    setHour('')
-  }}
-/>
-
+            <DayPicker
+              mode="single"
+              selected={date}
+              disabled={{ before: new Date() }}
+              onSelect={(d) => {
+                setDate(d)
+                setHour('')
+              }}
+            />
 
             {date && (
-              <div style={{ marginTop: 20 }}>
-                <div style={styles.hoursGrid}>
+              <div style={styles.hoursGrid}>
                 {(field.hours || [])
-  .slice()
-  .sort((a, b) => a.localeCompare(b))
-  .map((h) => {
-
-                    const disabled = bookedHours.includes(h)
-                    const active = hour === h
-
-                    return (
-                      <button
-                        key={h}
-                        disabled={disabled}
-                        onClick={() => setHour(h)}
-                        style={{
-                          ...styles.hourBtn,
-                          background: active ? '#16a34a' : 'white',
-                          color: active ? 'white' : '#111827',
-                          opacity: disabled ? 0.3 : 1,
-                        }}
-                      >
-                        {h}
-                      </button>
-                    )
-                  })}
-                </div>
+                  .slice()
+                  .sort()
+                  .map((h) => (
+                    <button
+                      key={h}
+                      disabled={bookedHours.includes(h)}
+                      onClick={() => setHour(h)}
+                      style={{
+                        ...styles.hourBtn,
+                        background: hour === h ? '#16a34a' : 'white',
+                        color: hour === h ? 'white' : '#111',
+                        opacity: bookedHours.includes(h) ? 0.3 : 1,
+                      }}
+                    >
+                      {h}
+                    </button>
+                  ))}
               </div>
             )}
 
             <button
               onClick={() => setShowEmailModal(true)}
               disabled={!date || !hour || sending}
-              style={{
-                ...styles.reserveBtn,
-                background: sending ? '#9ca3af' : '#16a34a',
-              }}
+              style={styles.reserveBtn}
             >
               Reservar
             </button>
@@ -248,15 +245,11 @@ export default function ReserveField() {
         </div>
       </main>
 
-      {/* MODAL MEJORADO */}
+      {/* MODAL */}
       {showEmailModal && (
         <div style={styles.modalBg}>
           <div style={styles.modalCard}>
-            <h3 style={styles.modalTitle}>Confirmá tu reserva</h3>
-            <p style={styles.modalSubtitle}>
-              Completá tus datos para finalizar la reserva
-            </p>
-
+            <h3 style={styles.modalTitle}>Confirmar reserva</h3>
             <input
               placeholder="Nombre completo"
               value={name}
@@ -278,10 +271,10 @@ export default function ReserveField() {
 
             <button
               onClick={confirmReserve}
-              disabled={sending}
               style={styles.modalConfirm}
+              disabled={sending}
             >
-              {sending ? 'Confirmando…' : 'Confirmar reserva'}
+              Confirmar
             </button>
 
             <button
@@ -299,168 +292,110 @@ export default function ReserveField() {
 
 /* ===== STYLES ===== */
 const styles: any = {
-  page: {
-    background: '#f7f7f7',
-    padding: '20px 12px',
-  },
+  page: { background: '#f7f7f7', padding: 20 },
+  wrapper: { maxWidth: 1100, margin: '0 auto', display: 'grid', gap: 30 },
 
-  /* ===== GRID PRINCIPAL ===== */
-  wrapper: {
-    maxWidth: 1100,
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: '1fr', // 📱 MOBILE por defecto
-    gap: 30,
-  },
-
-  /* 🖥️ DESKTOP */
-  '@media (min-width: 1024px)': {
-    wrapper: {
-      gridTemplateColumns: '2fr 1fr',
-      alignItems: 'start',
-    },
-  },
-
-  left: {
-    width: '100%',
-  },
-
-  /* ===== GALERÍA ===== */
   mainImage: {
-    width: '100%',
-    height: 240,
+    height: 260,
     borderRadius: 20,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     marginBottom: 12,
   },
-
-  thumbs: {
-    display: 'flex',
-    gap: 10,
-    overflowX: 'auto',
-    paddingBottom: 6,
-    marginBottom: 14,
-  },
-
+  thumbs: { display: 'flex', gap: 10, marginBottom: 14 },
   thumb: {
-    minWidth: 80,
-    height: 60,
+    width: 80,
+    height: 80,
     borderRadius: 10,
     backgroundSize: 'cover',
     cursor: 'pointer',
-    flexShrink: 0,
   },
 
-  title: {
-    fontSize: 22,
-    fontWeight: 600,
-    marginBottom: 6,
+  title: { fontSize: 22, fontWeight: 600 },
+  price: { color: '#6b7280', marginBottom: 10 },
+  description: { color: '#4b5563', marginBottom: 35 },
+
+  featuresTitle: { fontWeight: 600, marginBottom: 15 },
+  featuresGrid: { display: 'flex', flexWrap: 'wrap', gap: 10 },
+  featurePill: {
+    padding: '6px 12px',
+    borderRadius: 999,
+    background: 'white',
+    fontSize: 13,
+    fontWeight: 500,
   },
 
-  price: {
-    color: '#6b7280',
-    marginBottom: 10,
-  },
-
-  /* ===== CARD DERECHA ===== */
   card: {
     background: 'white',
     borderRadius: 20,
     padding: 20,
-    boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
-    position: 'sticky',
-    top: 20,
+    boxShadow: '0 20px 40px rgba(0,0,0,.12)',
   },
 
-  /* ===== HORAS ===== */
   hoursGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)', // ✅ máximo 3 columnas
+    gridTemplateColumns: 'repeat(3,1fr)',
     gap: 8,
+    marginTop: 16,
   },
 
   hourBtn: {
-    padding: '8px 0',
+    padding: 10,
     borderRadius: 999,
     border: '1px solid #e5e7eb',
-    fontWeight: 500,
-    fontSize: 14,
-    background: 'white',
     cursor: 'pointer',
   },
 
   reserveBtn: {
-    width: '100%',
+    marginTop: 20,
     padding: 14,
+    width: '100%',
     borderRadius: 14,
-    border: 'none',
+    background: '#16a34a',
     color: 'white',
-    fontSize: 16,
     fontWeight: 600,
-    marginTop: 22,
-    cursor: 'pointer',
+    border: 'none',
   },
 
-  /* ===== MODAL ===== */
   modalBg: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.5)',
+    background: 'rgba(0,0,0,.5)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
-    zIndex: 1000,
   },
 
-  modal: {
-    background: '#fff',
-    borderRadius: 20,
+  modalCard: {
+    background: 'white',
     padding: 24,
+    borderRadius: 20,
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 400,
   },
 
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 600,
-    marginBottom: 8,
-  },
-
-  modalText: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 16,
-  },
-
-  input: {
-    width: '100%',
-    padding: 14,
-    borderRadius: 14,
-    border: '1px solid #e5e7eb',
-    marginBottom: 16,
-    fontSize: 15,
-  },
-
-  confirmBtn: {
-    width: '100%',
-    padding: 14,
-    borderRadius: 14,
-    border: 'none',
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 600,
-  },
-
-  cancelBtn: {
+  modalTitle: { fontSize: 20, fontWeight: 600, marginBottom: 12 },
+  modalInput: {
     width: '100%',
     padding: 12,
+    borderRadius: 12,
+    border: '1px solid #e5e7eb',
+    marginBottom: 12,
+  },
+  modalConfirm: {
+    width: '100%',
+    padding: 12,
+    borderRadius: 12,
+    background: '#16a34a',
+    color: 'white',
     border: 'none',
+    marginBottom: 8,
+  },
+  modalCancel: {
+    width: '100%',
+    padding: 10,
     background: 'transparent',
-    marginTop: 6,
-    fontSize: 14,
+    border: 'none',
     color: '#6b7280',
-    cursor: 'pointer',
   },
 }

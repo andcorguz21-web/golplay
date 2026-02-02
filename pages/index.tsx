@@ -1,52 +1,44 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { supabase } from '@/lib/supabase';
-import Header from '@/components/ui/Header';
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import Header from '@/components/ui/Header'
 
 // Swiper
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
+import { Swiper, SwiperSlide } from 'swiper/react'
+import 'swiper/css'
 
 type Field = {
-  id: number;
-  name: string;
-  price: number;
-  location: string;
-  images: string[];
-};
+  id: number
+  name: string
+  price: number
+  location: string
+  images: string[]
+}
 
 const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=800&q=60';
+  'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=1200&q=60'
 
 const formatCRC = (amount: number) =>
-  `₡${Number(amount).toLocaleString('es-CR')}`;
+  `₡${Number(amount).toLocaleString('es-CR')}`
 
 export default function Home() {
-  const router = useRouter();
+  const router = useRouter()
 
   const [fieldsByLocation, setFieldsByLocation] = useState<
     Record<string, Field[]>
-  >({});
-  const [loading, setLoading] = useState(true);
+  >({})
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase
         .from('fields_with_images')
         .select('*')
-        .order('name');
+        .order('name')
 
-      console.log('📦 RAW VIEW =>', data, error);
+      if (error || !data) return
 
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
-      if (!data) return;
-
-      // Agrupar imágenes por cancha
-      const map = new Map<number, Field>();
+      const map = new Map<number, Field>()
 
       data.forEach((row: any) => {
         if (!map.has(row.id)) {
@@ -56,61 +48,72 @@ export default function Home() {
             price: row.price,
             location: row.location ?? 'Sin ubicación',
             images: [],
-          });
+          })
         }
 
         if (row.url) {
-          map.get(row.id)!.images.push(row.url);
+          map.get(row.id)!.images.push(row.url)
         }
-      });
+      })
 
-      const grouped: Record<string, Field[]> = {};
+      const grouped: Record<string, Field[]> = {}
       Array.from(map.values()).forEach((f) => {
-        if (!grouped[f.location]) grouped[f.location] = [];
-        grouped[f.location].push(f);
-      });
+        if (!grouped[f.location]) grouped[f.location] = []
+        grouped[f.location].push(f)
+      })
 
-      setFieldsByLocation(grouped);
-      setLoading(false);
-    };
+      setFieldsByLocation(grouped)
+      setLoading(false)
+    }
 
-    load();
-  }, []);
+    load()
+  }, [])
 
   return (
     <>
+      {/* HEADER */}
       <Header />
 
-      <main style={{ background: '#f7f7f7', padding: 32 }}>
-        {loading && <p>Cargando...</p>}
+      {/* HERO */}
+      <section style={styles.hero}>
+        <div style={styles.heroContent}>
+          <h1 style={styles.heroTitle}>
+            Reservá tu cancha <span style={{ color: '#16a34a' }}>en segundos</span>
+          </h1>
+          <p style={styles.heroSubtitle}>
+            Complejos disponibles, precios claros y reservas rápidas.
+          </p>
+        </div>
+      </section>
+
+      {/* MARKETPLACE */}
+      <main style={styles.page}>
+        {loading && <p>Cargando canchas…</p>}
 
         {!loading &&
           Object.entries(fieldsByLocation).map(([location, fields]) => (
-            <section
-              key={location}
-              style={{ maxWidth: 1100, margin: '0 auto', marginBottom: 30 }}
-            >
-              <h2 style={sectionTitle}>{location}</h2>
+            <section key={location} style={styles.section}>
+              <h2 style={styles.sectionTitle}>{location}</h2>
 
               <Swiper spaceBetween={20} slidesPerView="auto">
                 {fields.map((f) => (
-                  <SwiperSlide key={f.id} style={{ width: 260 }}>
+                  <SwiperSlide key={f.id} style={{ width: 300 }}>
                     <div
-                      style={card}
+                      style={styles.card}
                       onClick={() => router.push(`/reserve/${f.id}`)}
                     >
                       <div
                         style={{
-                          ...image,
+                          ...styles.image,
                           backgroundImage: `url(${
                             f.images[0] ?? FALLBACK_IMAGE
                           })`,
                         }}
                       />
-                      <div style={{ padding: 16 }}>
-                        <h3>{f.name}</h3>
-                        <p style={{ color: '#6b7280' }}>
-                          A partir de {formatCRC(f.price)}
+                      <div style={styles.cardBody}>
+                        <h3 style={styles.cardTitle}>{f.name}</h3>
+                        <p style={styles.cardPrice}>
+                          Desde {formatCRC(f.price)}
                         </p>
                       </div>
                     </div>
@@ -120,28 +123,137 @@ export default function Home() {
             </section>
           ))}
       </main>
+
+      {/* FOOTER */}
+      <footer style={styles.footer}>
+        <div style={styles.footerGrid}>
+          <div>
+            <h4>GOLPLAY</h4>
+            <p style={styles.footerText}>
+              El marketplace de complejos deportivos en Costa Rica.
+            </p>
+          </div>
+
+          <div>
+            <h4>Información</h4>
+            <a style={styles.footerLink}>Términos y condiciones</a>
+            <a style={styles.footerLink}>Sobre GOLPLAY</a>
+            <a style={styles.footerLink}>Guía para unirse</a>
+          </div>
+        </div>
+
+        <p style={styles.footerCopy}>
+          © {new Date().getFullYear()} GOLPLAY. Todos los derechos reservados.
+        </p>
+      </footer>
     </>
-  );
+  )
 }
 
 /* ===== STYLES ===== */
 
-const sectionTitle: React.CSSProperties = {
-  fontSize: 25,
-  fontWeight: 700,
-  marginBottom: 15,
-};
+const styles: any = {
+  page: {
+    background: '#f7f7f7',
+    padding: '40px 16px',
+  },
 
-const card: React.CSSProperties = {
-  background: 'white',
-  borderRadius: 25,
-  overflow: 'hidden',
-  boxShadow: '0 6px 16px rgba(201, 197, 197, 0.15)',
-  cursor: 'pointer',
-};
+  hero: {
+    background:
+      'linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%)',
+    padding: '60px 20px',
+    textAlign: 'center',
+  },
 
-const image: React.CSSProperties = {
-  height: 130,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-};
+  heroContent: {
+    maxWidth: 900,
+    margin: '0 auto',
+  },
+
+  heroTitle: {
+    fontSize: 36,
+    fontWeight: 800,
+    marginBottom: 12,
+  },
+
+  heroSubtitle: {
+    fontSize: 18,
+    color: '#6b7280',
+  },
+
+  section: {
+    maxWidth: 1200,
+    margin: '0 auto 40px',
+  },
+
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 700,
+    marginBottom: 16,
+  },
+
+  card: {
+    background: 'white',
+    borderRadius: 24,
+    overflow: 'hidden',
+    boxShadow: '0 10px 30px rgba(221, 217, 217, 0.12)',
+    cursor: 'pointer',
+    transition: 'transform .2s',
+  },
+
+  image: {
+    height: 180,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  },
+
+  cardBody: {
+    padding: 16,
+  },
+
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 600,
+    marginBottom: 6,
+  },
+
+  cardPrice: {
+    color: '#6b7280',
+    fontSize: 14,
+  },
+
+  footer: {
+    background: '#111827',
+    color: 'white',
+    padding: '40px 20px',
+    marginTop: 60,
+  },
+
+  footerGrid: {
+    maxWidth: 1100,
+    margin: '0 auto',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 30,
+  },
+
+  footerText: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+
+  footerLink: {
+    display: 'block',
+    fontSize: 14,
+    color: '#9ca3af',
+    marginTop: 6,
+    cursor: 'pointer',
+  },
+
+  footerCopy: {
+    textAlign: 'center',
+    marginTop: 30,
+    fontSize: 13,
+    color: '#9ca3af',
+  },
+}
