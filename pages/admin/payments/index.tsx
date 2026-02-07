@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/router';
-import AdminHeader from '@/components/ui/admin/AdminHeader';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
 
 /* ===================== */
 /* TYPES */
@@ -65,9 +65,7 @@ export default function PaymentsIndexPage() {
   }, []);
 
   return (
-    <>
-      <AdminHeader />
-
+    <AdminLayout>
       <main style={container}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <h1 style={pageTitle}>Pagos y facturación</h1>
@@ -91,7 +89,6 @@ export default function PaymentsIndexPage() {
                     </div>
 
                     <div>{s.reservations_count} reservas</div>
-
                     <div>{formatCRC(s.amount_due)}</div>
 
                     <div>
@@ -104,9 +101,7 @@ export default function PaymentsIndexPage() {
                           style={{
                             ...payBtn,
                             opacity: isOverdue ? 0.45 : 1,
-                            cursor: isOverdue
-                              ? 'not-allowed'
-                              : 'pointer',
+                            cursor: isOverdue ? 'not-allowed' : 'pointer',
                           }}
                           disabled={isOverdue}
                           onClick={() =>
@@ -136,7 +131,7 @@ export default function PaymentsIndexPage() {
           )}
         </div>
       </main>
-    </>
+    </AdminLayout>
   );
 }
 
@@ -175,8 +170,6 @@ const container = {
   background: '#f9fafb',
   minHeight: '100vh',
   padding: 32,
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
 };
 
 const pageTitle = {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
-import AdminHeader from '@/components/ui/admin/AdminHeader';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
 
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
@@ -37,6 +37,14 @@ ChartJS.register(
 /* ===================== */
 const formatCRC = (v: number) => `₡${v.toLocaleString('es-CR')}`;
 
+const formatISO = (d?: Date) =>
+  d ? d.toISOString().split('T')[0] : undefined;
+
+const generateColors = (count: number) =>
+  Array.from({ length: count }, (_, i) =>
+    `hsl(${(i * 360) / count}, 70%, 50%)`
+  );
+
 function normalizeField(f: any) {
   if (!f) return null;
   if (Array.isArray(f)) return f[0];
@@ -57,7 +65,6 @@ export default function AdminDashboard() {
 
   const [openCalendar, setOpenCalendar] =
     useState<'from' | 'to' | null>(null);
-
   const [openFieldSelect, setOpenFieldSelect] = useState(false);
 
   const [fromDate, setFromDate] = useState<Date | undefined>();
@@ -104,8 +111,8 @@ export default function AdminDashboard() {
         `)
         .order('date', { ascending: true });
 
-      if (fromDate) query = query.gte('date', fromDate);
-      if (toDate) query = query.lte('date', toDate);
+      if (fromDate) query = query.gte('date', formatISO(fromDate));
+      if (toDate) query = query.lte('date', formatISO(toDate));
 
       const { data } = await query;
       if (!data) return;
@@ -137,24 +144,31 @@ export default function AdminDashboard() {
         totalRevenue += field.price ?? 0;
       });
 
+      const revenueLabels = Object.keys(revenueByField);
+      const revenueValues = Object.values(revenueByField);
+
       setCharts({
         totalRevenue,
         totalBookings: filtered.length,
         activeFields: Object.keys(byField).length,
         bookingsByDay: {
           labels: Object.keys(byDay),
-          datasets: [{ data: Object.values(byDay), backgroundColor: '#16a34a' }],
+          datasets: [
+            { data: Object.values(byDay), backgroundColor: '#16a34a' },
+          ],
         },
         bookingsByField: {
           labels: Object.keys(byField),
-          datasets: [{ data: Object.values(byField), backgroundColor: '#2563eb' }],
+          datasets: [
+            { data: Object.values(byField), backgroundColor: '#2563eb' },
+          ],
         },
         revenueDistribution: {
-          labels: Object.keys(revenueByField),
+          labels: revenueLabels,
           datasets: [
             {
-              data: Object.values(revenueByField),
-              backgroundColor: ['#16a34a', '#2563eb', '#9333ea', '#f59e0b'],
+              data: revenueValues,
+              backgroundColor: generateColors(revenueValues.length),
             },
           ],
         },
@@ -186,74 +200,78 @@ export default function AdminDashboard() {
   };
 
   if (!ready || !charts) {
-    return <p style={{ padding: 20 }}></p>;
+    return (
+      <AdminLayout>
+        <p style={{ padding: 20 }} />
+      </AdminLayout>
+    );
   }
 
   return (
-    <>
-      <AdminHeader />
-
+    <AdminLayout>
       <main style={page}>
         <div style={container}>
 
-          {/* ================= FILTER CARD ================= */}
+          {/* ================= FILTERS ================= */}
           <section style={filterCard}>
             <h2 style={sectionTitle}>Filtros</h2>
 
             <div style={filterGrid}>
-              {/* DESDE */}
-              <FilterItem label="Desde">
-                <CalendarButton
-                  value={fromDate}
-                  onClick={() =>
-                    setOpenCalendar(openCalendar === 'from' ? null : 'from')
-                  }
-                />
-                {openCalendar === 'from' && (
-                  <CalendarPopover>
-                    <DayPicker
-                      mode="single"
-                      selected={fromDate}
-                      onSelect={(d) => {
-                        setFromDate(d);
-                        setOpenCalendar(null);
-                      }}
-                    />
-                  </CalendarPopover>
-                )}
-              </FilterItem>
+            <FilterItem label="Desde">
+  <div style={{ position: 'relative' }}>
+    <CalendarButton
+      value={fromDate}
+      onClick={() =>
+        setOpenCalendar(openCalendar === 'from' ? null : 'from')
+      }
+    />
 
-              {/* HASTA */}
-              <FilterItem label="Hasta">
-                <CalendarButton
-                  value={toDate}
-                  onClick={() =>
-                    setOpenCalendar(openCalendar === 'to' ? null : 'to')
-                  }
-                />
-                {openCalendar === 'to' && (
-                  <CalendarPopover>
-                    <DayPicker
-                      mode="single"
-                      selected={toDate}
-                      onSelect={(d) => {
-                        setToDate(d);
-                        setOpenCalendar(null);
-                      }}
-                    />
-                  </CalendarPopover>
-                )}
-              </FilterItem>
+    {openCalendar === 'from' && (
+      <CalendarPopover>
+        <DayPicker
+          mode="single"
+          selected={fromDate}
+          onSelect={(d) => {
+            setFromDate(d);
+            setOpenCalendar(null);
+          }}
+        />
+      </CalendarPopover>
+    )}
+  </div>
+</FilterItem>
 
-              {/* CANCHAS (CUSTOM SELECT) */}
+
+<FilterItem label="Hasta">
+  <div style={{ position: 'relative' }}>
+    <CalendarButton
+      value={toDate}
+      onClick={() =>
+        setOpenCalendar(openCalendar === 'to' ? null : 'to')
+      }
+    />
+
+    {openCalendar === 'to' && (
+      <CalendarPopover>
+        <DayPicker
+          mode="single"
+          selected={toDate}
+          onSelect={(d) => {
+            setToDate(d);
+            setOpenCalendar(null);
+          }}
+        />
+      </CalendarPopover>
+    )}
+  </div>
+</FilterItem>
+
+
               <FilterItem label="Canchas">
                 <div style={{ position: 'relative' }}>
                   <button
                     style={calendarBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenFieldSelect(!openFieldSelect);
-                    }}
+                    onClick={() => setOpenFieldSelect(!openFieldSelect)}
                   >
                     {fieldId === 'all'
                       ? 'Todas las canchas'
@@ -289,7 +307,6 @@ export default function AdminDashboard() {
                 </div>
               </FilterItem>
 
-              {/* BOTÓN */}
               <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                 <button onClick={exportExcel} style={primaryBtnCompact}>
                   Descargar
@@ -305,7 +322,7 @@ export default function AdminDashboard() {
             <Stat
               title="Ingreso promedio"
               value={formatCRC(
-                charts.totalBookings > 0
+                charts.totalBookings
                   ? charts.totalRevenue / charts.totalBookings
                   : 0
               )}
@@ -330,7 +347,7 @@ export default function AdminDashboard() {
 
         </div>
       </main>
-    </>
+    </AdminLayout>
   );
 }
 
@@ -338,7 +355,7 @@ export default function AdminDashboard() {
 /* UI COMPONENTS */
 function FilterItem({ label, children }: any) {
   return (
-    <div style={{ position: 'relative' }}>
+    <div>
       <div style={filterLabel}>{label}</div>
       {children}
     </div>
@@ -377,7 +394,7 @@ function ChartCard({ title, children }: any) {
 
 /* ===================== */
 /* STYLES */
-const page = { background: '#f9fafb', minHeight: '100vh', padding: 32 };
+const page = { background: '#f9fafb', minHeight: '100vh' };
 const container = { maxWidth: 1200, margin: '0 auto' };
 
 const filterCard = {
@@ -401,7 +418,6 @@ const filterLabel = {
   fontSize: 11,
   color: '#6b7280',
   marginBottom: 4,
-  fontWeight: 500,
 };
 
 const calendarBtn = {
@@ -410,25 +426,21 @@ const calendarBtn = {
   borderRadius: 12,
   border: '1px solid #e5e7eb',
   background: '#fff',
-  fontSize: 13,
-  textAlign: 'left' as const,
 };
 
 const calendarPopover = {
-  position: 'absolute' as const,
+  position: 'relative' as const,
   top: '110%',
-  left: 0,
-  zIndex: 50,
   background: '#fff',
   borderRadius: 16,
   boxShadow: '0 20px 40px rgba(0,0,0,.12)',
   padding: 12,
+  zIndex: 50,
 };
 
 const selectPopover = {
-  position: 'absolute' as const,
+  position: 'relative' as const,
   top: '110%',
-  left: 0,
   width: '100%',
   background: '#fff',
   borderRadius: 14,
@@ -440,7 +452,6 @@ const selectPopover = {
 const selectOption = {
   padding: '10px 12px',
   borderRadius: 10,
-  fontSize: 13,
   cursor: 'pointer',
 };
 
@@ -449,8 +460,6 @@ const primaryBtnCompact = {
   borderRadius: 12,
   background: '#2563eb',
   color: '#fff',
-  fontSize: 13,
-  fontWeight: 500,
   border: 'none',
   cursor: 'pointer',
 };
@@ -488,7 +497,7 @@ const barOptions: ChartOptions<'bar'> = {
     x: { grid: { display: false } },
     y: { display: false },
   },
-} satisfies ChartOptions<'bar'>;
+};
 
 const pieOptions: ChartOptions<'pie'> = {
   plugins: {
@@ -505,4 +514,4 @@ const pieOptions: ChartOptions<'pie'> = {
       },
     },
   },
-} satisfies ChartOptions<'pie'>;
+};

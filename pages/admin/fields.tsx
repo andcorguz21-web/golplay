@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/router';
-import AdminHeader from '@/components/ui/admin/AdminHeader';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
 
 /* ===================== */
 /* TYPES */
@@ -69,15 +69,20 @@ export default function AdminFields() {
   const [hours, setHours] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  /* 🆕 GALERÍA */
   const [gallery, setGallery] = useState<FieldImage[]>([]);
 
+  /* ===================== */
+  /* AUTH */
+  /* ===================== */
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) router.replace('/login');
     });
   }, [router]);
 
+  /* ===================== */
+  /* LOAD FIELDS */
+  /* ===================== */
   const loadFields = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -115,13 +120,11 @@ export default function AdminFields() {
   const setMainImage = async (imageId: number) => {
     if (!editingId) return;
 
-    // Reset todas
     await supabase
       .from('field_images')
       .update({ is_main: false })
       .eq('field_id', editingId);
 
-    // Marcar seleccionada
     await supabase
       .from('field_images')
       .update({ is_main: true })
@@ -131,32 +134,24 @@ export default function AdminFields() {
   };
 
   /* ===================== */
-/* DELETE GALLERY IMAGE */
-/* ===================== */
-const deleteGalleryImage = async (img: FieldImage) => {
-  if (!editingId) return;
-  if (!confirm('¿Eliminar esta imagen?')) return;
+  /* DELETE IMAGE */
+  /* ===================== */
+  const deleteGalleryImage = async (img: FieldImage) => {
+    if (!editingId) return;
+    if (!confirm('¿Eliminar esta imagen?')) return;
 
-  // Eliminar registro
-  await supabase
-    .from('field_images')
-    .delete()
-    .eq('id', img.id);
+    await supabase.from('field_images').delete().eq('id', img.id);
 
-  // Eliminar archivo de storage
-  const path = img.url.split('/field-images/')[1];
-  if (path) {
-    await supabase
-      .storage
-      .from('field-images')
-      .remove([path]);
-  }
+    const path = img.url.split('/field-images/')[1];
+    if (path) {
+      await supabase.storage.from('field-images').remove([path]);
+    }
 
-  await loadGallery(editingId);
-};
+    await loadGallery(editingId);
+  };
 
   /* ===================== */
-  /* UPLOAD GALLERY IMAGE */
+  /* UPLOAD IMAGE */
   /* ===================== */
   const uploadGalleryImage = async (e: any) => {
     try {
@@ -187,9 +182,6 @@ const deleteGalleryImage = async (img: FieldImage) => {
       });
 
       await loadGallery(editingId);
-    } catch (err) {
-      console.error(err);
-      alert('Error subiendo imagen');
     } finally {
       setUploading(false);
     }
@@ -197,29 +189,24 @@ const deleteGalleryImage = async (img: FieldImage) => {
 
   const saveField = async () => {
     if (!name || !price) return;
-  
+
     const payload = {
       name,
       price: Number(price),
-      description: description ?? '',
-      features: Array.isArray(features) ? features : [],
-      hours: Array.isArray(hours) ? hours : [],
+      description,
+      features,
+      hours,
     };
-  
+
     const { error } = editingId
       ? await supabase.from('fields').update(payload).eq('id', editingId)
       : await supabase.from('fields').insert(payload);
-  
-    if (error) {
-      console.error('SAVE FIELD ERROR:', error);
-      alert(error.message);
-      return;
+
+    if (!error) {
+      resetForm();
+      loadFields();
     }
-  
-    resetForm();
-    loadFields();
-  };  
-  
+  };
 
   const resetForm = () => {
     setEditingId(null);
@@ -261,9 +248,7 @@ const deleteGalleryImage = async (img: FieldImage) => {
   };
 
   return (
-    <>
-      <AdminHeader />
-
+    <AdminLayout>
       <main style={container}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={headerRow}>
@@ -328,70 +313,58 @@ const deleteGalleryImage = async (img: FieldImage) => {
             {gallery.length > 0 && (
               <Section title="Fotos actuales (clic para marcar principal)">
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {gallery.map(img => (
-  <div
-    key={img.id}
-    style={{ position: 'relative' }}
-  >
-    {/* CLICK PARA MARCAR PRINCIPAL */}
-    <div
-      onClick={() => setMainImage(img.id)}
-      style={{ cursor: 'pointer' }}
-    >
-      <img
-        src={img.url}
-        style={{
-          width: 90,
-          height: 70,
-          objectFit: 'cover',
-          borderRadius: 8,
-          border: img.is_main
-            ? '3px solid #16a34a'
-            : '1px solid #e5e7eb',
-        }}
-      />
-    </div>
+                  {gallery.map(img => (
+                    <div key={img.id} style={{ position: 'relative' }}>
+                      <div onClick={() => setMainImage(img.id)} style={{ cursor: 'pointer' }}>
+                        <img
+                          src={img.url}
+                          style={{
+                            width: 90,
+                            height: 70,
+                            objectFit: 'cover',
+                            borderRadius: 8,
+                            border: img.is_main
+                              ? '3px solid #16a34a'
+                              : '1px solid #e5e7eb',
+                          }}
+                        />
+                      </div>
 
-    {/* BADGE PRINCIPAL */}
-    {img.is_main && (
-      <span
-        style={{
-          position: 'absolute',
-          bottom: 4,
-          left: 4,
-          background: '#16a34a',
-          color: 'white',
-          fontSize: 10,
-          padding: '2px 6px',
-          borderRadius: 6,
-        }}
-      >
-        Principal
-      </span>
-    )}
+                      {img.is_main && (
+                        <span style={{
+                          position: 'absolute',
+                          bottom: 4,
+                          left: 4,
+                          background: '#16a34a',
+                          color: 'white',
+                          fontSize: 10,
+                          padding: '2px 6px',
+                          borderRadius: 6,
+                        }}>
+                          Principal
+                        </span>
+                      )}
 
-    {/* BOTÓN ELIMINAR */}
-    <button
-      onClick={() => deleteGalleryImage(img)}
-      style={{
-        position: 'absolute',
-        top: -6,
-        right: -6,
-        background: '#dc2626',
-        color: 'white',
-        border: 'none',
-        borderRadius: '50%',
-        width: 18,
-        height: 18,
-        fontSize: 10,
-        cursor: 'pointer',
-      }}
-    >
-      ✕
-    </button>
-  </div>
-))}
-
+                      <button
+                        onClick={() => deleteGalleryImage(img)}
+                        style={{
+                          position: 'absolute',
+                          top: -6,
+                          right: -6,
+                          background: '#dc2626',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: 18,
+                          height: 18,
+                          fontSize: 10,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </Section>
             )}
@@ -404,11 +377,17 @@ const deleteGalleryImage = async (img: FieldImage) => {
             <Section title="Información básica">
               <Input label="Nombre" value={name} onChange={setName} />
               <Input label="Precio por hora" type="number" value={price} onChange={setPrice} />
-              <Select label="Tipo" value={type} onChange={setType} options={['Fútbol 5','Fútbol 7','Fútbol 11','Tenis','Padel']} />
+              <Select label="Tipo" value={type} onChange={setType}
+                options={['Fútbol 5','Fútbol 7','Fútbol 11','Tenis','Padel']}
+              />
             </Section>
 
-            <Section title="Ubicacion">
-              <Options values={['San Jose','Cartago','Heredia','Alajuela','Puntarenas','Limon','Guanacaste']} selected={features} onToggle={(v: string) => toggle(v, features, setFeatures)} />
+            <Section title="Ubicación">
+              <Options
+                values={['San Jose','Cartago','Heredia','Alajuela','Puntarenas','Limon','Guanacaste']}
+                selected={features}
+                onToggle={(v: string) => toggle(v, features, setFeatures)}
+              />
             </Section>
 
             <Section title="Descripción">
@@ -416,11 +395,19 @@ const deleteGalleryImage = async (img: FieldImage) => {
             </Section>
 
             <Section title="Características opcionales">
-              <Options values={['Iluminación','Parqueo','Camerinos','Baños','Techada']} selected={features} onToggle={(v: string) => toggle(v, features, setFeatures)} />
+              <Options
+                values={['Iluminación','Parqueo','Camerinos','Baños','Techada']}
+                selected={features}
+                onToggle={(v: string) => toggle(v, features, setFeatures)}
+              />
             </Section>
 
             <Section title="Horarios disponibles">
-              <Options values={ALL_HOURS} selected={hours} onToggle={(v: string) => toggle(v, hours, setHours)} />
+              <Options
+                values={ALL_HOURS}
+                selected={hours}
+                onToggle={(v: string) => toggle(v, hours, setHours)}
+              />
             </Section>
 
             <div style={actions}>
@@ -430,18 +417,13 @@ const deleteGalleryImage = async (img: FieldImage) => {
           </div>
         </div>
       )}
-    </>
+    </AdminLayout>
   );
 }
 
 /* ===================== */
 /* UI HELPERS & STYLES */
-/* ===================== */
-/* (SIN CAMBIOS – se mantienen exactamente igual que tu código original) */
-
-
-/* ===================== */
-/* UI HELPERS */
+/* (SIN CAMBIOS) */
 /* ===================== */
 
 const Section = ({ title, children }: any) => (
@@ -486,8 +468,6 @@ const Options = ({ values, selected, onToggle }: any) => (
 
 /* ===================== */
 /* STYLES */
-/* ===================== */
-
 const container: CSSProperties = {
   background: '#f9fafb',
   minHeight: '100vh',

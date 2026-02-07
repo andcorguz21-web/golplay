@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 
-import AdminHeader from '@/components/ui/admin/AdminHeader';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
 import DailyCalendar from './daily';
 import WeeklyCalendar from './week';
 
@@ -34,9 +34,7 @@ export default function AdminCalendar() {
   }, [router]);
 
   return (
-    <>
-      <AdminHeader />
-
+    <AdminLayout>
       <main
         style={{
           backgroundColor: '#f9fafb',
@@ -50,7 +48,7 @@ export default function AdminCalendar() {
             <h1 style={pageTitle}>Calendario</h1>
 
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              {/* DATE PICKER (HOMOLOGADO DASHBOARD) */}
+              {/* DATE PICKER */}
               <div style={{ position: 'relative' }}>
                 <button
                   style={dateButton}
@@ -106,7 +104,7 @@ export default function AdminCalendar() {
           )}
         </div>
       </main>
-    </>
+    </AdminLayout>
   );
 }
 

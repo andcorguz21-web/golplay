@@ -111,7 +111,7 @@ export default function Home() {
             <span style={{ color: '#16a34a' }}>en segundos</span>
           </h1>
           <p style={styles.heroSubtitle}>
-            Canchas disponibles, precios claros y reservas rápidas.
+            Complejos disponibles, precios claros y reservas rápidas.
           </p>
         </div>
       </section>

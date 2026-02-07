@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 
-import AdminHeader from '@/components/ui/admin/AdminHeader';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
 
 /* ===================== */
 /* TYPES */
@@ -87,9 +87,7 @@ export default function BillingPage() {
   };
 
   return (
-    <>
-      <AdminHeader />
-
+    <AdminLayout>
       <main
         style={{
           backgroundColor: '#f9fafb',
@@ -174,7 +172,7 @@ export default function BillingPage() {
           )}
         </div>
       </main>
-    </>
+    </AdminLayout>
   );
 }
 

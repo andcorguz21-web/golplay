@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
-import AdminHeader from '@/components/ui/admin/AdminHeader';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
 
 import Loader from '@/components/ui/Loader';
 import { PageTitle } from '@/components/ui/Typography';
@@ -78,9 +78,7 @@ export default function AdminBookings() {
   /* ===================== */
 
   return (
-    <>
-      <AdminHeader />
-
+    <AdminLayout>
       <main style={container}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <PageTitle>Reservas</PageTitle>
@@ -120,7 +118,7 @@ export default function AdminBookings() {
           )}
         </div>
       </main>
-    </>
+    </AdminLayout>
   );
 }
 

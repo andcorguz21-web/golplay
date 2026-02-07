@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/router';
-import AdminHeader from '@/components/ui/admin/AdminHeader';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
 
 /* ===================== */
 /* TYPES */
@@ -102,10 +102,9 @@ export default function PaymentDetailPage() {
 
   if (!statement) {
     return (
-      <>
-        <AdminHeader />
+      <AdminLayout>
         <main style={container} />
-      </>
+      </AdminLayout>
     );
   }
 
@@ -118,9 +117,7 @@ export default function PaymentDetailPage() {
   /* ===================== */
 
   return (
-    <>
-      <AdminHeader />
-
+    <AdminLayout>
       <main style={container}>
         <div style={card}>
           <h1 style={pageTitle}>
@@ -128,22 +125,13 @@ export default function PaymentDetailPage() {
           </h1>
 
           <div style={grid}>
-            <Info
-              label="Reservas del mes"
-              value={statement.reservations_count}
-            />
-            <Info
-              label="Monto a pagar"
-              value={formatCRC(statement.amount_due)}
-            />
+            <Info label="Reservas del mes" value={statement.reservations_count} />
+            <Info label="Monto a pagar" value={formatCRC(statement.amount_due)} />
             <Info
               label="Fecha límite"
               value={new Date(statement.due_date).toLocaleDateString('es-CR')}
             />
-            <Info
-              label="Estado"
-              value={<StatusBadge status={statement.status} />}
-            />
+            <Info label="Estado" value={<StatusBadge status={statement.status} />} />
           </div>
 
           {isLate && (
@@ -167,7 +155,7 @@ export default function PaymentDetailPage() {
           )}
         </div>
       </main>
-    </>
+    </AdminLayout>
   );
 }
 
@@ -213,8 +201,6 @@ const container = {
   background: '#f9fafb',
   minHeight: '100vh',
   padding: 32,
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
 };
 
 const card = {
