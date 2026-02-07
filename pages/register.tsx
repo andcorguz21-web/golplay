@@ -59,7 +59,7 @@ export default function RegisterPage() {
       <div style={card}>
         <h1 style={title}>Crear cuenta</h1>
         <p style={subtitle}>
-          Reservá canchas fácil y rápido
+          Administra tu complejo en un solo lugar
         </p>
 
         <form onSubmit={handleRegister} style={{ marginTop: 24 }}>
@@ -76,7 +76,7 @@ export default function RegisterPage() {
           />
 
           <Input
-            label="Teléfono (opcional)"
+            label="Teléfono"
             value={phone}
             onChange={setPhone}
           />

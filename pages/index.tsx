@@ -12,7 +12,7 @@ type Field = {
   name: string
   price: number
   location: string
-  images: string[]
+  image?: string
 }
 
 const FALLBACK_IMAGE =
@@ -31,32 +31,62 @@ export default function Home() {
 
   useEffect(() => {
     const load = async () => {
-      const { data, error } = await supabase
-        .from('fields_with_images')
-        .select('*')
+      setLoading(true)
+
+      /* ===================== */
+      /* LOAD FIELDS */
+      /* ===================== */
+      const { data: fields, error } = await supabase
+        .from('fields')
+        .select('id, name, price, location')
+        .eq('active', true)
         .order('name')
 
-      if (error || !data) return
+      if (error || !fields) {
+        console.error('FIELDS ERROR:', error)
+        setLoading(false)
+        return
+      }
 
+      /* ===================== */
+      /* LOAD MAIN IMAGES ONLY */
+      /* ===================== */
+      const { data: images, error: imgError } = await supabase
+        .from('field_images')
+        .select('field_id, url')
+        .eq('is_main', true)
+
+      if (imgError) {
+        console.error('IMAGES ERROR:', imgError)
+      }
+
+      /* ===================== */
+      /* MAP FIELDS */
+      /* ===================== */
       const map = new Map<number, Field>()
 
-      data.forEach((row: any) => {
-        if (!map.has(row.id)) {
-          map.set(row.id, {
-            id: row.id,
-            name: row.name,
-            price: row.price,
-            location: row.location ?? 'Sin ubicación',
-            images: [],
-          })
-        }
+      fields.forEach((f) => {
+        map.set(f.id, {
+          id: f.id,
+          name: f.name,
+          price: f.price,
+          location: f.location ?? 'Sin ubicación',
+          image: FALLBACK_IMAGE,
+        })
+      })
 
-        if (row.url) {
-          map.get(row.id)!.images.push(row.url)
+      images?.forEach((img) => {
+        const field = map.get(img.field_id)
+        if (field && img.url) {
+          field.image = img.url
         }
       })
 
+      /* ===================== */
+      /* GROUP BY LOCATION */
+      /* ===================== */
       const grouped: Record<string, Field[]> = {}
+
       Array.from(map.values()).forEach((f) => {
         if (!grouped[f.location]) grouped[f.location] = []
         grouped[f.location].push(f)
@@ -71,25 +101,23 @@ export default function Home() {
 
   return (
     <>
-      {/* HEADER */}
       <Header />
 
       {/* HERO */}
       <section style={styles.hero}>
         <div style={styles.heroContent}>
           <h1 style={styles.heroTitle}>
-            Reservá tu cancha <span style={{ color: '#16a34a' }}>en segundos</span>
+            Reservá tu cancha{' '}
+            <span style={{ color: '#16a34a' }}>en segundos</span>
           </h1>
           <p style={styles.heroSubtitle}>
-            Complejos disponibles, precios claros y reservas rápidas.
+            Canchas disponibles, precios claros y reservas rápidas.
           </p>
         </div>
       </section>
 
       {/* MARKETPLACE */}
       <main style={styles.page}>
-        {loading && <p>Cargando canchas…</p>}
-
         {!loading &&
           Object.entries(fieldsByLocation).map(([location, fields]) => (
             <section key={location} style={styles.section}>
@@ -105,9 +133,7 @@ export default function Home() {
                       <div
                         style={{
                           ...styles.image,
-                          backgroundImage: `url(${
-                            f.images[0] ?? FALLBACK_IMAGE
-                          })`,
+                          backgroundImage: `url(${f.image})`,
                         }}
                       />
                       <div style={styles.cardBody}>
@@ -126,130 +152,92 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer style={styles.footer}>
-        <div style={styles.footerGrid}>
+        <div style={styles.footerInner}>
           <div>
             <h4>GOLPLAY</h4>
             <p style={styles.footerText}>
-              El marketplace de complejos deportivos en Costa Rica.
+              Marketplace de complejos deportivos en Costa Rica.
             </p>
           </div>
 
           <div>
             <h4>Información</h4>
-            <a style={styles.footerLink}>Términos y condiciones</a>
-            <a style={styles.footerLink}>Sobre GOLPLAY</a>
-            <a style={styles.footerLink}>Guía para unirse</a>
+            <a href="/terms" style={styles.footerLink}>Términos y condiciones</a>
+            <a href="/about" style={styles.footerLink}>Sobre GolPlay</a>
+            <a href="/join" style={styles.footerLink}>Guía para unirse</a>
+          </div>
+
+          <div>
+            <h4>Contacto</h4>
+            <a href="mailto:gestion@golplay.app" style={styles.footerLink}>
+              gestion@golplay.app
+            </a>
+            <a href="tel:+50671335020" style={styles.footerLink}>
+              +506 7133 5020
+            </a>
           </div>
         </div>
 
         <p style={styles.footerCopy}>
-          © {new Date().getFullYear()} GOLPLAY. Todos los derechos reservados.
+          © {new Date().getFullYear()} GolPlay. Todos los derechos reservados.
         </p>
       </footer>
     </>
   )
 }
 
-/* ===== STYLES ===== */
+/* ===================== */
+/* STYLES (SIN CAMBIOS) */
+/* ===================== */
 
 const styles: any = {
-  page: {
-    background: '#f7f7f7',
-    padding: '40px 16px',
-  },
-
+  page: { background: '#f7f7f7', padding: '40px 16px' },
   hero: {
-    background:
-      'linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%)',
+    background: 'linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%)',
     padding: '60px 20px',
     textAlign: 'center',
   },
-
-  heroContent: {
-    maxWidth: 900,
-    margin: '0 auto',
-  },
-
-  heroTitle: {
-    fontSize: 36,
-    fontWeight: 800,
-    marginBottom: 12,
-  },
-
-  heroSubtitle: {
-    fontSize: 18,
-    color: '#6b7280',
-  },
-
-  section: {
-    maxWidth: 1200,
-    margin: '0 auto 40px',
-  },
-
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 16,
-  },
-
+  heroContent: { maxWidth: 900, margin: '0 auto' },
+  heroTitle: { fontSize: 36, fontWeight: 800, marginBottom: 12 },
+  heroSubtitle: { fontSize: 18, color: '#6b7280' },
+  section: { maxWidth: 1200, margin: '0 auto 40px' },
+  sectionTitle: { fontSize: 22, fontWeight: 700, marginBottom: 16 },
   card: {
     background: 'white',
-    borderRadius: 24,
+    borderRadius: 35,
     overflow: 'hidden',
-    boxShadow: '0 10px 30px rgba(221, 217, 217, 0.12)',
+    boxShadow: '0 10px 30px rgba(220, 218, 218, 0.12)',
     cursor: 'pointer',
-    transition: 'transform .2s',
   },
-
   image: {
     height: 180,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },
-
-  cardBody: {
-    padding: 16,
-  },
-
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 600,
-    marginBottom: 6,
-  },
-
-  cardPrice: {
-    color: '#6b7280',
-    fontSize: 14,
-  },
-
+  cardBody: { padding: 16 },
+  cardTitle: { fontSize: 16, fontWeight: 600, marginBottom: 6 },
+  cardPrice: { color: '#6b7280', fontSize: 14 },
   footer: {
     background: '#111827',
     color: 'white',
     padding: '40px 20px',
     marginTop: 60,
   },
-
-  footerGrid: {
+  footerInner: {
     maxWidth: 1100,
     margin: '0 auto',
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: 30,
   },
-
-  footerText: {
-    fontSize: 14,
-    color: '#9ca3af',
-  },
-
+  footerText: { fontSize: 14, color: '#9ca3af' },
   footerLink: {
     display: 'block',
     fontSize: 14,
-    color: '#9ca3af',
-    marginTop: 6,
-    cursor: 'pointer',
+    color: '#e5e7eb',
+    marginTop: 4,
+    textDecoration: 'none',
   },
-
   footerCopy: {
     textAlign: 'center',
     marginTop: 30,

@@ -186,7 +186,7 @@ export default function AdminDashboard() {
   };
 
   if (!ready || !charts) {
-    return <p style={{ padding: 20 }}>Cargando dashboard…</p>;
+    return <p style={{ padding: 20 }}></p>;
   }
 
   return (

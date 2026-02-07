@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { supabase } from '@/lib/supabase'
+import 'react-day-picker/dist/style.css'
 
 const DayPicker = dynamic(
   () => import('react-day-picker').then((m) => m.DayPicker),
@@ -79,7 +80,6 @@ export default function Header() {
       {/* ===== SEARCH BAR ===== */}
       <div style={styles.searchWrapper}>
         <div style={styles.searchBar}>
-
           <div style={styles.searchItem} onClick={() => setOpenField(true)}>
             <span style={styles.searchLabel}>⚽️🏀🎾</span>
             <span style={styles.searchValue}>
@@ -136,26 +136,25 @@ export default function Header() {
         </Modal>
       )}
 
-{/* ===== MODAL FECHA ===== */}
-{openDate && (
-  <Modal onClose={() => setOpenDate(false)}>
-    <h3 style={styles.modalTitle}>Elegí la fecha</h3>
+      {/* ===== MODAL FECHA ===== */}
+      {openDate && (
+        <Modal onClose={() => setOpenDate(false)}>
+          <h3 style={styles.modalTitle}>Elegí la fecha</h3>
 
-    <div style={styles.calendarCard}>
-      <DayPicker
-        mode="single"
-        selected={date}
-        disabled={{ before: new Date() }}
-        onSelect={(d) => {
-          setDate(d)
-          setHour(null)
-          setOpenDate(false)
-        }}
-      />
-    </div>
-  </Modal>
-)}
-
+          <div style={styles.calendarWrapper}>
+            <DayPicker
+              mode="single"
+              selected={date}
+              disabled={{ before: new Date() }}
+              onSelect={(d) => {
+                setDate(d)
+                setHour(null)
+                setOpenDate(false)
+              }}
+            />
+          </div>
+        </Modal>
+      )}
 
       {/* ===== MODAL HORA ===== */}
       {openHour && (
@@ -182,8 +181,23 @@ export default function Header() {
         </Modal>
       )}
 
-      {/* ===== CALENDAR GLOBAL STYLES ===== */}
+      {/* ===== DAYPICKER GLOBAL FIX (MOBILE + DESKTOP) ===== */}
       <style jsx global>{`
+        .rdp {
+          --rdp-cell-size: 42px;
+          --rdp-caption-font-size: 14px;
+          --rdp-nav-button-width: 36px;
+          --rdp-nav-button-height: 36px;
+        }
+
+        .rdp-month {
+          width: 100%;
+        }
+
+        .rdp-table {
+          width: 100%;
+        }
+
         .rdp-caption {
           display: flex;
           justify-content: center;
@@ -191,15 +205,12 @@ export default function Header() {
           gap: 12px;
           margin-bottom: 12px;
           font-weight: 600;
-          font-size: 14px;
         }
 
         .rdp-nav_button {
           border-radius: 999px;
           background: #f3f4f6;
           border: none;
-          width: 36px;
-          height: 36px;
           cursor: pointer;
         }
 
@@ -236,7 +247,7 @@ const styles: any = {
   searchItem: { flex: 1, cursor: 'pointer' },
   searchLabel: { fontSize: 11, color: '#6b7280' },
   searchValue: { fontSize: 14, fontWeight: 500 },
-  divider: { width: 1, height: 32, background: '#e5e7eb' },
+  divider: { width: 1, height: 32, background: 'white' },
 
   searchBtn: { width: 44, height: 44, borderRadius: '50%', border: 'none', background: '#16a34a', color: 'white', fontSize: 18 },
 
@@ -250,12 +261,9 @@ const styles: any = {
   hourGrid: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 },
   hourItem: { padding: 14, borderRadius: 14, textAlign: 'center', cursor: 'pointer', fontWeight: 500 },
 
-  dayPill: { width: 42, height: 42, borderRadius: 999, border: 'none', fontWeight: 500, fontSize: 14 },
-
-  calendarCard: {
-    borderRadius: 16,
-    padding: 8,
+  calendarWrapper: {
+    width: 320,
+    maxWidth: '100%',
+    margin: '0 auto',
   },
-  
-  
 }
