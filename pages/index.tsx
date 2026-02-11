@@ -10,7 +10,7 @@ import 'swiper/css'
 type Field = {
   id: number
   name: string
-  price: number
+  price_day: number
   location: string
   image?: string
 }
@@ -34,11 +34,11 @@ export default function Home() {
       setLoading(true)
 
       /* ===================== */
-      /* LOAD FIELDS */
+      /* LOAD FIELDS (PRICE DAY) */
       /* ===================== */
       const { data: fields, error } = await supabase
         .from('fields')
-        .select('id, name, price, location')
+        .select('id, name, price_day, location')
         .eq('active', true)
         .order('name')
 
@@ -49,16 +49,11 @@ export default function Home() {
       }
 
       /* ===================== */
-      /* LOAD MAIN IMAGES ONLY */
+      /* LOAD ALL IMAGES */
       /* ===================== */
-      const { data: images, error: imgError } = await supabase
+      const { data: images } = await supabase
         .from('field_images')
-        .select('field_id, url')
-        .eq('is_main', true)
-
-      if (imgError) {
-        console.error('IMAGES ERROR:', imgError)
-      }
+        .select('field_id, url, is_main')
 
       /* ===================== */
       /* MAP FIELDS */
@@ -69,15 +64,24 @@ export default function Home() {
         map.set(f.id, {
           id: f.id,
           name: f.name,
-          price: f.price,
+          price_day: Number(f.price_day ?? 0),
           location: f.location ?? 'Sin ubicación',
           image: FALLBACK_IMAGE,
         })
       })
 
+      /* ===================== */
+      /* ASSIGN MAIN IMAGE OR FIRST */
+      /* ===================== */
       images?.forEach((img) => {
         const field = map.get(img.field_id)
-        if (field && img.url) {
+        if (!field || !img.url) return
+
+        // Prioridad a imagen principal
+        if (img.is_main) {
+          field.image = img.url
+        } else if (field.image === FALLBACK_IMAGE) {
+          // Si no hay main, usa la primera disponible
           field.image = img.url
         }
       })
@@ -139,7 +143,7 @@ export default function Home() {
                       <div style={styles.cardBody}>
                         <h3 style={styles.cardTitle}>{f.name}</h3>
                         <p style={styles.cardPrice}>
-                          Desde {formatCRC(f.price)}
+                          Desde {formatCRC(f.price_day)}
                         </p>
                       </div>
                     </div>
@@ -186,6 +190,8 @@ export default function Home() {
   )
 }
 
+/* STYLES: SIN CAMBIOS */
+
 /* ===================== */
 /* STYLES (SIN CAMBIOS) */
 /* ===================== */
@@ -204,7 +210,7 @@ const styles: any = {
   sectionTitle: { fontSize: 22, fontWeight: 700, marginBottom: 16 },
   card: {
     background: 'white',
-    borderRadius: 35,
+    borderRadius: 45,
     overflow: 'hidden',
     boxShadow: '0 10px 30px rgba(220, 218, 218, 0.12)',
     cursor: 'pointer',

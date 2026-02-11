@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 
+/* ===================== */
+/* COMPONENT */
+/* ===================== */
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -13,101 +17,147 @@ export default function RegisterPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  /* ===================== */
+  /* REGISTER */
+  /* ===================== */
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    // 1️⃣ Crear usuario en Auth
-    const { data, error: signUpError } =
-      await supabase.auth.signUp({
-        email,
-        password,
-      });
+    try {
+      // 1️⃣ Crear usuario en Supabase Auth
+      const { data, error: signUpError } =
+        await supabase.auth.signUp({
+          email,
+          password,
+        });
 
-    if (signUpError || !data.user) {
-      setError('No se pudo crear el usuario');
+      if (signUpError || !data.user) {
+        setError(signUpError?.message || 'Error creando la cuenta');
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Crear profile como OWNER
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          role: 'owner',
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+        });
+
+      if (profileError) {
+        setError('La cuenta se creó pero falló el perfil');
+        setLoading(false);
+        return;
+      }
+
+      // 3️⃣ Aviso de confirmación
+      setSuccess(true);
+
+    } catch (err) {
+      console.error(err);
+      setError('Error inesperado, intentá nuevamente');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const userId = data.user.id;
-
-    // 2️⃣ Actualizar profile (el trigger ya lo creó)
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-      })
-      .eq('id', userId);
-
-    if (profileError) {
-      setError('Usuario creado, pero no se pudo guardar el perfil');
-      setLoading(false);
-      return;
-    }
-
-    // 3️⃣ Redirect
-    router.replace('/');
   };
+
+  /* ===================== */
+  /* UI */
+  /* ===================== */
 
   return (
     <main style={container}>
       <div style={card}>
         <h1 style={title}>Crear cuenta</h1>
         <p style={subtitle}>
-          Administra tu complejo en un solo lugar
+          Registrá tu cancha y comenzá a recibir reservas
         </p>
 
-        <form onSubmit={handleRegister} style={{ marginTop: 24 }}>
-          <Input
-            label="Nombre"
-            value={firstName}
-            onChange={setFirstName}
-          />
+        {success ? (
+          <div style={successBox}>
+            📩 Te enviamos un correo para confirmar tu cuenta.  
+            <br />
+            Después de confirmar, podrás ingresar al panel de administración.
+          </div>
+        ) : (
+          <form onSubmit={handleRegister} style={{ marginTop: 24 }}>
+            <Field label="Nombre">
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                style={input}
+              />
+            </Field>
 
-          <Input
-            label="Apellido"
-            value={lastName}
-            onChange={setLastName}
-          />
+            <Field label="Apellido">
+              <input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                style={input}
+              />
+            </Field>
 
-          <Input
-            label="Teléfono"
-            value={phone}
-            onChange={setPhone}
-          />
+            <Field label="Teléfono">
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                style={input}
+              />
+            </Field>
 
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-          />
+            <Field label="Email">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={input}
+              />
+            </Field>
 
-          <Input
-            label="Contraseña"
-            type="password"
-            value={password}
-            onChange={setPassword}
-          />
+            <Field label="Contraseña">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={input}
+              />
+            </Field>
 
-          {error && <div style={errorBox}>{error}</div>}
+            {error && <div style={errorBox}>{error}</div>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...button,
-              background: loading ? '#9ca3af' : '#16a34a',
-            }}
-          >
-            {loading ? 'Creando cuenta…' : 'Registrarme'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                ...button,
+                backgroundColor: loading ? '#9ca3af' : '#16a34a',
+              }}
+            >
+              {loading ? 'Creando cuenta…' : 'Crear cuenta'}
+            </button>
+
+            <p style={loginLink}>
+              ¿Ya tenés cuenta?{' '}
+              <span onClick={() => router.push('/login')}>
+                Iniciá sesión
+              </span>
+            </p>
+          </form>
+        )}
       </div>
     </main>
   );
@@ -115,66 +165,53 @@ export default function RegisterPage() {
 
 /* ===================== */
 /* UI HELPERS */
+/* ===================== */
 
-function Input({
-  label,
-  value,
-  onChange,
-  type = 'text',
-}: any) {
-  return (
-    <div style={field}>
-      <label style={labelStyle}>{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={label !== 'Teléfono (opcional)'}
-        style={input}
-      />
-    </div>
-  );
-}
+const Field = ({ label, children }: any) => (
+  <div style={{ marginBottom: 14 }}>
+    <label style={labelStyle}>{label}</label>
+    {children}
+  </div>
+);
 
 /* ===================== */
 /* STYLES */
+/* ===================== */
 
 const container = {
   minHeight: '100vh',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: '#f7f7f7',
+  background: '#f9fafb',
   padding: 24,
 };
 
 const card = {
   width: '100%',
-  maxWidth: 440,
+  maxWidth: 460,
   background: 'white',
-  borderRadius: 24,
-  padding: 32,
-  boxShadow: '0 15px 35px rgba(0,0,0,0.12)',
+  borderRadius: 26,
+  padding: 40,
+  boxShadow: '0 20px 45px rgba(0,0,0,0.12)',
 };
 
 const title = {
-  fontSize: 26,
+  fontSize: 28,
   fontWeight: 600,
 };
 
 const subtitle = {
   fontSize: 14,
   color: '#6b7280',
-  marginTop: 4,
+  marginBottom: 16,
 };
 
-const field = { marginBottom: 14 };
-
 const labelStyle = {
-  display: 'block',
   fontSize: 12,
   color: '#6b7280',
   marginBottom: 6,
+  display: 'block',
 };
 
 const input = {
@@ -182,19 +219,17 @@ const input = {
   padding: '12px 14px',
   borderRadius: 12,
   border: '1px solid #e5e7eb',
-  fontSize: 14,
 };
 
 const button = {
   width: '100%',
-  marginTop: 16,
   padding: '14px 16px',
   borderRadius: 14,
   border: 'none',
   color: 'white',
   fontSize: 15,
   fontWeight: 500,
-  cursor: 'pointer',
+  marginTop: 12,
 };
 
 const errorBox = {
@@ -205,4 +240,21 @@ const errorBox = {
   borderRadius: 10,
   fontSize: 13,
   marginBottom: 12,
+};
+
+const successBox = {
+  background: '#dcfce7',
+  border: '1px solid #86efac',
+  color: '#166534',
+  padding: 16,
+  borderRadius: 14,
+  fontSize: 14,
+};
+
+const loginLink = {
+  marginTop: 18,
+  fontSize: 13,
+  color: '#6b7280',
+  textAlign: 'center' as const,
+  cursor: 'pointer',
 };

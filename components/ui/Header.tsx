@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
@@ -31,6 +31,25 @@ export default function Header() {
   const [openDate, setOpenDate] = useState(false)
   const [openHour, setOpenHour] = useState(false)
 
+  /* 🔥 HEADER SCROLL BEHAVIOR */
+  const lastScrollY = useRef(0)
+  const [hidden, setHidden] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => {
+      const currentY = window.scrollY
+      if (currentY > lastScrollY.current && currentY > 80) {
+        setHidden(true) // scroll down
+      } else {
+        setHidden(false) // scroll up
+      }
+      lastScrollY.current = currentY
+    }
+
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   /* AUTH */
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -59,7 +78,12 @@ export default function Header() {
   return (
     <>
       {/* ===== TOP BAR ===== */}
-      <header style={styles.topBar}>
+      <header
+        style={{
+          ...styles.topBar,
+          transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
+        }}
+      >
         <div style={styles.topInner}>
           <div style={styles.logo} onClick={() => router.push('/')}>
             <Image src="/logo-golplay.svg" alt="GolPlay" width={120} height={80} />
@@ -78,12 +102,17 @@ export default function Header() {
       </header>
 
       {/* ===== SEARCH BAR ===== */}
-      <div style={styles.searchWrapper}>
+      <div
+        style={{
+          ...styles.searchWrapper,
+          transform: hidden ? 'translateY(-120%)' : 'translateY(0)',
+        }}
+      >
         <div style={styles.searchBar}>
           <div style={styles.searchItem} onClick={() => setOpenField(true)}>
-            <span style={styles.searchLabel}>⚽️🏀🎾</span>
+            <span style={styles.searchLabel}>👀</span>
             <span style={styles.searchValue}>
-              {selectedField?.name || '.. ¿Dónde?'}
+              {selectedField?.name || '   ¿Dónde?'}
             </span>
           </div>
 
@@ -92,7 +121,7 @@ export default function Header() {
           <div style={styles.searchItem} onClick={() => setOpenDate(true)}>
             <span style={styles.searchLabel}>📆</span>
             <span style={styles.searchValue}>
-              {date ? date.toLocaleDateString('es-CR') : '.. ¿Cuándo?'}
+              {date ? date.toLocaleDateString('es-CR') : '   ¿Cuándo?'}
             </span>
           </div>
 
@@ -101,15 +130,26 @@ export default function Header() {
           <div style={styles.searchItem} onClick={() => setOpenHour(true)}>
             <span style={styles.searchLabel}>🕣</span>
             <span style={styles.searchValue}>
-              {hour || '.. Hora'}
+              {hour || '   ¿Hora?'}
             </span>
           </div>
 
-          <button style={styles.searchBtn} onClick={search}>🔍</button>
+          {/* 🔥 PRO SEARCH BUTTON */}
+          <button style={styles.searchBtn} onClick={search}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M21 21L16.65 16.65M10 18C5.58 18 2 14.42 2 10C2 5.58 5.58 2 10 2C14.42 2 18 5.58 18 10C18 14.42 14.42 18 10 18Z"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
         </div>
       </div>
 
-      {/* ===== MODAL CANCHA ===== */}
+      {/* ===== MODALS (SIN CAMBIOS FUNCIONALES) ===== */}
+      {/* CANCHA */}
       {openField && (
         <Modal onClose={() => setOpenField(false)}>
           <h3 style={styles.modalTitle}>Seleccioná la cancha</h3>
@@ -136,27 +176,24 @@ export default function Header() {
         </Modal>
       )}
 
-      {/* ===== MODAL FECHA ===== */}
+      {/* FECHA */}
       {openDate && (
         <Modal onClose={() => setOpenDate(false)}>
           <h3 style={styles.modalTitle}>Elegí la fecha</h3>
-
-          <div style={styles.calendarWrapper}>
-            <DayPicker
-              mode="single"
-              selected={date}
-              disabled={{ before: new Date() }}
-              onSelect={(d) => {
-                setDate(d)
-                setHour(null)
-                setOpenDate(false)
-              }}
-            />
-          </div>
+          <DayPicker
+            mode="single"
+            selected={date}
+            disabled={{ before: new Date() }}
+            onSelect={(d) => {
+              setDate(d)
+              setHour(null)
+              setOpenDate(false)
+            }}
+          />
         </Modal>
       )}
 
-      {/* ===== MODAL HORA ===== */}
+      {/* HORA */}
       {openHour && (
         <Modal onClose={() => setOpenHour(false)}>
           <h3 style={styles.modalTitle}>Elegí la hora</h3>
@@ -180,44 +217,6 @@ export default function Header() {
           </div>
         </Modal>
       )}
-
-      {/* ===== DAYPICKER GLOBAL FIX (MOBILE + DESKTOP) ===== */}
-      <style jsx global>{`
-        .rdp {
-          --rdp-cell-size: 42px;
-          --rdp-caption-font-size: 14px;
-          --rdp-nav-button-width: 36px;
-          --rdp-nav-button-height: 36px;
-        }
-
-        .rdp-month {
-          width: 100%;
-        }
-
-        .rdp-table {
-          width: 100%;
-        }
-
-        .rdp-caption {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 12px;
-          font-weight: 600;
-        }
-
-        .rdp-nav_button {
-          border-radius: 999px;
-          background: #f3f4f6;
-          border: none;
-          cursor: pointer;
-        }
-
-        .rdp-nav_button:hover {
-          background: #e5e7eb;
-        }
-      `}</style>
     </>
   )
 }
@@ -235,35 +234,117 @@ function Modal({ children, onClose }: any) {
 
 /* ===== STYLES ===== */
 const styles: any = {
-  topBar: { position: 'sticky', top: 0, zIndex: 100, background: 'white', borderBottom: '1px solid #eee' },
-  topInner: { maxWidth: 1280, margin: '0 auto', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  topBar: {
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    background: 'white',
+    borderBottom: '1px solid #eee',
+    transition: 'transform 0.3s ease',
+  },
+  searchWrapper: {
+    position: 'sticky',
+    top: 64,
+    background: 'white',
+    padding: '12px 16px',
+    zIndex: 90,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+    transition: 'transform 0.3s ease',
+  },
+
+  topInner: {
+    maxWidth: 1280,
+    margin: '0 auto',
+    padding: '12px 16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
   logo: { cursor: 'pointer' },
 
-  primaryBtn: { padding: '8px 16px', borderRadius: 999, background: '#16a34a', color: 'white', border: 'none', fontWeight: 600 },
-  secondaryBtn: { padding: '8px 16px', borderRadius: 999, border: '1px solid #e5e7eb', background: 'white' },
+  primaryBtn: {
+    padding: '8px 18px',
+    borderRadius: 999,
+    background: '#16a34a',
+    color: 'white',
+    border: 'none',
+    fontWeight: 600,
+  },
+  secondaryBtn: {
+    padding: '8px 18px',
+    borderRadius: 999,
+    border: '1px solid #e5e7eb',
+    background: 'white',
+  },
 
-  searchWrapper: { position: 'sticky', top: 64, background: 'white', padding: '12px 16px', zIndex: 90, boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
-  searchBar: { maxWidth: 900, margin: '0 auto', borderRadius: 999, border: '1px solid #e5e7eb', padding: 10, display: 'flex', alignItems: 'center', gap: 8 },
+  searchBar: {
+    maxWidth: 900,
+    margin: '0 auto',
+    borderRadius: 999,
+    border: '1px solid #e5e7eb',
+    padding: 10,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+
   searchItem: { flex: 1, cursor: 'pointer' },
   searchLabel: { fontSize: 11, color: '#6b7280' },
   searchValue: { fontSize: 14, fontWeight: 500 },
-  divider: { width: 1, height: 32, background: 'white' },
+  divider: { width: 1, height: 32, background: '#e5e7eb' },
 
-  searchBtn: { width: 44, height: 44, borderRadius: '50%', border: 'none', background: '#16a34a', color: 'white', fontSize: 18 },
+  searchBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: '50%',
+    border: 'none',
+    background: '#16a34a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
 
-  modalBg: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 },
-  modal: { background: 'white', borderRadius: 20, padding: 24, width: '90%', maxWidth: 420 },
+  modalBg: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.4)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+  },
+  modal: {
+    background: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 420,
+  },
 
   modalTitle: { fontSize: 18, fontWeight: 600, marginBottom: 12 },
-  modalInput: { width: '100%', padding: 14, borderRadius: 14, border: '1px solid #e5e7eb', marginBottom: 14 },
-  listItem: { padding: 14, borderRadius: 14, border: '1px solid #f0f0f0', marginBottom: 8, cursor: 'pointer' },
+  modalInput: {
+    width: '100%',
+    padding: 14,
+    borderRadius: 14,
+    border: '1px solid #e5e7eb',
+    marginBottom: 14,
+  },
+  listItem: {
+    padding: 14,
+    borderRadius: 14,
+    border: '1px solid #f0f0f0',
+    marginBottom: 8,
+    cursor: 'pointer',
+  },
 
   hourGrid: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 },
-  hourItem: { padding: 14, borderRadius: 14, textAlign: 'center', cursor: 'pointer', fontWeight: 500 },
-
-  calendarWrapper: {
-    width: 320,
-    maxWidth: '100%',
-    margin: '0 auto',
+  hourItem: {
+    padding: 14,
+    borderRadius: 14,
+    textAlign: 'center',
+    cursor: 'pointer',
+    fontWeight: 500,
   },
 }

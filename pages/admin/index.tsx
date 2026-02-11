@@ -11,12 +11,11 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
-  ArcElement,
   Tooltip,
 } from 'chart.js';
 
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { Bar, Pie } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import type { ChartOptions } from 'chart.js';
 import * as XLSX from 'xlsx';
 
@@ -27,7 +26,6 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  ArcElement,
   Tooltip,
   ChartDataLabels
 );
@@ -39,11 +37,6 @@ const formatCRC = (v: number) => `₡${v.toLocaleString('es-CR')}`;
 
 const formatISO = (d?: Date) =>
   d ? d.toISOString().split('T')[0] : undefined;
-
-const generateColors = (count: number) =>
-  Array.from({ length: count }, (_, i) =>
-    `hsl(${(i * 360) / count}, 70%, 50%)`
-  );
 
 function normalizeField(f: any) {
   if (!f) return null;
@@ -129,7 +122,6 @@ export default function AdminDashboard() {
 
       const byDay: any = {};
       const byField: any = {};
-      const revenueByField: any = {};
       let totalRevenue = 0;
 
       filtered.forEach((b: any) => {
@@ -138,18 +130,12 @@ export default function AdminDashboard() {
 
         byDay[b.date] = (byDay[b.date] || 0) + 1;
         byField[field.name] = (byField[field.name] || 0) + 1;
-        revenueByField[field.name] =
-          (revenueByField[field.name] || 0) + field.price;
-
         totalRevenue += field.price ?? 0;
       });
 
-      const revenueLabels = Object.keys(revenueByField);
-      const revenueValues = Object.values(revenueByField);
-
       setCharts({
-        totalRevenue,
         totalBookings: filtered.length,
+        totalRevenue,
         activeFields: Object.keys(byField).length,
         bookingsByDay: {
           labels: Object.keys(byDay),
@@ -161,15 +147,6 @@ export default function AdminDashboard() {
           labels: Object.keys(byField),
           datasets: [
             { data: Object.values(byField), backgroundColor: '#2563eb' },
-          ],
-        },
-        revenueDistribution: {
-          labels: revenueLabels,
-          datasets: [
-            {
-              data: revenueValues,
-              backgroundColor: generateColors(revenueValues.length),
-            },
           ],
         },
       });
@@ -212,60 +189,56 @@ export default function AdminDashboard() {
       <main style={page}>
         <div style={container}>
 
-          {/* ================= FILTERS ================= */}
+          {/* ================= FILTROS ================= */}
           <section style={filterCard}>
             <h2 style={sectionTitle}>Filtros</h2>
 
             <div style={filterGrid}>
-            <FilterItem label="Desde">
-  <div style={{ position: 'relative' }}>
-    <CalendarButton
-      value={fromDate}
-      onClick={() =>
-        setOpenCalendar(openCalendar === 'from' ? null : 'from')
-      }
-    />
+              <FilterItem label="Desde">
+                <div style={{ position: 'relative' }}>
+                  <CalendarButton
+                    value={fromDate}
+                    onClick={() =>
+                      setOpenCalendar(openCalendar === 'from' ? null : 'from')
+                    }
+                  />
+                  {openCalendar === 'from' && (
+                    <CalendarPopover>
+                      <DayPicker
+                        mode="single"
+                        selected={fromDate}
+                        onSelect={(d) => {
+                          setFromDate(d);
+                          setOpenCalendar(null);
+                        }}
+                      />
+                    </CalendarPopover>
+                  )}
+                </div>
+              </FilterItem>
 
-    {openCalendar === 'from' && (
-      <CalendarPopover>
-        <DayPicker
-          mode="single"
-          selected={fromDate}
-          onSelect={(d) => {
-            setFromDate(d);
-            setOpenCalendar(null);
-          }}
-        />
-      </CalendarPopover>
-    )}
-  </div>
-</FilterItem>
-
-
-<FilterItem label="Hasta">
-  <div style={{ position: 'relative' }}>
-    <CalendarButton
-      value={toDate}
-      onClick={() =>
-        setOpenCalendar(openCalendar === 'to' ? null : 'to')
-      }
-    />
-
-    {openCalendar === 'to' && (
-      <CalendarPopover>
-        <DayPicker
-          mode="single"
-          selected={toDate}
-          onSelect={(d) => {
-            setToDate(d);
-            setOpenCalendar(null);
-          }}
-        />
-      </CalendarPopover>
-    )}
-  </div>
-</FilterItem>
-
+              <FilterItem label="Hasta">
+                <div style={{ position: 'relative' }}>
+                  <CalendarButton
+                    value={toDate}
+                    onClick={() =>
+                      setOpenCalendar(openCalendar === 'to' ? null : 'to')
+                    }
+                  />
+                  {openCalendar === 'to' && (
+                    <CalendarPopover>
+                      <DayPicker
+                        mode="single"
+                        selected={toDate}
+                        onSelect={(d) => {
+                          setToDate(d);
+                          setOpenCalendar(null);
+                        }}
+                      />
+                    </CalendarPopover>
+                  )}
+                </div>
+              </FilterItem>
 
               <FilterItem label="Canchas">
                 <div style={{ position: 'relative' }}>
@@ -315,22 +288,45 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          {/* ================= KPI ================= */}
-          <section style={kpiGrid}>
-            <Stat title="Reservas" value={charts.totalBookings} />
-            <Stat title="Ingresos" value={formatCRC(charts.totalRevenue)} />
-            <Stat
-              title="Ingreso promedio"
-              value={formatCRC(
-                charts.totalBookings
-                  ? charts.totalRevenue / charts.totalBookings
-                  : 0
-              )}
-            />
-            <Stat title="Canchas activas" value={charts.activeFields} />
-          </section>
+{/* ================= KPI ================= */}
+<section style={kpiGrid}>
+  <Stat title="Reservas" value={charts.totalBookings} />
 
-          {/* ================= CHARTS ================= */}
+  <Stat
+    title="Ingresos"
+    value={formatCRC(charts.totalRevenue)} />
+
+<Stat title="Ingreso promedio" value={formatCRC( charts.totalBookings ? charts.totalRevenue / charts.totalBookings : 0 )} />
+
+  <Stat title="Canchas activas" value={charts.activeFields} />
+
+  {/* 🆕 COMISIÓN REAL */}
+  <div style={stat}>
+    <p style={{ fontSize: 12 }}>Comisión GolPlay</p>
+
+    <p style={{ fontSize: 26, fontWeight: 600 }}>
+      {formatCRC(
+        Math.min(charts.totalBookings, 100) * 1500
+      )}
+    </p>
+
+    {charts.totalBookings >= 100 && (
+      <p style={{ fontSize: 12, color: '#16a34a' }}>
+        Comisión completada (100 reservas)
+      </p>
+    )}
+
+    <button
+      style={payBtn}
+      onClick={() => router.push('/admin/payments')}
+    >
+      Ir a pago
+    </button>
+  </div>
+</section>
+
+
+          {/* ================= GRÁFICOS ================= */}
           <div style={chartsGrid}>
             <ChartCard title="Reservas por día">
               <Bar data={charts.bookingsByDay} options={barOptions} />
@@ -338,10 +334,6 @@ export default function AdminDashboard() {
 
             <ChartCard title="Reservas por cancha">
               <Bar data={charts.bookingsByField} options={barOptions} />
-            </ChartCard>
-
-            <ChartCard title="Distribución de ingresos">
-              <Pie data={charts.revenueDistribution} options={pieOptions} />
             </ChartCard>
           </div>
 
@@ -414,11 +406,7 @@ const filterGrid = {
   alignItems: 'end',
 };
 
-const filterLabel = {
-  fontSize: 11,
-  color: '#6b7280',
-  marginBottom: 4,
-};
+const filterLabel = { fontSize: 11, color: '#6b7280', marginBottom: 4 };
 
 const calendarBtn = {
   width: '100%',
@@ -429,17 +417,18 @@ const calendarBtn = {
 };
 
 const calendarPopover = {
-  position: 'relative' as const,
+  position: 'absolute' as const,
   top: '110%',
+  left: 0,
   background: '#fff',
   borderRadius: 16,
-  boxShadow: '0 20px 40px rgba(0,0,0,.12)',
+  boxShadow: '0 20px 40px rgba(0,0,0,.15)',
   padding: 12,
-  zIndex: 50,
+  zIndex: 100,
 };
 
 const selectPopover = {
-  position: 'relative' as const,
+  position: 'absolute' as const,
   top: '110%',
   width: '100%',
   background: '#fff',
@@ -480,6 +469,18 @@ const chartsGrid = {
 const stat = { background: '#fff', padding: 22, borderRadius: 18 };
 const card = { background: '#fff', padding: 24, borderRadius: 18 };
 
+const payBtn = {
+  marginTop: 10,
+  width: '100%',
+  padding: '10px 14px',
+  borderRadius: 10,
+  border: 'none',
+  background: '#111827',
+  color: 'white',
+  fontSize: 13,
+  cursor: 'pointer',
+};
+
 /* ===================== */
 /* CHART OPTIONS */
 const barOptions: ChartOptions<'bar'> = {
@@ -496,22 +497,5 @@ const barOptions: ChartOptions<'bar'> = {
   scales: {
     x: { grid: { display: false } },
     y: { display: false },
-  },
-};
-
-const pieOptions: ChartOptions<'pie'> = {
-  plugins: {
-    legend: { position: 'bottom' },
-    datalabels: {
-      color: '#fff',
-      font: { weight: 'bold', size: 12 },
-      formatter: (v: number, ctx: any) => {
-        const total = ctx.chart.data.datasets[0].data.reduce(
-          (a: number, b: number) => a + b,
-          0
-        );
-        return `${((v / total) * 100).toFixed(1)}%`;
-      },
-    },
   },
 };

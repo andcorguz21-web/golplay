@@ -6,6 +6,7 @@ const links = [
   { label: 'Canchas', path: '/admin/fields' },
   { label: 'Reservas', path: '/admin/bookings' },
   { label: 'Calendario', path: '/admin/calendar' },
+  { label: 'Información', path: '/admin/business-model' },
   { label: 'Pagos', path: '/admin/payments' },
 ];
 

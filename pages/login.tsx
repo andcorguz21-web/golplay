@@ -24,7 +24,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // 1️⃣ Login
+      // 1️⃣ Login Auth
       const { data, error: loginError } =
         await supabase.auth.signInWithPassword({
           email,
@@ -46,12 +46,12 @@ export default function LoginPage() {
           .single();
 
       if (profileError || !profile) {
-        setError('No se pudo cargar el perfil del usuario');
+        setError('No se pudo cargar el perfil');
         setLoading(false);
         return;
       }
 
-      // 3️⃣ Redirección según rol
+      // 3️⃣ Redirección por rol
       if (profile.role === 'admin' || profile.role === 'owner') {
         router.replace('/admin');
       } else {
@@ -60,62 +60,62 @@ export default function LoginPage() {
 
     } catch (err) {
       console.error(err);
-      setError('Error inesperado, intentá nuevamente');
+      setError('Error inesperado');
     } finally {
       setLoading(false);
     }
   };
 
+  /* ===================== */
+  /* UI */
+  /* ===================== */
+
   return (
     <main style={container}>
       <div style={card}>
         <h1 style={title}>Acceso a tu negocio</h1>
-        <p style={subtitle}>
-          Iniciá sesión para administrar tus canchas
-        </p>
+        <p style={subtitle}>Ingresá para administrar tus canchas</p>
 
         <form onSubmit={handleLogin} style={{ marginTop: 24 }}>
-          {/* EMAIL */}
-          <div style={field}>
-            <label style={label}>Email</label>
+          <Field label="Email">
             <input
               type="email"
-              placeholder="correo@ejemplo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               style={input}
             />
-          </div>
+          </Field>
 
-          {/* PASSWORD */}
-          <div style={field}>
-            <label style={label}>Contraseña</label>
+          <Field label="Contraseña">
             <input
               type="password"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               style={input}
             />
-          </div>
+          </Field>
 
-          {/* ERROR */}
           {error && <div style={errorBox}>{error}</div>}
 
-          {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
             style={{
               ...button,
               backgroundColor: loading ? '#9ca3af' : '#16a34a',
-              cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
+
+          <p style={registerLink}>
+            ¿No tenés cuenta?{' '}
+            <span onClick={() => router.push('/register')}>
+              Crear cuenta
+            </span>
+          </p>
         </form>
       </div>
     </main>
@@ -123,69 +123,63 @@ export default function LoginPage() {
 }
 
 /* ===================== */
-/* STYLES */
-/* ===================== */
+/* UI HELPERS */
+const Field = ({ label, children }: any) => (
+  <div style={{ marginBottom: 14 }}>
+    <label style={labelStyle}>{label}</label>
+    {children}
+  </div>
+);
 
-const container: React.CSSProperties = {
+/* ===================== */
+/* STYLES */
+const container = {
   minHeight: '100vh',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: '#f7f7f7',
+  background: '#f9fafb',
   padding: 24,
 };
 
-const card: React.CSSProperties = {
+const card = {
   width: '100%',
   maxWidth: 420,
   background: 'white',
   borderRadius: 24,
-  padding: 100,
+  padding: 36,
   boxShadow: '0 15px 35px rgba(0,0,0,0.12)',
 };
 
-const title: React.CSSProperties = {
-  fontSize: 26,
-  fontWeight: 600,
-  marginBottom: 6,
-};
+const title = { fontSize: 26, fontWeight: 600 };
+const subtitle = { fontSize: 14, color: '#6b7280' };
 
-const subtitle: React.CSSProperties = {
-  fontSize: 14,
-  color: '#6b7280',
-};
-
-const field: React.CSSProperties = {
-  marginBottom: 16,
-};
-
-const label: React.CSSProperties = {
-  display: 'block',
+const labelStyle = {
   fontSize: 12,
   color: '#6b7280',
   marginBottom: 6,
+  display: 'block',
 };
 
-const input: React.CSSProperties = {
+const input = {
   width: '100%',
   padding: '12px 14px',
   borderRadius: 12,
   border: '1px solid #e5e7eb',
-  fontSize: 14,
 };
 
-const button: React.CSSProperties = {
+const button = {
   width: '100%',
-  marginTop: 16,
   padding: '14px 16px',
   borderRadius: 14,
   border: 'none',
   color: 'white',
   fontSize: 15,
   fontWeight: 500,
+  marginTop: 12,
 };
 
-const errorBox: React.CSSProperties = {
+const errorBox = {
   background: '#fee2e2',
   border: '1px solid #fecaca',
   color: '#7f1d1d',
@@ -193,4 +187,12 @@ const errorBox: React.CSSProperties = {
   borderRadius: 10,
   fontSize: 13,
   marginBottom: 12,
+};
+
+const registerLink = {
+  marginTop: 18,
+  fontSize: 13,
+  color: '#6b7280',
+  textAlign: 'center' as const,
+  cursor: 'pointer',
 };

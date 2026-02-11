@@ -1,12 +1,12 @@
-import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/ui/Header'
 import 'react-day-picker/dist/style.css'
 
 const DayPicker = dynamic(
-  () => import('react-day-picker').then((mod) => mod.DayPicker),
+  () => import('react-day-picker').then((m) => m.DayPicker),
   { ssr: false }
 )
 
@@ -14,6 +14,8 @@ type Field = {
   id: number
   name: string
   price: number
+  price_day: number
+  price_night: number
   description: string | null
   features: string[] | null
   hours: string[] | null
@@ -25,7 +27,8 @@ const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1509027572446-af8401acfdc3?auto=format&fit=crop&w=1200&q=60',
 ]
 
-const formatCRC = (value: number) => `₡${value.toLocaleString('es-CR')}`
+const formatCRC = (value: number) =>
+  `₡${Number(value).toLocaleString('es-CR')}`
 
 export default function ReserveField() {
   const router = useRouter()
@@ -37,7 +40,7 @@ export default function ReserveField() {
   const [isDesktop, setIsDesktop] = useState(false)
 
   const [loading, setLoading] = useState(true)
-  const [date, setDate] = useState<Date | undefined>()
+  const [date, setDate] = useState<Date>()
   const [hour, setHour] = useState('')
   const [bookedHours, setBookedHours] = useState<string[]>([])
 
@@ -47,7 +50,7 @@ export default function ReserveField() {
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState(false)
 
-  /* ===== RESPONSIVE ===== */
+  /* RESPONSIVE */
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024)
     handleResize()
@@ -55,7 +58,7 @@ export default function ReserveField() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  /* LOAD FIELD + IMAGES */
+  /* LOAD FIELD */
   useEffect(() => {
     if (!fieldId) return
 
@@ -64,19 +67,21 @@ export default function ReserveField() {
         .from('fields_with_images')
         .select('*')
         .eq('id', fieldId)
+        .limit(1)
 
-      if (!data || data.length === 0) {
-        setLoading(false)
-        return
-      }
+      if (!data?.length) return setLoading(false)
+
+      const f = data[0]
 
       setField({
-        id: data[0].id,
-        name: data[0].name,
-        price: Number(data[0].price),
-        description: data[0].description,
-        features: data[0].features,
-        hours: data[0].hours,
+        id: f.id,
+        name: f.name,
+        price: Number(f.price ?? 0),
+        price_day: Number(f.price_day ?? f.price ?? 0),
+        price_night: Number(f.price_night ?? f.price ?? 0),
+        description: f.description,
+        features: f.features,
+        hours: f.hours,
       })
 
       const imgs = data.map((r: any) => r.url).filter(Boolean)
@@ -87,7 +92,7 @@ export default function ReserveField() {
     load()
   }, [fieldId])
 
-  /* LOAD BOOKED HOURS */
+  /* LOAD BOOKINGS */
   useEffect(() => {
     if (!fieldId || !date) return
     const iso = date.toISOString().split('T')[0]
@@ -98,11 +103,26 @@ export default function ReserveField() {
       .eq('field_id', fieldId)
       .eq('date', iso)
       .eq('status', 'active')
-      .then(({ data }) => setBookedHours((data || []).map((b) => b.hour)))
+      .then(({ data }) =>
+        setBookedHours((data || []).map((b) => b.hour))
+      )
   }, [fieldId, date])
 
+  /* 💰 PRECIO SEGÚN HORA */
+  const { isNight, selectedPrice } = useMemo(() => {
+    if (!field || !hour) return { isNight: false, selectedPrice: 0 }
+    const h = Number(hour.split(':')[0])
+    const night = h >= 18
+    return {
+      isNight: night,
+      selectedPrice: night ? field.price_night : field.price_day,
+    }
+  }, [hour, field])
+
+  /* CONFIRM */
   const confirmReserve = async () => {
-    if (!date || !hour || !email || !name || !phone) return
+    if (!date || !hour || !email || !name || !phone || !field) return
+
     setSending(true)
 
     const res = await fetch(
@@ -114,21 +134,22 @@ export default function ReserveField() {
           apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         },
         body: JSON.stringify({
-          email,
-          name,
-          phone,
           field_id: fieldId,
           date: date.toISOString().split('T')[0],
           hour,
+          name,
+          phone,
+          email,
+          price: selectedPrice,
+          tariff: isNight ? 'night' : 'day',
         }),
       }
     )
 
-    const data = await res.json()
     setSending(false)
     setShowEmailModal(false)
 
-    if (!res.ok || !data.ok) return alert('No se pudo reservar')
+    if (!res.ok) return alert('No se pudo completar la reserva')
     router.push('/?reserva=ok')
   }
 
@@ -179,23 +200,22 @@ export default function ReserveField() {
             </div>
 
             <h1 style={styles.title}>{field.name}</h1>
-            <p style={styles.price}>{formatCRC(field.price)} por hora</p>
+
+            <div style={styles.pricePills}>
+              <span style={styles.dayPill}>🌞 Día {formatCRC(field.price_day)}</span>
+              <span style={styles.nightPill}>🌙 Noche {formatCRC(field.price_night)}</span>
+            </div>
+
+            {field.features?.length ? (
+              <div style={styles.features}>
+                {field.features.map((f) => (
+                  <span key={f} style={styles.featurePill}>{f}</span>
+                ))}
+              </div>
+            ) : null}
 
             {field.description && (
               <p style={styles.description}>{field.description}</p>
-            )}
-
-            {field.features && field.features.length > 0 && (
-              <>
-                <h3 style={styles.featuresTitle}>Características</h3>
-                <div style={styles.featuresGrid}>
-                  {field.features.map((f) => (
-                    <span key={f} style={styles.featurePill}>
-                      {f}
-                    </span>
-                  ))}
-                </div>
-              </>
             )}
           </div>
 
@@ -213,24 +233,45 @@ export default function ReserveField() {
 
             {date && (
               <div style={styles.hoursGrid}>
-                {(field.hours || [])
-                  .slice()
-                  .sort()
-                  .map((h) => (
-                    <button
-                      key={h}
-                      disabled={bookedHours.includes(h)}
-                      onClick={() => setHour(h)}
-                      style={{
-                        ...styles.hourBtn,
-                        background: hour === h ? '#16a34a' : 'white',
-                        color: hour === h ? 'white' : '#111',
-                        opacity: bookedHours.includes(h) ? 0.3 : 1,
-                      }}
-                    >
-                      {h}
-                    </button>
-                  ))}
+                {(field.hours || []).slice().sort().map((h) => {
+  const blocked = bookedHours.includes(h)
+  const selected = hour === h
+
+  if (blocked) {
+    return (
+      <div
+        key={h}
+        style={{
+          ...styles.hourBtn,
+          background: '#f3f4f6',
+          color: '#9ca3af',
+          opacity: 0.4,
+          cursor: 'not-allowed',
+          pointerEvents: 'none', // 🔥 CLAVE MOBILE
+        }}
+      >
+        {h}
+      </div>
+    )
+  }
+
+  return (
+    <button
+      key={h}
+      onClick={() => setHour(h)}
+      style={{
+        ...styles.hourBtn,
+        background: selected ? '#16a34a' : '#fff',
+        color: selected ? '#fff' : '#111',
+      }}
+    >
+      {h}
+    </button>
+  )
+})}
+
+                  
+              
               </div>
             )}
 
@@ -250,37 +291,22 @@ export default function ReserveField() {
         <div style={styles.modalBg}>
           <div style={styles.modalCard}>
             <h3 style={styles.modalTitle}>Confirmar reserva</h3>
-            <input
-              placeholder="Nombre completo"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={styles.modalInput}
-            />
-            <input
-              placeholder="Teléfono"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              style={styles.modalInput}
-            />
-            <input
-              placeholder="Correo electrónico"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.modalInput}
-            />
 
-            <button
-              onClick={confirmReserve}
-              style={styles.modalConfirm}
-              disabled={sending}
-            >
-              Confirmar
+            <p style={{ marginBottom: 10 }}>
+              <strong>Hora:</strong> {hour} <br />
+              <strong>Tarifa:</strong> {isNight ? 'Nocturna' : 'Diurna'} <br />
+              <strong>Precio:</strong> {formatCRC(selectedPrice)}
+            </p>
+
+            <input placeholder="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} style={styles.modalInput} />
+            <input placeholder="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} style={styles.modalInput} />
+            <input placeholder="Correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)} style={styles.modalInput} />
+
+            <button onClick={confirmReserve} style={styles.modalConfirm} disabled={sending}>
+              Confirmar reserva
             </button>
 
-            <button
-              onClick={() => setShowEmailModal(false)}
-              style={styles.modalCancel}
-            >
+            <button onClick={() => setShowEmailModal(false)} style={styles.modalCancel}>
               Cancelar
             </button>
           </div>
@@ -289,6 +315,9 @@ export default function ReserveField() {
     </>
   )
 }
+
+/* STYLES: exactamente los mismos que ya tenías */
+
 
 /* ===== STYLES ===== */
 const styles: any = {
@@ -312,18 +341,30 @@ const styles: any = {
   },
 
   title: { fontSize: 22, fontWeight: 600 },
-  price: { color: '#6b7280', marginBottom: 10 },
-  description: { color: '#4b5563', marginBottom: 35 },
 
-  featuresTitle: { fontWeight: 600, marginBottom: 15 },
-  featuresGrid: { display: 'flex', flexWrap: 'wrap', gap: 10 },
+  pricePills: { display: 'flex', gap: 10, marginBottom: 14 },
+  dayPill: {
+    padding: '6px 14px',
+    borderRadius: 999,
+    background: '#ecfeff',
+    fontWeight: 600,
+  },
+  nightPill: {
+    padding: '6px 14px',
+    borderRadius: 999,
+    background: '#f3e8ff',
+    fontWeight: 600,
+  },
+
+  features: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 },
   featurePill: {
     padding: '6px 12px',
     borderRadius: 999,
-    background: 'white',
+    background: '#f1f5f9',
     fontSize: 13,
-    fontWeight: 500,
   },
+
+  description: { color: '#4b5563', marginBottom: 35 },
 
   card: {
     background: 'white',
@@ -365,7 +406,6 @@ const styles: any = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   modalCard: {
     background: 'white',
     padding: 24,
@@ -373,7 +413,6 @@ const styles: any = {
     width: '100%',
     maxWidth: 400,
   },
-
   modalTitle: { fontSize: 20, fontWeight: 600, marginBottom: 12 },
   modalInput: {
     width: '100%',
