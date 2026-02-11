@@ -8,16 +8,18 @@ import AdminLayout from '@/components/ui/admin/AdminLayout';
 /* ===================== */
 
 type Field = {
-  id: number;
-  name: string;
-  price: number;
-  description?: string;
-  features?: string[];
-  hours?: string[];
-  location?: string;
-  monthly_statements?: {
-    status: string;
-  }[];
+  id: number
+  name: string
+  price: number
+  price_day?: number
+  price_night?: number
+  night_from_hour?: number
+  description?: string | null
+  features?: string[] | null
+  hours?: string[] | null
+  location?: string | null
+  active?: boolean
+  status?: string
 };
 
 type FieldImage = {
