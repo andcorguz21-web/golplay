@@ -1,6 +1,9 @@
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 
+/* 👇 Agregamos tipo Role */
+type Role = 'admin' | 'owner' | null;
+
 const links = [
   { label: 'Dashboard', path: '/admin' },
   { label: 'Canchas', path: '/admin/fields' },
@@ -10,7 +13,13 @@ const links = [
   { label: 'Pagos', path: '/admin/payments' },
 ];
 
-export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
+export default function AdminSidebar({
+  role, // 👈 ahora sí lo recibe
+  onClose,
+}: {
+  role: Role;
+  onClose?: () => void;
+}) {
   const router = useRouter();
 
   const logout = async () => {
