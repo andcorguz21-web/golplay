@@ -32,8 +32,13 @@ export default function BusinessModel() {
   const progress = Math.min((bookingsCounted / COMMISSION_LIMIT) * 100, 100)
 
   if (loading) {
-    return <AdminLayout />
+    return (
+      <AdminLayout>
+        <div style={{ padding: 40 }} />
+      </AdminLayout>
+    )
   }
+  
 
   return (
     <AdminLayout>
