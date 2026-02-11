@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import BookingModal from '@/components/ui/admin/BookingModal';
 
+function parseLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+
 type Booking = {
   id: number;
   date: string;
@@ -74,7 +80,8 @@ export default function DailyCalendar({ selectedDate }: Props) {
         </h2>
 
         <p style={{ fontSize: 14, color: '#6b7280' }}>
-          {new Date(selectedDate).toLocaleDateString('es-CR', {
+        {parseLocalDate(selectedDate).toLocaleDateString('es-CR', {
+
             weekday: 'long',
             day: 'numeric',
             month: 'long',

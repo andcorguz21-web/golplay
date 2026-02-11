@@ -9,6 +9,14 @@ import WeeklyCalendar from './week';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
+function formatLocalDate(d: Date) {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+
 /* ===================== */
 /* COMPONENT */
 /* ===================== */
@@ -64,10 +72,15 @@ export default function AdminCalendar() {
                       selected={selectedDate}
                       onSelect={(date) => {
                         if (!date) return;
-                        date.setHours(0, 0, 0, 0);
-                        setSelectedDate(date);
+                        const localDate = new Date(
+                          date.getFullYear(),
+                          date.getMonth(),
+                          date.getDate()
+                        );
+                        setSelectedDate(localDate);
                         setOpenCalendar(false);
                       }}
+                      
                     />
                   </div>
                 )}
@@ -95,11 +108,13 @@ export default function AdminCalendar() {
           {/* VIEW */}
           {view === 'daily' ? (
             <DailyCalendar
-              selectedDate={selectedDate.toISOString().split('T')[0]}
+            selectedDate={formatLocalDate(selectedDate)}
+
             />
           ) : (
             <WeeklyCalendar
-              selectedDate={selectedDate.toISOString().split('T')[0]}
+            selectedDate={formatLocalDate(selectedDate)}
+
             />
           )}
         </div>

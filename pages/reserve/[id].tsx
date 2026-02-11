@@ -92,21 +92,31 @@ export default function ReserveField() {
     load()
   }, [fieldId])
 
-  /* LOAD BOOKINGS */
-  useEffect(() => {
-    if (!fieldId || !date) return
-    const iso = date.toISOString().split('T')[0]
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  
 
-    supabase
-      .from('bookings')
-      .select('hour')
-      .eq('field_id', fieldId)
-      .eq('date', iso)
-      .eq('status', 'active')
-      .then(({ data }) =>
-        setBookedHours((data || []).map((b) => b.hour))
-      )
-  }, [fieldId, date])
+/* LOAD BOOKINGS */
+useEffect(() => {
+  if (!fieldId || !date) return
+
+  const iso = formatLocalDate(date)
+
+  supabase
+    .from('bookings')
+    .select('hour')
+    .eq('field_id', fieldId)
+    .eq('date', iso)
+    .eq('status', 'active')
+    .then(({ data }) =>
+      setBookedHours((data || []).map((b) => b.hour))
+    )
+}, [fieldId, date])
+
 
   /* 💰 PRECIO SEGÚN HORA */
   const { isNight, selectedPrice } = useMemo(() => {
