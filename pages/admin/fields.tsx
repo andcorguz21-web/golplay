@@ -20,6 +20,9 @@ type Field = {
   location?: string | null
   active?: boolean
   status?: string
+  monthly_statements?: {
+    status: string
+  }[] | null
 };
 
 type FieldImage = {
