@@ -1,13 +1,12 @@
 export const dynamic = 'force-dynamic'
 
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 
 import AdminLayout from '@/components/ui/admin/AdminLayout';
-import DailyCalendar from './daily';
-import WeeklyCalendar from './week';
+import DailyCalendar from '../../../components/ui/admin/daily';
+import WeeklyCalendar from '../../../components/ui/admin/week';
 
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
