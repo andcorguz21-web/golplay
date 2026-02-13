@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 
-/* ===================== */
-/* COMPONENT */
-/* ===================== */
-
 export default function LoginPage() {
   const router = useRouter();
 
@@ -33,7 +29,6 @@ export default function LoginPage() {
 
       if (loginError || !data.user) {
         setError('Credenciales incorrectas');
-        setLoading(false);
         return;
       }
 
@@ -47,7 +42,6 @@ export default function LoginPage() {
 
       if (profileError || !profile) {
         setError('No se pudo cargar el perfil');
-        setLoading(false);
         return;
       }
 
@@ -65,10 +59,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  /* ===================== */
-  /* UI */
-  /* ===================== */
 
   return (
     <main style={container}>
@@ -109,6 +99,20 @@ export default function LoginPage() {
           >
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
+
+          {/* 🔐 RECUPERAR CONTRASEÑA */}
+          <p
+            style={{
+              marginTop: 12,
+              cursor: 'pointer',
+              color: '#16a34a',
+              textAlign: 'center',
+              fontSize: 13,
+            }}
+            onClick={() => router.push('/forgot-password')}
+          >
+            ¿Olvidaste tu contraseña?
+          </p>
 
           <p style={registerLink}>
             ¿No tenés cuenta?{' '}
