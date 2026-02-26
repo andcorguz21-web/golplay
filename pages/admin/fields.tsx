@@ -20,6 +20,7 @@ interface Field {
   hours?: string[] | null
   location?: string | null
   active?: boolean
+  owner_id?: string
   monthly_statements?: { status: string }[] | null
 }
 
@@ -152,19 +153,21 @@ export default function AdminFields() {
 
   // ── Load fields ─────────────────────────────────────────────────────────────
   const loadFields = useCallback(async () => {
+    if (!userId) return
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('fields')
       .select('*, monthly_statements(status)')
+      .eq('owner_id', userId)   // ✅ scoped a las canchas del owner logueado
       .order('id')
-    setFields(data || [])
+    if (!error && data) setFields(data)
     setLoading(false)
-  }, [])
+  }, [userId])
 
-  useEffect(() => { loadFields() }, [loadFields])
+  useEffect(() => { if (userId) loadFields() }, [loadFields, userId])
 
   const isBlocked = (f: Field) =>
-    f.monthly_statements?.some(s => s.status === 'overdue') ?? false
+    f.monthly_statements?.some(s => s.status === 'pending') ?? false
 
   // ── Gallery ─────────────────────────────────────────────────────────────────
   const loadGallery = useCallback(async (fieldId: number) => {
@@ -252,7 +255,7 @@ export default function AdminFields() {
 
   // ── Toggle active ───────────────────────────────────────────────────────────
   const toggleActive = async (field: Field) => {
-    if (isBlocked(field)) { showToast('Cancha bloqueada por deuda pendiente', false); return }
+    if (isBlocked(field)) { showToast('Cancha bloqueada: estado de cuenta pendiente de pago', false); return }
     setTogglingId(field.id)
     const { error } = await supabase.from('fields').update({ active: !field.active }).eq('id', field.id)
     setTogglingId(null)
@@ -300,7 +303,7 @@ export default function AdminFields() {
   }
 
   const openEdit = async (field: Field) => {
-    if (isBlocked(field)) { showToast('Cancha bloqueada por deuda pendiente', false); return }
+    if (isBlocked(field)) { showToast('Cancha bloqueada: estado de cuenta pendiente de pago', false); return }
     resetForm()
     setEditingId(field.id)
     setFName(field.name)
