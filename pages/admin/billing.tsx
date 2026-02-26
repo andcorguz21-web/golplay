@@ -15,6 +15,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
+import type { CSSProperties } from 'react'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
 import {
   CheckCircle, Clock, AlertCircle, XCircle, CreditCard,
@@ -121,7 +122,7 @@ const STATUS_CFG: Record<PaymentStatus, {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-const S = {
+const S: any = {
   page: {
     background: '#f8fafc',
     minHeight: '100vh',
@@ -131,11 +132,11 @@ const S = {
 
   header: {
     display: 'flex', justifyContent: 'space-between',
-    alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 28,
+    alignItems: 'flex-start', flexWrap: 'wrap' as const, gap: 16, marginBottom: 28,
   },
   h1: { fontSize: 24, fontWeight: 700, color: '#0f172a', margin: 0 },
   headerSub: { fontSize: 13, color: '#94a3b8', marginTop: 4, marginBottom: 0 },
-  headerActions: { display: 'flex', gap: 8, flexWrap: 'wrap' },
+  headerActions: { display: 'flex', gap: 8, flexWrap: 'wrap' as const },
 
   btnPrimary: {
     display: 'flex', alignItems: 'center', gap: 7,
@@ -822,7 +823,7 @@ export default function BillingPage() {
 
             {/* Footer */}
             {!loading && statements.length > 0 && (
-              <div style={{ padding: '12px 20px', borderTop: '1px solid #f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ padding: '12px 20px', borderTop: '1px solid #f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: 8 }}>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
                   {statements.length} estado{statements.length !== 1 ? 's' : ''} de cuenta
                 </span>
