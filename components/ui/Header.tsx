@@ -727,7 +727,9 @@ export default function Header() {
                 user={user}
                 dropdownOpen={dropdownOpen}
                 setDropdownOpen={setDropdownOpen}
-                dropdownRef={dropdownRef}
+                {
+                  dropdownRef: React.RefObject<HTMLDivElement | null>
+                }
                 onSignOut={handleSignOut}
                 router={router}
               />
