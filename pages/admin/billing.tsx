@@ -121,7 +121,7 @@ const STATUS_CFG: Record<PaymentStatus, {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-const S: Record<string, React.CSSProperties> = {
+const S = {
   page: {
     background: '#f8fafc',
     minHeight: '100vh',
