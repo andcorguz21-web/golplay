@@ -62,7 +62,7 @@ export default function Header() {
 
   // User dropdown
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
 
   // Search state
   const [activePanel, setActivePanel] = useState<ActivePanel>(null)
@@ -724,15 +724,13 @@ export default function Header() {
           <div className="hdr__actions hdr__actions--desktop">
             {user ? (
               <AuthenticatedActions
-                user={user}
-                dropdownOpen={dropdownOpen}
-                setDropdownOpen={setDropdownOpen}
-                {
-                  dropdownRef: React.RefObject<HTMLDivElement | null>
-                }
-                onSignOut={handleSignOut}
-                router={router}
-              />
+              user={user}
+              dropdownOpen={dropdownOpen}
+              setDropdownOpen={setDropdownOpen}
+              dropdownRef={dropdownRef}
+              onSignOut={handleSignOut}
+              router={router}
+            />
             ) : (
               <>
                 <button className="btn btn--ghost" onClick={() => router.push('/login')}>Iniciar sesión</button>
@@ -1134,7 +1132,7 @@ function AuthenticatedActions({
   user: User
   dropdownOpen: boolean
   setDropdownOpen: (v: boolean) => void
-  dropdownRef: React.RefObject<HTMLDivElement>
+  dropdownRef: React.RefObject<HTMLDivElement | null>
   onSignOut: () => void
   router: ReturnType<typeof useRouter>
 }) {
