@@ -49,7 +49,7 @@ type View = 'daily' | 'weekly'
 interface Field { id: string; name: string }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const S: Record<string, React.CSSProperties> = {
+const S: any = {
   page: {
     background: '#f8fafc',
     minHeight: '100vh',
