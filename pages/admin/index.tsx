@@ -26,7 +26,7 @@ import {
   getSportEmoji, getSportLabel,
   formatMoney, formatMoneyShort,
   USD_RATES, LATAM_COUNTRIES,
-} from '@/pages/sports'
+} from '@/sports'
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,

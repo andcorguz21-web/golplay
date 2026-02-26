@@ -20,7 +20,7 @@ import {
   REGIONS_BY_COUNTRY,
   formatMoney,
   type CountryCode,
-} from '@/pages/sports'
+} from '@/sports'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
