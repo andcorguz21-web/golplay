@@ -37,7 +37,7 @@ export interface MapEmbedProps {
 import dynamic from 'next/dynamic'
 
 const MapEmbedClient = dynamic(
-  () => import('./MapEmbedClient'),
+  () => import('../../components/ui/MapEmbedClient'),
   {
     ssr: false,
     loading: () => (
