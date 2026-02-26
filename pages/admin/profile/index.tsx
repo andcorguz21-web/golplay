@@ -69,7 +69,7 @@ function commissionLabel(currency: string) {
   if (!country) return '— / reserva'
   // Usamos USD_RATES para convertir $1 USD
   try {
-    const { USD_RATES } = require('@/lib/sports')
+    const { USD_RATES } = require('@/§+sports')
     const rate = USD_RATES[currency] ?? 1
     return `${formatMoney(rate, currency)} / reserva`
   } catch {
