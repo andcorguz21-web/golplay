@@ -46,31 +46,14 @@ interface Statement {
 type PayStep = 'confirm' | 'processing' | 'success' | 'error'
 
 // ─── dLocal Integration Layer (Mock — ready for real SDK) ─────────────────────
-/**
- * INTEGRACIÓN dLocal — INSTRUCCIONES:
- *
- * 1. Instalar: npm install @dlocal/dlocal-js
- * 2. Reemplazar `mockDLocalCharge` con llamada real a tu backend:
- *    POST /api/payments/dlocal/create-payment
- *    { amount, currency, statementId, fieldId }
- * 3. Tu backend llama a dLocal API con tu API key secreta
- * 4. Retorna { paymentId, redirectUrl } o { success: true } si es directo
- * 5. El frontend redirige o muestra confirmación
- *
- * Flujo típico dLocal:
- *   Frontend → POST backend → dLocal API → webhook → update DB → Frontend polling
- */
 async function mockDLocalCharge(params: {
   amount: number
   currency: string
   statementId: string
   fieldId: number
 }): Promise<{ success: boolean; transactionId?: string; error?: string }> {
-  // Simula latencia de red y procesamiento
   await new Promise(r => setTimeout(r, 2200))
-
-  // En producción: fetch('/api/payments/dlocal/charge', { method: 'POST', body: JSON.stringify(params) })
-  const simulateSuccess = Math.random() > 0.15 // 85% success rate simulado
+  const simulateSuccess = Math.random() > 0.15
   if (simulateSuccess) {
     return {
       success: true,
@@ -117,6 +100,17 @@ const STATUS_CFG: Record<PaymentStatus, {
   failed:     { label: 'Fallido',    color: '#b91c1c', bg: '#fef2f2', border: '#fecaca', Icon: XCircle },
   processing: { label: 'Procesando', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe', Icon: Loader2 },
 }
+
+// ─── Skeleton helper (fuera del objeto S para evitar error de tipos) ───────────
+const skel = (h = 16, w: string | number = '60%'): React.CSSProperties => ({
+  height: h,
+  width: w,
+  background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
+  backgroundSize: '200% 100%',
+  borderRadius: 6,
+  animation: 'pulse 1.5s infinite',
+  display: 'block',
+})
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
@@ -198,19 +192,19 @@ const S: Record<string, React.CSSProperties> = {
   cardSub: { fontSize: 12, color: '#94a3b8', marginTop: 2, marginBottom: 0 },
 
   // Table
-  table: { width: '100%', borderCollapse: 'collapse' as const },
+  table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     padding: '12px 16px', fontSize: 11, fontWeight: 600,
-    color: '#94a3b8', textTransform: 'uppercase' as const,
-    letterSpacing: '0.07em', textAlign: 'left' as const,
+    color: '#94a3b8', textTransform: 'uppercase',
+    letterSpacing: '0.07em', textAlign: 'left',
     background: '#f8fafc', borderBottom: '1px solid #f1f5f9',
   },
   td: {
     padding: '14px 16px', fontSize: 13, color: '#374151',
-    borderBottom: '1px solid #f8fafc', verticalAlign: 'middle' as const,
+    borderBottom: '1px solid #f8fafc', verticalAlign: 'middle',
   },
 
-  // Mobile card (for small screens)
+  // Mobile card
   mobileCard: {
     border: '1px solid #f1f5f9', borderRadius: 14,
     padding: 16, marginBottom: 12, background: '#fff',
@@ -218,7 +212,7 @@ const S: Record<string, React.CSSProperties> = {
 
   // Empty state
   empty: {
-    display: 'flex', flexDirection: 'column' as const,
+    display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
     padding: '56px 24px', color: '#94a3b8', gap: 12,
   },
@@ -230,18 +224,9 @@ const S: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
 
-  // Skeleton
-  skel: (h = 16, w: string | number = '60%') => ({
-    height: h, width: w,
-    background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
-    backgroundSize: '200% 100%',
-    borderRadius: 6, animation: 'pulse 1.5s infinite',
-    display: 'block',
-  }),
-
   // Modal overlay
   overlay: {
-    position: 'fixed' as const, inset: 0,
+    position: 'fixed', inset: 0,
     background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 999, padding: 20,
@@ -250,7 +235,7 @@ const S: Record<string, React.CSSProperties> = {
     background: '#fff', borderRadius: 20, padding: 32,
     width: '100%', maxWidth: 460,
     boxShadow: '0 20px 60px rgba(0,0,0,.2)',
-    position: 'relative' as const,
+    position: 'relative',
   },
   modalTitle: { fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' },
   modalSub: { fontSize: 13, color: '#64748b', marginBottom: 20 },
@@ -315,8 +300,8 @@ function KPICard({
       </div>
       {loading ? (
         <>
-          <span style={S.skel(26, '50%')} />
-          <span style={{ ...S.skel(12, '70%'), marginTop: 8 }} />
+          <span style={skel(26, '50%')} />
+          <span style={{ ...skel(12, '70%'), marginTop: 8 }} />
         </>
       ) : (
         <>
@@ -355,8 +340,6 @@ function PaymentModal({
       })
 
       if (result.success && result.transactionId) {
-        // En producción: el backend ya actualizó el status vía webhook
-        // Aquí hacemos optimistic update como fallback
         await supabase
           .from('monthly_statements')
           .update({ status: 'paid', paid_at: new Date().toISOString(), transaction_id: result.transactionId })
@@ -685,12 +668,12 @@ export default function BillingPage() {
               <div style={{ padding: '16px 20px' }}>
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
-                    <span style={S.skel(14, '12%')} />
-                    <span style={S.skel(14, '18%')} />
-                    <span style={S.skel(14, '10%')} />
-                    <span style={S.skel(14, '12%')} />
-                    <span style={S.skel(22, '80px')} />
-                    <span style={{ ...S.skel(28, '70px'), marginLeft: 'auto' }} />
+                    <span style={skel(14, '12%')} />
+                    <span style={skel(14, '18%')} />
+                    <span style={skel(14, '10%')} />
+                    <span style={skel(14, '12%')} />
+                    <span style={skel(22, '80px')} />
+                    <span style={{ ...skel(28, '70px'), marginLeft: 'auto' }} />
                   </div>
                 ))}
               </div>
