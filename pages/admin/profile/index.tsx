@@ -17,7 +17,6 @@ import AdminLayout from '@/components/ui/admin/AdminLayout'
 import type { Role } from '@/components/ui/admin/AdminLayout'
 import {
   LATAM_COUNTRIES,
-  REGIONS_BY_COUNTRY,
   formatMoney,
   type CountryCode,
 } from '@/sports'
@@ -27,13 +26,12 @@ import {
 interface Profile {
   id: string
   role: Role
-  full_name: string
+  first_name: string
+  last_name: string
   phone: string
   country: CountryCode | ''
   currency: string
   complex_name: string
-  complex_province: string   // reutilizamos la columna existente para la región
-  complex_description: string
   created_at: string
   email: string
 }
@@ -67,9 +65,8 @@ function fDate(iso: string) {
 function commissionLabel(currency: string) {
   const country = LATAM_COUNTRIES.find(c => c.currency === currency)
   if (!country) return '— / reserva'
-  // Usamos USD_RATES para convertir $1 USD
   try {
-    const { USD_RATES } = require('@/§+sports')
+    const { USD_RATES } = require('@/sports')
     const rate = USD_RATES[currency] ?? 1
     return `${formatMoney(rate, currency)} / reserva`
   } catch {
@@ -91,15 +88,14 @@ export default function AdminProfile() {
   const [activeTab, setActiveTab] = useState<'identity' | 'complex' | 'security' | 'account'>('identity')
 
   // Form — identidad
-  const [fName,    setFName]    = useState('')
-  const [fPhone,   setFPhone]   = useState('')
+  const [fFirstName, setFFirstName] = useState('')
+  const [fLastName,  setFLastName]  = useState('')
+  const [fPhone,     setFPhone]     = useState('')
 
   // Form — complejo
   const [fCountry,     setFCountry]     = useState<CountryCode | ''>('')
   const [fCurrency,    setFCurrency]    = useState('')
   const [fComplexName, setFComplexName] = useState('')
-  const [fRegion,      setFRegion]      = useState('')
-  const [fComplexDesc, setFComplexDesc] = useState('')
 
   // Password
   const [pw,       setPw]       = useState<PasswordForm>({ current: '', next: '', confirm: '' })
@@ -115,13 +111,11 @@ export default function AdminProfile() {
 
   // ── Derived: país seleccionado ───────────────────────────────────────────────
   const selectedCountry = LATAM_COUNTRIES.find(c => c.code === fCountry) ?? null
-  const regionOptions   = fCountry ? (REGIONS_BY_COUNTRY[fCountry] ?? []) : []
   const phonePrefix     = selectedCountry?.phonePrefix ?? '+506'
 
   // Auto-sincroniza moneda cuando cambia el país
   const handleCountryChange = (code: CountryCode | '') => {
     setFCountry(code)
-    setFRegion('')
     if (code) {
       const country = LATAM_COUNTRIES.find(c => c.code === code)
       if (country) setFCurrency(country.currency)
@@ -141,27 +135,25 @@ export default function AdminProfile() {
         .single()
 
       const merged: Profile = {
-        id:                  user.id,
-        role:               (p?.role ?? 'owner') as Role,
-        full_name:           p?.full_name ?? user.user_metadata?.full_name ?? '',
-        phone:               p?.phone ?? '',
-        country:             (p?.country ?? '') as CountryCode | '',
-        currency:            p?.currency ?? 'CRC',
-        complex_name:        p?.complex_name ?? '',
-        complex_province:    p?.complex_province ?? '',
-        complex_description: p?.complex_description ?? '',
-        created_at:          user.created_at,
-        email:               user.email ?? '',
+        id:           user.id,
+        role:         (p?.role ?? 'owner') as Role,
+        first_name:   p?.first_name ?? user.user_metadata?.first_name ?? '',
+        last_name:    p?.last_name  ?? user.user_metadata?.last_name  ?? '',
+        phone:        p?.phone ?? '',
+        country:      (p?.country ?? '') as CountryCode | '',
+        currency:     p?.currency ?? 'CRC',
+        complex_name: p?.complex_name ?? '',
+        created_at:   user.created_at,
+        email:        user.email ?? '',
       }
 
       setProfile(merged)
-      setFName(merged.full_name)
+      setFFirstName(merged.first_name)
+      setFLastName(merged.last_name)
       setFPhone(merged.phone)
       setFCountry(merged.country)
       setFCurrency(merged.currency)
       setFComplexName(merged.complex_name)
-      setFRegion(merged.complex_province)
-      setFComplexDesc(merged.complex_description)
       setLoading(false)
 
       // Stats para owners
@@ -198,27 +190,30 @@ export default function AdminProfile() {
     setSaving(true)
 
     const payload: Record<string, string> = {
-      full_name: fName.trim(),
-      phone:     fPhone.trim(),
+      first_name: fFirstName.trim(),
+      last_name:  fLastName.trim(),
+      phone:      fPhone.trim(),
+      country:    fCountry,
+      currency:   fCurrency,
     }
     if (profile.role === 'owner') {
-      payload.country             = fCountry
-      payload.currency            = fCurrency
-      payload.complex_name        = fComplexName.trim()
-      payload.complex_province    = fRegion          // columna existente
-      payload.complex_description = fComplexDesc.trim()
+      payload.complex_name = fComplexName.trim()
     }
 
-    const { error } = await supabase.from('profiles').upsert({
-      id:   profile.id,
-      role: profile.role,
-      ...payload,
-    }, { onConflict: 'id' })
+    const { error } = await supabase
+      .from('profiles')
+      .update(payload)
+      .eq('id', profile.id)
 
-    await supabase.auth.updateUser({ data: { full_name: fName.trim() } })
+    await supabase.auth.updateUser({
+      data: {
+        first_name: fFirstName.trim(),
+        last_name:  fLastName.trim(),
+      },
+    })
 
     setSaving(false)
-    if (error) { showToast('Error al guardar perfil', false); return }
+    if (error) { showToast(`Error al guardar: ${error.message}`, false); return }
     setProfile(prev => prev ? { ...prev, ...payload } : prev)
     showToast('Perfil actualizado ✓')
   }
@@ -258,8 +253,9 @@ export default function AdminProfile() {
     )
   }
 
-  const isOwner = profile.role === 'owner'
-  const initials = getInitials(profile.full_name || profile.email)
+  const isOwner  = profile.role === 'owner'
+  const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ')
+  const initials = getInitials(fullName || profile.email)
 
   const TABS = [
     { id: 'identity', label: 'Mi identidad', icon: '👤' },
@@ -315,7 +311,7 @@ export default function AdminProfile() {
               </span>
             </div>
             <div className="p-hero__info">
-              <h1 className="p-hero__name">{profile.full_name || 'Sin nombre'}</h1>
+              <h1 className="p-hero__name">{fullName || 'Sin nombre'}</h1>
               <p className="p-hero__email">{profile.email}</p>
               <div className="p-hero__badges">
                 <span className={`p-badge p-badge--${profile.role}`}>
@@ -388,12 +384,20 @@ export default function AdminProfile() {
             {activeTab === 'identity' && (
               <Section title="Mi identidad" sub="Tu nombre y datos de contacto visibles en el panel">
                 <div className="p-grid2">
-                  <PField label="Nombre completo" hint="Como querés aparecer en el sistema">
+                  <PField label="Nombre" hint="Tu nombre de pila">
                     <input
                       className="p-input"
-                      placeholder="Ej: Carlos Rodríguez"
-                      value={fName}
-                      onChange={e => setFName(e.target.value)}
+                      placeholder="Ej: Carlos"
+                      value={fFirstName}
+                      onChange={e => setFFirstName(e.target.value)}
+                    />
+                  </PField>
+                  <PField label="Apellido" hint="Tu apellido">
+                    <input
+                      className="p-input"
+                      placeholder="Ej: Rodríguez"
+                      value={fLastName}
+                      onChange={e => setFLastName(e.target.value)}
                     />
                   </PField>
                   <PField label="Email" hint="No puede ser modificado directamente">
@@ -450,32 +454,6 @@ export default function AdminProfile() {
                     </select>
                   </PField>
 
-                  {/* Región / Estado / Provincia */}
-                  <PField
-                    label={selectedCountry ? `${selectedCountry.regionLabel ?? 'Región'} / Estado` : 'Provincia / Estado'}
-                    hint="Ubicación principal del complejo"
-                  >
-                    {regionOptions.length > 0 ? (
-                      <select
-                        className="p-input"
-                        value={fRegion}
-                        onChange={e => setFRegion(e.target.value)}
-                        disabled={!fCountry}
-                      >
-                        <option value="">Seleccioná una opción</option>
-                        {regionOptions.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    ) : (
-                      <input
-                        className="p-input"
-                        placeholder={fCountry ? 'Ingresá tu región' : 'Primero seleccioná un país'}
-                        value={fRegion}
-                        disabled={!fCountry}
-                        onChange={e => setFRegion(e.target.value)}
-                      />
-                    )}
-                  </PField>
-
                   {/* Moneda */}
                   <PField label="Moneda" hint="Se usa para precios y reportes">
                     <div className="p-currency-row">
@@ -498,15 +476,6 @@ export default function AdminProfile() {
                     </div>
                   </PField>
                 </div>
-
-                <PField label="Descripción del complejo" hint="Se muestra en el perfil público del marketplace">
-                  <textarea
-                    className="p-input p-textarea"
-                    placeholder="Describí tu complejo, instalaciones, servicios adicionales, etc."
-                    value={fComplexDesc}
-                    onChange={e => setFComplexDesc(e.target.value)}
-                  />
-                </PField>
 
                 <div className="p-callout p-callout--info">
                   <span>ℹ️</span>

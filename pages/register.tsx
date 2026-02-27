@@ -44,7 +44,7 @@ const COUNTRIES = [
   { code: 'CL', label: '🇨🇱 Chile',         currency: 'CLP' },
   { code: 'PE', label: '🇵🇪 Perú',          currency: 'PEN' },
   { code: 'GT', label: '🇬🇹 Guatemala',     currency: 'GTQ' },
-  { code: 'US', label: '🇺🇸 Estados Unidos',currency: 'USD' },
+  { code: 'PA', label: '🇵🇦 Panamá',        currency: 'USD' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -239,9 +239,8 @@ export default function RegisterPage() {
         }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 64 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>⚽</div>
-              <span style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.03em' }}>GolPlay</span>
+            <div style={{ marginBottom: 64 }}>
+              <img src="/logo-golplay.svg" alt="GolPlay" style={{ height: 150, width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' }} />
             </div>
             <h2 style={{ fontSize: 34, fontWeight: 900, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.04em', fontFamily: 'Outfit, sans-serif', marginBottom: 20 }}>
               El marketplace<br />deportivo<br />de LATAM
@@ -270,9 +269,8 @@ export default function RegisterPage() {
           <div style={{ width: '100%', maxWidth: 440, animation: 'fadeUp .5s ease both' }}>
 
             {/* Mobile logo */}
-            <div className="mobile-logo" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32, justifyContent: 'center' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>⚽</div>
-              <span style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif' }}>GolPlay</span>
+            <div className="mobile-logo" style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+              <img src="/logo-golplay.svg" alt="GolPlay" style={{ height: 36, width: 'auto', display: 'block' }} />
             </div>
 
             <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', fontFamily: 'Outfit, sans-serif', marginBottom: 6 }}>Crear cuenta</h1>

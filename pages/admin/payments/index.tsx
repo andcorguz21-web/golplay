@@ -500,6 +500,109 @@ function exportStatements(statements: Statement[]) {
   a.click()
 }
 
+// ─── Download Receipt (client-side HTML → print/PDF) ──────────────────────────
+function downloadReceipt(s: Statement) {
+  const period   = `${monthName(s.month)} ${s.year}`
+  const paidDate = s.paid_at ? formatDate(s.paid_at) : '—'
+  const txId     = s.transaction_id ?? '—'
+  const concept  = typeLabel[s.type ?? 'commission']
+  const amount   = formatCRC(s.amount_due)
+  const receiptNo = `GP-${s.year}${String(s.month).padStart(2,'0')}-${s.id.slice(0,6).toUpperCase()}`
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Comprobante ${receiptNo} — GolPlay</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0f172a;padding:48px;max-width:680px;margin:0 auto}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:40px}
+    .logo-icon{width:40px;height:40px;background:#16a34a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:900;line-height:1}
+    .logo-text{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.03em}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:24px;border-bottom:2px solid #f1f5f9}
+    .title{font-size:28px;font-weight:700;color:#0f172a;margin-bottom:4px}
+    .subtitle{font-size:13px;color:#64748b}
+    .badge-paid{display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;margin-top:8px}
+    .section-title{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #f1f5f9;border-radius:12px;overflow:hidden;margin-bottom:28px}
+    .info-item{padding:14px 18px;border-bottom:1px solid #f8fafc}
+    .info-item:nth-child(odd){border-right:1px solid #f8fafc}
+    .info-item:nth-last-child(-n+2){border-bottom:none}
+    .info-label{font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:3px}
+    .info-value{font-size:14px;font-weight:600;color:#0f172a}
+    .total-box{background:#f8fafc;border-radius:12px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+    .total-label{font-size:15px;color:#374151}
+    .total-amount{font-size:28px;font-weight:800;color:#0f172a}
+    .tx-box{background:#f1f5f9;border-radius:10px;padding:12px 16px;font-family:monospace;font-size:11px;color:#64748b;margin-bottom:32px;word-break:break-all}
+    .tx-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .footer{text-align:center;font-size:11px;color:#cbd5e1;border-top:1px solid #f1f5f9;padding-top:20px;line-height:1.7}
+    @media print{body{padding:24px}@page{margin:15mm}}
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <div class="logo-icon">⚽</div>
+    <span class="logo-text">GolPlay</span>
+  </div>
+
+  <div class="header">
+    <div>
+      <div class="title">Comprobante de pago</div>
+      <div class="subtitle">N° ${receiptNo}</div>
+      <div class="badge-paid">✓ Pago confirmado</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Fecha de emisión</div>
+      <div style="font-size:14px;font-weight:600">${new Date().toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Detalle del cobro</div>
+  <div class="info-grid">
+    <div class="info-item"><div class="info-label">Período</div><div class="info-value">${period}</div></div>
+    <div class="info-item"><div class="info-label">Concepto</div><div class="info-value">${concept}</div></div>
+    <div class="info-item"><div class="info-label">Reservas cobradas</div><div class="info-value">${s.reservations_count}</div></div>
+    <div class="info-item"><div class="info-label">Fecha de pago</div><div class="info-value">${paidDate}</div></div>
+    <div class="info-item"><div class="info-label">Fecha de vencimiento</div><div class="info-value">${formatDate(s.due_date)}</div></div>
+    <div class="info-item"><div class="info-label">Método</div><div class="info-value">${s.payment_method ?? 'Tarjeta (dLocal)'}</div></div>
+  </div>
+
+  <div class="total-box">
+    <span class="total-label">Total pagado</span>
+    <span class="total-amount">${amount}</span>
+  </div>
+
+  <div class="section-title">ID de transacción</div>
+  <div class="tx-box">
+    <div class="tx-label">Referencia dLocal</div>
+    ${txId}
+  </div>
+
+  <div class="footer">
+    GolPlay — Marketplace de canchas deportivas en LATAM<br/>
+    Este comprobante es válido como constancia de pago. Para consultas: soporte@golplay.com<br/>
+    golplay.com · Todos los derechos reservados ${new Date().getFullYear()}
+  </div>
+</body>
+</html>`
+
+  // Abre en nueva pestaña → el usuario puede guardar como PDF con Ctrl+P / Cmd+P
+  const win = window.open('', '_blank', 'width=780,height=900')
+  if (!win) {
+    // Fallback: si el navegador bloquea popups, descarga como archivo .html
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+    a.download = `comprobante-${receiptNo}.html`
+    a.click()
+    return
+  }
+  win.document.write(html)
+  win.document.close()
+  // Pequeño delay para que el navegador renderice antes de abrir el diálogo de impresión
+  setTimeout(() => { win.focus(); win.print() }, 350)
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function BillingPage() {
   const router = useRouter()
@@ -736,7 +839,7 @@ export default function BillingPage() {
                             {s.status === 'paid' && (
                               <button
                                 style={S.btnOutline}
-                                onClick={() => {/* TODO: generate PDF receipt */}}
+                                onClick={() => downloadReceipt(s)}
                                 title="Descargar comprobante"
                               >
                                 <Download size={12} />
@@ -790,7 +893,10 @@ export default function BillingPage() {
                         </button>
                       )}
                       {s.status === 'paid' && (
-                        <button style={{ ...S.btnOutline, width: '100%', justifyContent: 'center' }}>
+                        <button
+                          style={{ ...S.btnOutline, width: '100%', justifyContent: 'center' }}
+                          onClick={() => downloadReceipt(s)}
+                        >
                           <Download size={12} />
                           Descargar comprobante
                         </button>

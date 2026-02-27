@@ -35,7 +35,7 @@ ChartJS.register(
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BookingStatus = 'active' | 'confirmed' | 'pending' | 'cancelled'
+type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show'
 
 interface Field {
   id: number
@@ -971,10 +971,11 @@ const mainLineOpts: ChartOptions<'line'> = {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    active:    { label: 'Confirmada', cls: 'ok'   },
-    confirmed: { label: 'Confirmada', cls: 'ok'   },
-    pending:   { label: 'Pendiente',  cls: 'warn' },
-    cancelled: { label: 'Cancelada',  cls: 'err'  },
+    confirmed: { label: 'Confirmada', cls: 'ok'       },
+    pending:   { label: 'Pendiente',  cls: 'warn'     },
+    cancelled: { label: 'Cancelada',  cls: 'err'      },
+    completed: { label: 'Completada', cls: 'info'     },
+    no_show:   { label: 'No asistió', cls: 'noshow'   },
   }
   const { label, cls } = map[status] ?? { label: status, cls: 'ok' }
   return <span className={`gp-badge gp-badge--${cls}`}>{label}</span>
@@ -1442,9 +1443,11 @@ const CSS = `
   font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
   text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
 }
-.gp-badge--ok   { background: #dcfce7; color: #15803d; }
-.gp-badge--warn { background: #fef9c3; color: #854d0e; }
-.gp-badge--err  { background: #fee2e2; color: #991b1b; }
+.gp-badge--ok     { background: #dcfce7; color: #15803d; }
+.gp-badge--warn   { background: #fef9c3; color: #854d0e; }
+.gp-badge--err    { background: #fee2e2; color: #991b1b; }
+.gp-badge--info   { background: #eff6ff; color: #1d4ed8; }
+.gp-badge--noshow { background: #fef2f2; color: #b91c1c; }
 
 /* Ranking */
 .gp-ranking { display: flex; flex-direction: column; gap: 14px; padding: 4px 20px 20px; }

@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BookingStatus = 'active' | 'pending' | 'cancelled' | 'confirmed'
+type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show'
 type TabId   = 'all' | 'upcoming' | 'today' | 'past' | 'cancelled'
 type SortKey = 'date' | 'field' | 'client' | 'price'
 type SortDir = 'asc' | 'desc'
@@ -31,9 +31,6 @@ interface Booking {
   customer_last_name?: string
   customer_phone?: string
   customer_email?: string
-  name?: string
-  email?: string
-  phone?: string
   hasConflict?: boolean
 }
 
@@ -50,15 +47,16 @@ const SPORT_ICON: Record<string, string> = {
 }
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  active:    { label: 'Activa',     cls: 'b-badge--active' },
   confirmed: { label: 'Confirmada', cls: 'b-badge--active' },
   pending:   { label: 'Pendiente',  cls: 'b-badge--pending' },
   cancelled: { label: 'Cancelada',  cls: 'b-badge--cancelled' },
+  completed: { label: 'Completada', cls: 'b-badge--completed' },
+  no_show:   { label: 'No asistió', cls: 'b-badge--noshow' },
 }
 
 function clientName(b: Booking) {
-  const first = b.customer_name || b.name || ''
-  const last  = b.customer_last_name || ''
+  const first = b.customer_name ?? ''
+  const last  = b.customer_last_name ?? ''
   return `${first} ${last}`.trim() || null
 }
 
@@ -146,7 +144,7 @@ export default function AdminBookings() {
 
     let q = supabase
       .from('bookings')
-      .select('id, date, hour, status, price, source, field_id, name, email, phone, customer_name, customer_last_name, customer_phone, customer_email')
+      .select('id, date, hour, status, price, source, field_id, customer_name, customer_last_name, customer_phone, customer_email')
       .in('field_id', fieldIds)
       .order('date', { ascending: false })
       .order('hour', { ascending: true })
@@ -178,9 +176,6 @@ export default function AdminBookings() {
         customer_last_name: b.customer_last_name,
         customer_phone:     b.customer_phone,
         customer_email:     b.customer_email,
-        name:               b.name,
-        email:              b.email,
-        phone:              b.phone,
       }
     })
 
@@ -220,8 +215,8 @@ export default function AdminBookings() {
       Hora:     b.hour,
       Estado:   STATUS_CFG[b.status]?.label ?? b.status,
       Cliente:  clientName(b) ?? '—',
-      Teléfono: b.customer_phone || b.phone || '—',
-      Email:    b.customer_email || b.email || '—',
+      Teléfono: b.customer_phone ?? '—',
+      Email:    b.customer_email ?? '—',
       Precio:   b.price ?? '',
       Fuente:   b.source ?? '',
     }))
@@ -259,8 +254,8 @@ export default function AdminBookings() {
       r = r.filter(b =>
         (clientName(b) ?? '').toLowerCase().includes(q) ||
         b.fieldName.toLowerCase().includes(q) ||
-        (b.customer_email || b.email || '').toLowerCase().includes(q) ||
-        (b.customer_phone || b.phone || '').includes(q)
+        (b.customer_email ?? '').toLowerCase().includes(q) ||
+        (b.customer_phone ?? '').includes(q)
       )
     }
     r.sort((a, b) => {
@@ -366,9 +361,11 @@ export default function AdminBookings() {
 
           <select className="bk-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="all">Todos los estados</option>
-            <option value="active">Activa</option>
+            <option value="confirmed">Confirmada</option>
             <option value="pending">Pendiente</option>
             <option value="cancelled">Cancelada</option>
+            <option value="completed">Completada</option>
+            <option value="no_show">No asistió</option>
           </select>
 
           <div className="bk-daterange">
@@ -806,6 +803,8 @@ const CSS = `
 .b-badge--active    { background:#dcfce7; color:#15803d; }
 .b-badge--pending   { background:#fef9c3; color:#854d0e; }
 .b-badge--cancelled { background:#f1f5f9; color:#64748b; }
+.b-badge--completed { background:#eff6ff; color:#1d4ed8; }
+.b-badge--noshow    { background:#fef2f2; color:#b91c1c; }
 
 .bk-act { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; border:1.5px solid #e2e8f0; background:white; cursor:pointer; transition:all .12s; color:#64748b; margin-left:4px; }
 .bk-act:hover { transform:scale(1.08); }
