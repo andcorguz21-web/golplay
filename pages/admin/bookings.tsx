@@ -457,7 +457,7 @@ export default function AdminBookings() {
             <div className="bk-modal__av">{clientInitial(detail)}</div>
             <div style={{ flex: 1 }}>
               <h3 className="bk-modal__name">{clientName(detail) ?? `Reserva #${detail.id}`}</h3>
-              <p className="bk-modal__sub">{detail.customer_email || detail.email || '—'}</p>
+              <p className="bk-modal__sub">{detail.customer_email || '—'}</p>
             </div>
             <span className={`b-badge ${STATUS_CFG[detail.status]?.cls ?? ''}`}>
               {STATUS_CFG[detail.status]?.label ?? detail.status}
@@ -475,8 +475,8 @@ export default function AdminBookings() {
             <DetailRow icon="📅" label="Fecha"    value={fmtDate(detail.date)}/>
             <DetailRow icon="🕐" label="Hora"     value={detail.hour}/>
             <DetailRow icon="💰" label="Precio"   value={fCRC(detail.price)}/>
-            <DetailRow icon="📱" label="Teléfono" value={detail.customer_phone || detail.phone || '—'}/>
-            <DetailRow icon="📧" label="Email"    value={detail.customer_email || detail.email || '—'}/>
+            <DetailRow icon="📱" label="Teléfono" value={detail.customer_phone || '—'}/>
+<DetailRow icon="📧" label="Email"    value={detail.customer_email || '—'}/>
             <DetailRow icon="🔌" label="Fuente"   value={detail.source ?? '—'}/>
             <DetailRow icon="🔢" label="ID"       value={`#${detail.id}`}/>
           </div>
@@ -567,7 +567,7 @@ function BookingRow({ booking: b, today, acting, onDetail, onAction }: {
           <div className="bk-av">{clientInitial(b)}</div>
           <div>
             <p className="bk-td__cname">{clientName(b) ?? `Reserva #${b.id}`}</p>
-            <p className="bk-td__cemail">{b.customer_email || b.email || ''}</p>
+            <p className="bk-td__cemail">{b.customer_email || ''}</p>
           </div>
         </div>
       </td>
