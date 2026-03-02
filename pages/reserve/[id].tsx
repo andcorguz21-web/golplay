@@ -33,17 +33,18 @@ import { supabase }         from '@/lib/supabase'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Field = {
-  id:          number
-  name:        string
-  sport:       string | null
-  location:    string
-  description: string | null
-  features:    string[] | null
-  hours:       string[] | null
-  price_day:   number
-  price_night: number
-  latitude:    number | null
-  longitude:   number | null
+  id:              number
+  name:            string
+  sport:           string | null
+  location:        string
+  description:     string | null
+  features:        string[] | null
+  hours:           string[] | null
+  price_day:       number
+  price_night:     number
+  night_from_hour: number   // hora desde la que aplica tarifa nocturna (ej: 18)
+  latitude:        number | null
+  longitude:       number | null
 }
 
 type BookingStatus = 'idle' | 'sending' | 'success' | 'error'
@@ -82,7 +83,7 @@ const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) => `₡${Number(n).toLocaleString('es-CR')}`
-const isNightHour = (h: string) => Number(h.split(':')[0]) >= 18
+const isNightHour = (h: string, nightFrom: number = 18) => Number(h.split(':')[0]) >= nightFrom
 
 const dateToStr = (d: Date) => {
   const y = d.getFullYear()
@@ -597,6 +598,15 @@ export default function ReserveField() {
   const [formErrors,   setFormErrors]   = useState<Record<string, string>>({})
   const [status,       setStatus]       = useState<BookingStatus>('idle')
 
+  // ── Booking hold ───────────────────────────────────────────────────────────
+  const sessionToken = useRef<string>(
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  )
+  const [holdSecondsLeft, setHoldSecondsLeft] = useState<number | null>(null)
+  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const heroRef  = useRef<HTMLDivElement>(null)
 
   // ── Load field ─────────────────────────────────────────────────────────────
@@ -608,8 +618,9 @@ export default function ReserveField() {
         const [{ data: fieldData, error: fe }, { data: imgs }] = await Promise.all([
           supabase
             .from('fields')
-            .select('id,name,sport,location,description,features,hours,price_day,price_night,latitude,longitude')
+            .select('id,name,sport,location,description,features,hours,price_day,price_night,night_from_hour,latitude,longitude')
             .eq('id', fieldId)
+            .eq('active', true)
             .single(),
           supabase
             .from('field_images')
@@ -627,7 +638,8 @@ export default function ReserveField() {
           features:    Array.isArray(fieldData.features) ? fieldData.features : null,
           hours:       Array.isArray(fieldData.hours) ? fieldData.hours : null,
           price_day:   Number(fieldData.price_day  ?? 0),
-          price_night: Number(fieldData.price_night ?? 0),
+          price_night:     Number(fieldData.price_night ?? 0),
+          night_from_hour: Number(fieldData.night_from_hour ?? 18),
           latitude:    fieldData.latitude  ?? null,
           longitude:   fieldData.longitude ?? null,
         })
@@ -647,7 +659,7 @@ export default function ReserveField() {
       .select('hour')
       .eq('field_id', fieldId)
       .eq('date', selDate)
-      .eq('status', 'confirmed')
+      .in('status', ['confirmed', 'pending'])
       .then(({ data, error }) => {
         setBookedHours(error ? [] : (data || []).map((b: any) => b.hour))
         setLoadingHours(false)
@@ -657,7 +669,7 @@ export default function ReserveField() {
   // ── Derived values ─────────────────────────────────────────────────────────
   const { isNight, price } = useMemo(() => {
     if (!field || !selHour) return { isNight: false, price: 0 }
-    const night = isNightHour(selHour)
+    const night = isNightHour(selHour, field.night_from_hour)
     return { isNight: night, price: night ? field.price_night : field.price_day }
   }, [selHour, field])
 
@@ -665,10 +677,86 @@ export default function ReserveField() {
   const sortedHours = useMemo(() => [...(field?.hours || [])].sort(), [field])
   const dateDisplay = selDate ? formatDisplay(selDate) : ''
 
+  // ── Booking hold helpers ──────────────────────────────────────────────────
+
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearInterval(holdTimerRef.current)
+      holdTimerRef.current = null
+    }
+    setHoldSecondsLeft(null)
+  }, [])
+
+  const startHoldTimer = useCallback((expiresAt: string) => {
+    clearHoldTimer()
+    const tick = () => {
+      const diff = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
+      if (diff <= 0) {
+        clearHoldTimer()
+        // Hold expiró — liberar selección para que el usuario sepa que debe re-seleccionar
+        setSelHour('')
+        setHoldSecondsLeft(null)
+      } else {
+        setHoldSecondsLeft(diff)
+      }
+    }
+    tick()
+    holdTimerRef.current = setInterval(tick, 1000)
+  }, [clearHoldTimer])
+
+  const createHold = useCallback(async (fId: number, date: string, hour: string) => {
+    if (!fId || !date || !hour) return
+    try {
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+      const { error } = await supabase
+        .from('booking_holds')
+        .upsert({
+          field_id:      fId,
+          date,
+          hour,
+          session_token: sessionToken.current,
+          expires_at:    expiresAt,
+        }, { onConflict: 'field_id,date,hour' })
+      if (!error) startHoldTimer(expiresAt)
+    } catch {
+      // Hold falla silenciosamente — el único guard real es el UNIQUE index en bookings
+    }
+  }, [startHoldTimer])
+
+  const releaseHold = useCallback(async (fId: number, date: string, hour: string) => {
+    if (!fId || !date || !hour) return
+    clearHoldTimer()
+    try {
+      await supabase
+        .from('booking_holds')
+        .delete()
+        .eq('field_id',      fId)
+        .eq('date',          date)
+        .eq('hour',          hour)
+        .eq('session_token', sessionToken.current)
+    } catch { /* silencioso */ }
+  }, [clearHoldTimer])
+
+  // Limpiar hold/timer al desmontar
+  useEffect(() => {
+    return () => { clearHoldTimer() }
+  }, [clearHoldTimer])
+
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleDateChange = useCallback((d: string) => {
+    // Liberar hold del slot anterior si había uno
+    if (selDate && selHour && fieldId) releaseHold(fieldId, selDate, selHour)
     setSelDate(d); setSelHour('')
-  }, [])
+    clearHoldTimer()
+  }, [selDate, selHour, fieldId, releaseHold, clearHoldTimer])
+
+  const handleHourSelect = useCallback((h: string) => {
+    if (!fieldId || !selDate) return
+    // Liberar hold anterior si cambia de hora
+    if (selHour && selHour !== h) releaseHold(fieldId, selDate, selHour)
+    setSelHour(h)
+    createHold(fieldId, selDate, h)
+  }, [fieldId, selDate, selHour, releaseHold, createHold])
 
   const openModal = () => {
     setFormErrors({}); setStatus('idle'); setShowModal(true)
@@ -676,6 +764,10 @@ export default function ReserveField() {
 
   const handleConfirm = async () => {
     if (!selDate || !selHour || !field || !fieldId) return
+    // Validar que la fecha no sea pasada
+    const today = new Date(); today.setHours(0,0,0,0)
+    const [sy,sm,sd] = selDate.split("-").map(Number)
+    if (new Date(sy, sm-1, sd) < today) { setStatus("error"); return }
     const errs = validateForm(name, phone, email)
     if (Object.keys(errs).length) { setFormErrors(errs); return }
     setStatus('sending')
@@ -705,6 +797,7 @@ export default function ReserveField() {
         throw new Error(body?.message || 'Error al crear la reserva')
       }
       setStatus('success')
+      clearHoldTimer()  // el slot ya está confirmado, liberar timer
       setTimeout(() => router.push('/?reserva=ok'), 1800)
     } catch { setStatus('error') }
   }
@@ -903,7 +996,7 @@ export default function ReserveField() {
                     <p style={{ fontFamily: 'var(--font-h)', fontSize: 28, fontWeight: 800, color: '#065f46', lineHeight: 1, marginBottom: 6 }}>
                       {fmt(field.price_day)}
                     </p>
-                    <p style={{ fontSize: 12, color: '#047857', fontWeight: 500 }}>06:00 – 17:59 h</p>
+                    <p style={{ fontSize: 12, color: '#047857', fontWeight: 500 }}>06:00 – {String(field.night_from_hour - 1).padStart(2,'0')}:59 h</p>
                   </div>
                   {/* Night rate */}
                   <div style={{
@@ -919,7 +1012,7 @@ export default function ReserveField() {
                     <p style={{ fontFamily: 'var(--font-h)', fontSize: 28, fontWeight: 800, color: '#4c1d95', lineHeight: 1, marginBottom: 6 }}>
                       {fmt(field.price_night)}
                     </p>
-                    <p style={{ fontSize: 12, color: '#5b21b6', fontWeight: 500 }}>18:00 – 22:00 h</p>
+                    <p style={{ fontSize: 12, color: '#5b21b6', fontWeight: 500 }}>{String(field.night_from_hour).padStart(2,'0')}:00 – 22:00 h</p>
                   </div>
                 </div>
                 {/* No-advance note */}
@@ -1028,7 +1121,7 @@ export default function ReserveField() {
                       <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--g700)', fontFamily: 'var(--font-h)' }}>
                         📅 {dateDisplay}
                       </span>
-                      <button type="button" onClick={() => { setSelDate(''); setSelHour('') }}
+                      <button type="button" onClick={() => { if (selHour && fieldId) releaseHold(fieldId, selDate, selHour); setSelDate(''); setSelHour('') }}
                         style={{ fontSize: 11, color: '#ef4444', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                         ✕ Cambiar
                       </button>
@@ -1070,11 +1163,11 @@ export default function ReserveField() {
                         {sortedHours.map(h => {
                           const blocked  = bookedHours.includes(h)
                           const selected = selHour === h
-                          const night    = isNightHour(h)
+                          const night    = isNightHour(h, field?.night_from_hour)
                           return (
                             <button key={h} type="button"
                               disabled={blocked}
-                              onClick={() => setSelHour(h)}
+                              onClick={() => handleHourSelect(h)}
                               className={`hour-btn${selected ? (night ? ' night-sel' : ' sel') : ''}`}
                               aria-label={`${h}${blocked ? ', ocupado' : ''}`}
                               aria-pressed={selected}
@@ -1090,6 +1183,52 @@ export default function ReserveField() {
                         })}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* ── Hold countdown ─────────────────────────────────────── */}
+                {holdSecondsLeft !== null && selHour && (
+                  <div style={{
+                    marginTop: 12,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 14px', borderRadius: 12,
+                    background: holdSecondsLeft <= 60
+                      ? 'linear-gradient(135deg,#fef2f2,#fee2e2)'
+                      : 'linear-gradient(135deg,#fffbeb,#fef3c7)',
+                    border: `1px solid ${holdSecondsLeft <= 60 ? '#fecaca' : '#fde68a'}`,
+                    animation: 'fadeUp .25s ease',
+                  }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>
+                      {holdSecondsLeft <= 60 ? '⚠️' : '⏳'}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{
+                        fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700,
+                        letterSpacing: '.06em', textTransform: 'uppercase',
+                        color: holdSecondsLeft <= 60 ? '#b91c1c' : '#92400e',
+                        marginBottom: 1,
+                      }}>
+                        {holdSecondsLeft <= 60 ? 'Slot reservado por' : 'Reservado por'}
+                      </p>
+                      <p style={{
+                        fontSize: 13, fontWeight: 700,
+                        color: holdSecondsLeft <= 60 ? '#dc2626' : '#d97706',
+                      }}>
+                        {Math.floor(holdSecondsLeft / 60)}:{String(holdSecondsLeft % 60).padStart(2,'0')} min
+                      </p>
+                    </div>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%',
+                      background: holdSecondsLeft <= 60 ? '#fecaca' : '#fde68a',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke={holdSecondsLeft <= 60 ? '#b91c1c' : '#92400e'} strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                      </svg>
+                    </div>
                   </div>
                 )}
 

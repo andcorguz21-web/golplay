@@ -15,7 +15,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
-import type { CSSProperties } from 'react'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
 import {
   CheckCircle, Clock, AlertCircle, XCircle, CreditCard,
@@ -47,31 +46,14 @@ interface Statement {
 type PayStep = 'confirm' | 'processing' | 'success' | 'error'
 
 // ─── dLocal Integration Layer (Mock — ready for real SDK) ─────────────────────
-/**
- * INTEGRACIÓN dLocal — INSTRUCCIONES:
- *
- * 1. Instalar: npm install @dlocal/dlocal-js
- * 2. Reemplazar `mockDLocalCharge` con llamada real a tu backend:
- *    POST /api/payments/dlocal/create-payment
- *    { amount, currency, statementId, fieldId }
- * 3. Tu backend llama a dLocal API con tu API key secreta
- * 4. Retorna { paymentId, redirectUrl } o { success: true } si es directo
- * 5. El frontend redirige o muestra confirmación
- *
- * Flujo típico dLocal:
- *   Frontend → POST backend → dLocal API → webhook → update DB → Frontend polling
- */
 async function mockDLocalCharge(params: {
   amount: number
   currency: string
   statementId: string
   fieldId: number
 }): Promise<{ success: boolean; transactionId?: string; error?: string }> {
-  // Simula latencia de red y procesamiento
   await new Promise(r => setTimeout(r, 2200))
-
-  // En producción: fetch('/api/payments/dlocal/charge', { method: 'POST', body: JSON.stringify(params) })
-  const simulateSuccess = Math.random() > 0.15 // 85% success rate simulado
+  const simulateSuccess = Math.random() > 0.15
   if (simulateSuccess) {
     return {
       success: true,
@@ -82,10 +64,7 @@ async function mockDLocalCharge(params: {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const formatCRC = (v: number, currency = 'CRC') => {
-  const symbols: Record<string, string> = { CRC: '₡', USD: '$', MXN: '$', COP: '$', PEN: 'S/', CLP: '$', ARS: '$' }
-  return `${symbols[currency] ?? '₡'}${Number(v).toLocaleString('es-CR', { maximumFractionDigits: 0 })}`
-}
+const fmt = (v: number) => `$${Number(v).toFixed(2)}`
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -121,8 +100,19 @@ const STATUS_CFG: Record<PaymentStatus, {
   processing: { label: 'Procesando', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe', Icon: Loader2 },
 }
 
+// ─── Skeleton helper (fuera del objeto S para evitar error de tipos) ───────────
+const skel = (h = 16, w: string | number = '60%'): React.CSSProperties => ({
+  height: h,
+  width: w,
+  background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
+  backgroundSize: '200% 100%',
+  borderRadius: 6,
+  animation: 'pulse 1.5s infinite',
+  display: 'block',
+})
+
 // ─── Styles ────────────────────────────────────────────────────────────────────
-const S: any = {
+const S: Record<string, React.CSSProperties> = {
   page: {
     background: '#f8fafc',
     minHeight: '100vh',
@@ -132,11 +122,11 @@ const S: any = {
 
   header: {
     display: 'flex', justifyContent: 'space-between',
-    alignItems: 'flex-start', flexWrap: 'wrap' as const, gap: 16, marginBottom: 28,
+    alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 28,
   },
   h1: { fontSize: 24, fontWeight: 700, color: '#0f172a', margin: 0 },
   headerSub: { fontSize: 13, color: '#94a3b8', marginTop: 4, marginBottom: 0 },
-  headerActions: { display: 'flex', gap: 8, flexWrap: 'wrap' as const },
+  headerActions: { display: 'flex', gap: 8, flexWrap: 'wrap' },
 
   btnPrimary: {
     display: 'flex', alignItems: 'center', gap: 7,
@@ -201,19 +191,19 @@ const S: any = {
   cardSub: { fontSize: 12, color: '#94a3b8', marginTop: 2, marginBottom: 0 },
 
   // Table
-  table: { width: '100%', borderCollapse: 'collapse' as const },
+  table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     padding: '12px 16px', fontSize: 11, fontWeight: 600,
-    color: '#94a3b8', textTransform: 'uppercase' as const,
-    letterSpacing: '0.07em', textAlign: 'left' as const,
+    color: '#94a3b8', textTransform: 'uppercase',
+    letterSpacing: '0.07em', textAlign: 'left',
     background: '#f8fafc', borderBottom: '1px solid #f1f5f9',
   },
   td: {
     padding: '14px 16px', fontSize: 13, color: '#374151',
-    borderBottom: '1px solid #f8fafc', verticalAlign: 'middle' as const,
+    borderBottom: '1px solid #f8fafc', verticalAlign: 'middle',
   },
 
-  // Mobile card (for small screens)
+  // Mobile card
   mobileCard: {
     border: '1px solid #f1f5f9', borderRadius: 14,
     padding: 16, marginBottom: 12, background: '#fff',
@@ -221,7 +211,7 @@ const S: any = {
 
   // Empty state
   empty: {
-    display: 'flex', flexDirection: 'column' as const,
+    display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
     padding: '56px 24px', color: '#94a3b8', gap: 12,
   },
@@ -233,18 +223,9 @@ const S: any = {
     justifyContent: 'center',
   },
 
-  // Skeleton
-  skel: (h = 16, w: string | number = '60%') => ({
-    height: h, width: w,
-    background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
-    backgroundSize: '200% 100%',
-    borderRadius: 6, animation: 'pulse 1.5s infinite',
-    display: 'block',
-  }),
-
   // Modal overlay
   overlay: {
-    position: 'fixed' as const, inset: 0,
+    position: 'fixed', inset: 0,
     background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 999, padding: 20,
@@ -253,7 +234,7 @@ const S: any = {
     background: '#fff', borderRadius: 20, padding: 32,
     width: '100%', maxWidth: 460,
     boxShadow: '0 20px 60px rgba(0,0,0,.2)',
-    position: 'relative' as const,
+    position: 'relative',
   },
   modalTitle: { fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' },
   modalSub: { fontSize: 13, color: '#64748b', marginBottom: 20 },
@@ -318,8 +299,8 @@ function KPICard({
       </div>
       {loading ? (
         <>
-          <span style={S.skel(26, '50%')} />
-          <span style={{ ...S.skel(12, '70%'), marginTop: 8 }} />
+          <span style={skel(26, '50%')} />
+          <span style={{ ...skel(12, '70%'), marginTop: 8 }} />
         </>
       ) : (
         <>
@@ -352,14 +333,12 @@ function PaymentModal({
     try {
       const result = await mockDLocalCharge({
         amount: statement.amount_due,
-        currency: (statement as any).currency ?? 'CRC',
+        currency: 'USD',
         statementId: statement.id,
         fieldId: statement.field_id,
       })
 
       if (result.success && result.transactionId) {
-        // En producción: el backend ya actualizó el status vía webhook
-        // Aquí hacemos optimistic update como fallback
         await supabase
           .from('monthly_statements')
           .update({ status: 'paid', paid_at: new Date().toISOString(), transaction_id: result.transactionId })
@@ -420,7 +399,7 @@ function PaymentModal({
               <div style={S.divider} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 700 }}>
                 <span style={{ color: '#374151' }}>Total</span>
-                <span style={{ color: '#0f172a' }}>{formatCRC(statement.amount_due)}</span>
+                <span style={{ color: '#0f172a' }}>{fmt(statement.amount_due)}</span>
               </div>
             </div>
 
@@ -430,7 +409,7 @@ function PaymentModal({
               </button>
               <button style={{ ...S.btnPrimary, flex: 2, justifyContent: 'center' }} onClick={handlePay}>
                 <Lock size={14} />
-                Pagar {formatCRC(statement.amount_due)}
+                Pagar {fmt(statement.amount_due)}
               </button>
             </div>
 
@@ -460,7 +439,7 @@ function PaymentModal({
             </div>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>¡Pago exitoso!</p>
             <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
-              Tu pago de <strong>{formatCRC(statement.amount_due)}</strong> fue procesado correctamente.
+              Tu pago de <strong>{fmt(statement.amount_due)}</strong> fue procesado correctamente.
             </p>
             {txId && (
               <div style={{ background: '#f8fafc', borderRadius: 10, padding: '10px 14px', marginBottom: 20, fontSize: 11, fontFamily: 'monospace', color: '#64748b' }}>
@@ -501,7 +480,7 @@ function PaymentModal({
 // ─── Export CSV ────────────────────────────────────────────────────────────────
 function exportStatements(statements: Statement[]) {
   const rows = [
-    ['Período', 'Concepto', 'Reservas', 'Monto (CRC)', 'Vencimiento', 'Estado', 'ID Transacción', 'Pagado el'],
+    ['Período', 'Concepto', 'Reservas', 'Monto (USD)', 'Vencimiento', 'Estado', 'ID Transacción', 'Pagado el'],
     ...statements.map(s => [
       `${monthName(s.month)} ${s.year}`,
       typeLabel[s.type ?? 'commission'],
@@ -518,6 +497,109 @@ function exportStatements(statements: Statement[]) {
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
   a.download = `golplay-pagos-${new Date().toISOString().slice(0, 10)}.csv`
   a.click()
+}
+
+// ─── Download Receipt (client-side HTML → print/PDF) ──────────────────────────
+function downloadReceipt(s: Statement) {
+  const period   = `${monthName(s.month)} ${s.year}`
+  const paidDate = s.paid_at ? formatDate(s.paid_at) : '—'
+  const txId     = s.transaction_id ?? '—'
+  const concept  = typeLabel[s.type ?? 'commission']
+  const amount   = fmt(s.amount_due)
+  const receiptNo = `GP-${s.year}${String(s.month).padStart(2,'0')}-${s.id.slice(0,6).toUpperCase()}`
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Comprobante ${receiptNo} — GolPlay</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0f172a;padding:48px;max-width:680px;margin:0 auto}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:40px}
+    .logo-icon{width:40px;height:40px;background:#16a34a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:900;line-height:1}
+    .logo-text{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.03em}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:24px;border-bottom:2px solid #f1f5f9}
+    .title{font-size:28px;font-weight:700;color:#0f172a;margin-bottom:4px}
+    .subtitle{font-size:13px;color:#64748b}
+    .badge-paid{display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;margin-top:8px}
+    .section-title{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #f1f5f9;border-radius:12px;overflow:hidden;margin-bottom:28px}
+    .info-item{padding:14px 18px;border-bottom:1px solid #f8fafc}
+    .info-item:nth-child(odd){border-right:1px solid #f8fafc}
+    .info-item:nth-last-child(-n+2){border-bottom:none}
+    .info-label{font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:3px}
+    .info-value{font-size:14px;font-weight:600;color:#0f172a}
+    .total-box{background:#f8fafc;border-radius:12px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+    .total-label{font-size:15px;color:#374151}
+    .total-amount{font-size:28px;font-weight:800;color:#0f172a}
+    .tx-box{background:#f1f5f9;border-radius:10px;padding:12px 16px;font-family:monospace;font-size:11px;color:#64748b;margin-bottom:32px;word-break:break-all}
+    .tx-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .footer{text-align:center;font-size:11px;color:#cbd5e1;border-top:1px solid #f1f5f9;padding-top:20px;line-height:1.7}
+    @media print{body{padding:24px}@page{margin:15mm}}
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <div class="logo-icon">⚽</div>
+    <span class="logo-text">GolPlay</span>
+  </div>
+
+  <div class="header">
+    <div>
+      <div class="title">Comprobante de pago</div>
+      <div class="subtitle">N° ${receiptNo}</div>
+      <div class="badge-paid">✓ Pago confirmado</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Fecha de emisión</div>
+      <div style="font-size:14px;font-weight:600">${new Date().toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Detalle del cobro</div>
+  <div class="info-grid">
+    <div class="info-item"><div class="info-label">Período</div><div class="info-value">${period}</div></div>
+    <div class="info-item"><div class="info-label">Concepto</div><div class="info-value">${concept}</div></div>
+    <div class="info-item"><div class="info-label">Reservas cobradas</div><div class="info-value">${s.reservations_count}</div></div>
+    <div class="info-item"><div class="info-label">Fecha de pago</div><div class="info-value">${paidDate}</div></div>
+    <div class="info-item"><div class="info-label">Fecha de vencimiento</div><div class="info-value">${formatDate(s.due_date)}</div></div>
+    <div class="info-item"><div class="info-label">Método</div><div class="info-value">${s.payment_method ?? 'Tarjeta (dLocal)'}</div></div>
+  </div>
+
+  <div class="total-box">
+    <span class="total-label">Total pagado</span>
+    <span class="total-amount">${amount}</span>
+  </div>
+
+  <div class="section-title">ID de transacción</div>
+  <div class="tx-box">
+    <div class="tx-label">Referencia dLocal</div>
+    ${txId}
+  </div>
+
+  <div class="footer">
+    GolPlay — Marketplace de canchas deportivas en LATAM<br/>
+    Este comprobante es válido como constancia de pago. Para consultas: soporte@golplay.com<br/>
+    golplay.com · Todos los derechos reservados ${new Date().getFullYear()}
+  </div>
+</body>
+</html>`
+
+  // Abre en nueva pestaña → el usuario puede guardar como PDF con Ctrl+P / Cmd+P
+  const win = window.open('', '_blank', 'width=780,height=900')
+  if (!win) {
+    // Fallback: si el navegador bloquea popups, descarga como archivo .html
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+    a.download = `comprobante-${receiptNo}.html`
+    a.click()
+    return
+  }
+  win.document.write(html)
+  win.document.close()
+  // Pequeño delay para que el navegador renderice antes de abrir el diálogo de impresión
+  setTimeout(() => { win.focus(); win.print() }, 350)
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -600,7 +682,7 @@ export default function BillingPage() {
           <div style={S.header}>
             <div>
               <h1 style={S.h1}>Pagos & Facturación</h1>
-              <p style={S.headerSub}>Historial de comisiones · $1 USD por reserva confirmada · cobrado en tu moneda local</p>
+              <p style={S.headerSub}>Historial de comisiones y estados de cuenta · GolPlay</p>
             </div>
             <div style={S.headerActions}>
               <button style={S.btnOutline} onClick={loadStatements} disabled={loading}>
@@ -641,14 +723,14 @@ export default function BillingPage() {
           {/* ── KPIs ── */}
           <div style={S.kpiGrid}>
             <KPICard icon={DollarSign} iconBg="#fef2f2" iconColor="#dc2626"
-              value={formatCRC(kpis.totalPending)} label="Balance pendiente"
+              value={fmt(kpis.totalPending)} label="Balance pendiente"
               sub={`${kpis.pendingCount} factura${kpis.pendingCount !== 1 ? 's' : ''}`}
               loading={loading} highlight={kpis.totalPending > 0} />
 
             <KPICard icon={Calendar} iconBg="#fffbeb" iconColor="#d97706"
               value={kpis.nextDue ? formatDate(kpis.nextDue.due_date) : 'Al día'}
               label="Próximo vencimiento"
-              sub={kpis.nextDue ? formatCRC(kpis.nextDue.amount_due) : undefined}
+              sub={kpis.nextDue ? fmt(kpis.nextDue.amount_due) : undefined}
               loading={loading} />
 
             <KPICard icon={FileText} iconBg="#eff6ff" iconColor="#2563eb"
@@ -657,7 +739,7 @@ export default function BillingPage() {
               loading={loading} />
 
             <KPICard icon={TrendingUp} iconBg="#f0fdf4" iconColor="#16a34a"
-              value={formatCRC(kpis.paidThisMonthTotal)}
+              value={fmt(kpis.paidThisMonthTotal)}
               label="Pagado este mes"
               loading={loading} />
           </div>
@@ -688,12 +770,12 @@ export default function BillingPage() {
               <div style={{ padding: '16px 20px' }}>
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
-                    <span style={S.skel(14, '12%')} />
-                    <span style={S.skel(14, '18%')} />
-                    <span style={S.skel(14, '10%')} />
-                    <span style={S.skel(14, '12%')} />
-                    <span style={S.skel(22, '80px')} />
-                    <span style={{ ...S.skel(28, '70px'), marginLeft: 'auto' }} />
+                    <span style={skel(14, '12%')} />
+                    <span style={skel(14, '18%')} />
+                    <span style={skel(14, '10%')} />
+                    <span style={skel(14, '12%')} />
+                    <span style={skel(22, '80px')} />
+                    <span style={{ ...skel(28, '70px'), marginLeft: 'auto' }} />
                   </div>
                 ))}
               </div>
@@ -733,7 +815,7 @@ export default function BillingPage() {
                         </td>
                         <td style={S.td}>{s.reservations_count}</td>
                         <td style={{ ...S.td, fontWeight: 700, color: '#0f172a' }}>
-                          {formatCRC(s.amount_due)}
+                          {fmt(s.amount_due)}
                         </td>
                         <td style={{ ...S.td, color: isOverdue ? '#b91c1c' : '#374151' }}>
                           {isOverdue && <AlertTriangle size={12} color="#b91c1c" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
@@ -756,7 +838,7 @@ export default function BillingPage() {
                             {s.status === 'paid' && (
                               <button
                                 style={S.btnOutline}
-                                onClick={() => {/* TODO: generate PDF receipt */}}
+                                onClick={() => downloadReceipt(s)}
                                 title="Descargar comprobante"
                               >
                                 <Download size={12} />
@@ -795,7 +877,7 @@ export default function BillingPage() {
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                         <TypeBadge type={s.type} />
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{formatCRC(s.amount_due)}</span>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{fmt(s.amount_due)}</span>
                       </div>
                       <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 10 }}>
                         {s.reservations_count} reservas · Vence {formatDate(s.due_date)}
@@ -806,11 +888,14 @@ export default function BillingPage() {
                           onClick={() => setPayingStatement(s)}
                         >
                           <CreditCard size={13} />
-                          Pagar {formatCRC(s.amount_due)}
+                          Pagar {fmt(s.amount_due)}
                         </button>
                       )}
                       {s.status === 'paid' && (
-                        <button style={{ ...S.btnOutline, width: '100%', justifyContent: 'center' }}>
+                        <button
+                          style={{ ...S.btnOutline, width: '100%', justifyContent: 'center' }}
+                          onClick={() => downloadReceipt(s)}
+                        >
                           <Download size={12} />
                           Descargar comprobante
                         </button>
@@ -823,7 +908,7 @@ export default function BillingPage() {
 
             {/* Footer */}
             {!loading && statements.length > 0 && (
-              <div style={{ padding: '12px 20px', borderTop: '1px solid #f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: 8 }}>
+              <div style={{ padding: '12px 20px', borderTop: '1px solid #f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
                   {statements.length} estado{statements.length !== 1 ? 's' : ''} de cuenta
                 </span>

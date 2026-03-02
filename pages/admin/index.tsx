@@ -94,7 +94,6 @@ export default function AdminDashboard() {
   const [kpis,          setKpis]          = useState<any>(null)
   const [charts,        setCharts]        = useState<any>(null)
   const [expanded,      setExpanded]      = useState<string | null>(null)
-  const [mobileMenuOpen,setMobileMenuOpen]= useState(false)
 
   const [from,    setFrom]    = useState<Date>(() => { const d = new Date(); d.setDate(1); return d })
   const [to,      setTo]      = useState<Date>(new Date())
@@ -312,121 +311,9 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Mobile drawer ── */}
-      {mobileMenuOpen && (
-        <div className="gp-drawer-overlay" onClick={() => setMobileMenuOpen(false)}>
-          <div className="gp-drawer" onClick={e => e.stopPropagation()}>
-            <div className="gp-drawer__head">
-              <img src="/logo-golplay1.svg" alt="GolPlay" className="gp-drawer__logo"
-                onError={e => { (e.target as HTMLImageElement).style.display='none' }}
-              />
-              <button className="gp-drawer__close" onClick={() => setMobileMenuOpen(false)} aria-label="Cerrar menú">
-                <IcoX/>
-              </button>
-            </div>
-            <nav className="gp-drawer__nav">
-              {[
-                { icon: <IcoChart/>, label: 'Dashboard', href: '/admin',          active: true },
-                { icon: <IcoGrid/>,  label: 'Reservas',  href: '/admin/bookings', active: false },
-                { icon: <IcoBall/>,  label: 'Canchas',   href: '/admin/fields',   active: false },
-              ].map(item => (
-                <button
-                  key={item.label}
-                  className={`gp-drawer__item${item.active ? ' gp-drawer__item--active' : ''}`}
-                  onClick={() => { router.push(item.href); setMobileMenuOpen(false) }}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
-            <button className="gp-drawer__export" onClick={() => { exportXLSX(); setMobileMenuOpen(false) }}>
-              <IcoExport/>
-              Exportar XLSX
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="gp">
 
-        {/* ══════════════════════ TOPBAR ══════════════════════ */}
-        <header className="gp-top">
-          <div className="gp-top__left">
-            <button className="gp-burger" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menú">
-              <IcoMenu/>
-            </button>
-            <a href="/admin" className="gp-top__logo" aria-label="GolPlay Dashboard">
-              <img src="/logo-golplay1.svg" alt="GolPlay" className="gp-logo-img"
-                onError={e => { (e.target as HTMLImageElement).style.display='none' }}
-              />
-            </a>
-            <div className="gp-top__divider"/>
-            <span className="gp-top__breadcrumb">
-              <span className="gp-top__breadcrumb-sep">Admin</span>
-              <span className="gp-top__breadcrumb-ico">›</span>
-              <span className="gp-top__breadcrumb-cur">Dashboard</span>
-            </span>
-          </div>
-
-          {/* ── Date range controls ── */}
-          <div className="gp-top__center" ref={calRef}>
-            <div className="gp-presets" role="group" aria-label="Período rápido">
-              {(['today','week','month','prev'] as const).map(p => (
-                <button
-                  key={p}
-                  className="gp-preset"
-                  onClick={() => setPreset(p)}
-                >
-                  {p === 'today' ? 'Hoy' : p === 'week' ? '7 días' : p === 'month' ? 'Este mes' : 'Mes ant.'}
-                </button>
-              ))}
-            </div>
-
-            <div className="gp-rangepicker">
-              <button
-                className="gp-rangepicker__btn"
-                onClick={() => setOpenCal(openCal === 'from' ? null : 'from')}
-                aria-label="Fecha inicio"
-              >
-                <IcoCal/>
-                <span>{from.toLocaleDateString('es-CR', { day:'numeric', month:'short', year:'2-digit' })}</span>
-              </button>
-              <span className="gp-rangepicker__sep">–</span>
-              <button
-                className="gp-rangepicker__btn"
-                onClick={() => setOpenCal(openCal === 'to' ? null : 'to')}
-                aria-label="Fecha fin"
-              >
-                <IcoCal/>
-                <span>{to.toLocaleDateString('es-CR', { day:'numeric', month:'short', year:'2-digit' })}</span>
-              </button>
-              {openCal && (
-                <div className="gp-calpop">
-                  <MiniCal
-                    value={openCal === 'from' ? from : to}
-                    onSelect={d => { openCal === 'from' ? setFrom(d) : setTo(d); setOpenCal(null) }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Actions ── */}
-          <div className="gp-top__right">
-            <button className="gp-topbtn" onClick={() => router.push('/admin/bookings')}>
-              <IcoGrid/><span>Reservas</span>
-            </button>
-            <button className="gp-topbtn" onClick={() => router.push('/admin/fields')}>
-              <IcoBall/><span>Canchas</span>
-            </button>
-            <button className="gp-topbtn gp-topbtn--accent" onClick={exportXLSX}>
-              <IcoExport/><span>Exportar</span>
-            </button>
-          </div>
-        </header>
-
-        {/* ══════════════════════ PAGE HEADER ══════════════════════ */}
+        {/* ══════════════════════ PAGE HEADER  ══════════════════════ */}
         <div className="gp-phead">
           <div>
             <h1 className="gp-phead__title">Resumen general</h1>
@@ -446,6 +333,49 @@ export default function AdminDashboard() {
               {kpis.pendingCount} pendiente{kpis.pendingCount > 1 ? 's' : ''} · Revisar →
             </button>
           )}
+        </div>
+
+        {/* ══════════════════════ CONTROLES DE FECHA ══════════════════════ */}
+        <div className="gp-controls" ref={calRef}>
+          <div className="gp-presets" role="group" aria-label="Período rápido">
+            {(['today','week','month','prev'] as const).map(p => (
+              <button key={p} className="gp-preset" onClick={() => setPreset(p)}>
+                {p === 'today' ? 'Hoy' : p === 'week' ? '7 días' : p === 'month' ? 'Este mes' : 'Mes ant.'}
+              </button>
+            ))}
+          </div>
+
+          <div className="gp-rangepicker">
+            <button
+              className="gp-rangepicker__btn"
+              onClick={() => setOpenCal(openCal === 'from' ? null : 'from')}
+              aria-label="Fecha inicio"
+            >
+              <IcoCal/>
+              <span>{from.toLocaleDateString('es-CR', { day:'numeric', month:'short', year:'2-digit' })}</span>
+            </button>
+            <span className="gp-rangepicker__sep">–</span>
+            <button
+              className="gp-rangepicker__btn"
+              onClick={() => setOpenCal(openCal === 'to' ? null : 'to')}
+              aria-label="Fecha fin"
+            >
+              <IcoCal/>
+              <span>{to.toLocaleDateString('es-CR', { day:'numeric', month:'short', year:'2-digit' })}</span>
+            </button>
+            {openCal && (
+              <div className="gp-calpop">
+                <MiniCal
+                  value={openCal === 'from' ? from : to}
+                  onSelect={d => { openCal === 'from' ? setFrom(d) : setTo(d); setOpenCal(null) }}
+                />
+              </div>
+            )}
+          </div>
+
+          <button className="gp-btn-export" onClick={exportXLSX}>
+            <IcoExport/><span>Exportar</span>
+          </button>
         </div>
 
         {/* ══════════════════════ KPI STRIP ══════════════════════ */}
@@ -1035,15 +965,11 @@ function MiniCal({ value, onSelect }: { value: Date; onSelect: (d: Date) => void
 
 const IcoCal    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 const IcoExport = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-const IcoGrid   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
 const IcoField  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>
 const IcoMoney  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
 const IcoBall   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/><path d="M2 12h20"/></svg>
 const IcoNet    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
 const IcoOcc    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-const IcoChart  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-const IcoMenu   = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-const IcoX      = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 
@@ -1063,63 +989,23 @@ const CSS = `
   padding-bottom: 60px;
 }
 
-/* ── Topbar ───────────────────────────────────────────────────────────────── */
-.gp-top {
-  position: sticky; top: 0; z-index: 100;
-  height: 58px;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; gap: 16px;
-  background: rgba(255,255,255,.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid #e8edf3;
-  box-shadow: 0 1px 0 rgba(0,0,0,.04);
+/* ── Controls bar (fecha + export) ───────────────────────────────────────── */
+.gp-controls {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 16px 20px 0; position: relative;
 }
-
-/* Left */
-.gp-top__left {
-  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-}
-.gp-top__logo {
-  display: flex; align-items: center;
-  text-decoration: none;
-}
-.gp-logo-img { height: 36px; width: auto; display: block; }
-.gp-top__divider {
-  width: 1px; height: 20px;
-  background: #e2e8f0; flex-shrink: 0;
-}
-
-/* Breadcrumb */
-.gp-top__breadcrumb { display: flex; align-items: center; gap: 5px; }
-.gp-top__breadcrumb-sep { font-size: 11px; color: #9ca3af; font-weight: 500; }
-.gp-top__breadcrumb-ico { font-size: 11px; color: #d1d5db; }
-.gp-top__breadcrumb-cur { font-size: 11px; color: #374151; font-weight: 600; }
-
-/* Center */
-.gp-top__center {
-  display: flex; align-items: center; gap: 8px;
-  flex: 1; justify-content: center;
-}
-.gp-presets { display: flex; gap: 2px; }
+.gp-presets { display: flex; gap: 2px; flex-wrap: wrap; }
 .gp-preset {
   padding: 5px 11px; border-radius: 7px;
   font-family: inherit; font-size: 11px; font-weight: 500;
   color: #6b7280; cursor: pointer;
-  background: transparent; border: 1px solid transparent;
-  transition: all .15s;
+  background: #fff; border: 1px solid #e5e7eb; transition: all .15s;
 }
-.gp-preset:hover {
-  color: #111827; background: #f3f4f6; border-color: #e5e7eb;
-}
-
-/* Range picker */
+.gp-preset:hover { color: #111827; background: #f3f4f6; border-color: #d1d5db; }
 .gp-rangepicker {
   display: flex; align-items: center; gap: 2px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px; padding: 0 2px;
-  position: relative;
+  background: #fff; border: 1px solid #e5e7eb;
+  border-radius: 8px; padding: 0 2px; position: relative;
 }
 .gp-rangepicker__btn {
   display: flex; align-items: center; gap: 5px;
@@ -1131,83 +1017,16 @@ const CSS = `
 .gp-rangepicker__btn:hover { color: #111827; background: #f3f4f6; }
 .gp-rangepicker__sep { font-size: 10px; color: #d1d5db; }
 .gp-calpop {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 500;
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 500;
   animation: gpPop .15s ease;
 }
-
-/* Right */
-.gp-top__right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.gp-topbtn {
+.gp-btn-export {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 13px; border-radius: 8px;
-  font-family: inherit; font-size: 12px; font-weight: 500;
-  cursor: pointer; transition: all .15s;
-  border: 1px solid #e5e7eb;
-  background: #fff; color: #374151;
-  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer; background: #111827; color: #fff; border: none; transition: all .15s;
 }
-.gp-topbtn:hover { background: #f9fafb; border-color: #d1d5db; color: #111827; }
-.gp-topbtn--accent {
-  background: #111827; color: #fff; border-color: #111827;
-}
-.gp-topbtn--accent:hover { background: #1f2937; border-color: #1f2937; }
-
-/* Burger — mobile only */
-.gp-burger {
-  display: none; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
-  background: #f9fafb; border: 1px solid #e5e7eb;
-  color: #374151; cursor: pointer; transition: all .15s;
-}
-.gp-burger:hover { background: #f3f4f6; color: #111827; }
-
-/* ── Mobile Drawer ────────────────────────────────────────────────────────── */
-.gp-drawer-overlay {
-  position: fixed; inset: 0; z-index: 300;
-  background: rgba(0,0,0,.4);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  animation: gpFadeIn .2s ease;
-}
-.gp-drawer {
-  position: absolute; top: 0; left: 0; bottom: 0; width: 272px;
-  background: #fff; border-right: 1px solid #e5e7eb;
-  display: flex; flex-direction: column;
-  animation: gpSlideIn .2s ease;
-  padding-bottom: 20px;
-  box-shadow: 4px 0 24px rgba(0,0,0,.08);
-}
-.gp-drawer__head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 18px;
-  border-bottom: 1px solid #f3f4f6;
-}
-.gp-drawer__logo { height: 32px; width: auto; }
-.gp-drawer__close {
-  width: 32px; height: 32px; border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  background: #f9fafb; border: none;
-  cursor: pointer; color: #6b7280; transition: all .15s;
-}
-.gp-drawer__close:hover { background: #f3f4f6; color: #111827; }
-.gp-drawer__nav { display: flex; flex-direction: column; gap: 3px; padding: 14px 10px; flex: 1; }
-.gp-drawer__item {
-  display: flex; align-items: center; gap: 11px;
-  padding: 11px 12px; border-radius: 8px;
-  font-family: inherit; font-size: 14px; font-weight: 500;
-  color: #6b7280; background: none; border: none;
-  cursor: pointer; text-align: left; transition: all .15s;
-}
-.gp-drawer__item:hover { background: #f9fafb; color: #111827; }
-.gp-drawer__item--active { background: #eff6ff; color: #3b82f6; font-weight: 600; }
-.gp-drawer__export {
-  display: flex; align-items: center; gap: 9px;
-  margin: 0 10px; padding: 11px 14px; border-radius: 8px;
-  font-family: inherit; font-size: 13px; font-weight: 600;
-  background: #111827; color: #fff;
-  border: none; cursor: pointer; transition: all .15s;
-}
-.gp-drawer__export:hover { background: #1f2937; }
+.gp-btn-export:hover { background: #1f2937; }
 
 /* ── Page header ──────────────────────────────────────────────────────────── */
 .gp-phead {
@@ -1561,8 +1380,6 @@ const CSS = `
 
 /* ── Animations ───────────────────────────────────────────────────────────── */
 @keyframes gpPop      { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
-@keyframes gpFadeIn   { from { opacity:0 } to { opacity:1 } }
-@keyframes gpSlideIn  { from { transform:translateX(-100%) } to { transform:none } }
 @keyframes gpExpand   { from { opacity:0; transform:translateY(-6px) } to { opacity:1; transform:none } }
 @keyframes gpShim     { to { background-position: -200% 0 } }
 @keyframes gpBar      { to { width: var(--w) } }
@@ -1585,10 +1402,7 @@ const CSS = `
 
 /* Tablet pequeña */
 @media (max-width: 900px) {
-  .gp-top__center { display: none; }
-  .gp-top__right  { display: none; }
-  .gp-burger      { display: flex !important; }
-
+  .gp-controls { padding: 14px 14px 0; }
   .gp-kpis { grid-template-columns: repeat(2, 1fr); margin: 14px 14px 0; gap: 10px; }
   .gp-grid  { padding: 12px 14px 0; gap: 10px; }
   .gp-phead { padding: 18px 14px 0; }
@@ -1597,9 +1411,9 @@ const CSS = `
 
 /* Mobile */
 @media (max-width: 640px) {
-  .gp-top { padding: 0 12px; height: 52px; }
-  .gp-top__breadcrumb { display: none; }
-  .gp-top__divider { display: none; }
+  .gp-controls { padding: 12px 12px 0; gap: 6px; }
+  .gp-presets { gap: 2px; }
+  .gp-calpop { position: fixed; left: 10px; right: 10px; top: auto; bottom: 14px; }
 
   .gp-kpis { grid-template-columns: repeat(2, 1fr); margin: 12px 12px 0; gap: 8px; }
   .gp-kpi  { padding: 14px 14px 12px; }
@@ -1636,4 +1450,5 @@ const CSS = `
   .gp-grid { padding: 8px 10px 0; }
 }
 `
+
 

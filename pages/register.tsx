@@ -17,6 +17,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import { Eye, EyeOff, AlertCircle, Loader2, CheckCircle, Check } from 'lucide-react'
+import TermsModal from '@/components/ui/TermsModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -109,6 +110,8 @@ export default function RegisterPage() {
   const [error, setError]               = useState('')
   const [success, setSuccess]           = useState(false)
   const [touched, setTouched]           = useState<Partial<Record<keyof FormData, boolean>>>({})
+  const [termsOpen,     setTermsOpen]     = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   const update = useCallback((field: keyof FormData, value: string) => {
     setForm(f => ({ ...f, [field]: value }))
@@ -145,6 +148,12 @@ export default function RegisterPage() {
     e.preventDefault()
     if (!isValid || loading) return
 
+    // Si es owner y aún no aceptó los términos → mostrar modal primero
+    if (userType === 'owner' && !termsAccepted) {
+      setTermsOpen(true)
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -175,10 +184,11 @@ export default function RegisterPage() {
       await supabase
         .from('profiles')
         .update({
-          phone:        form.phone.trim()       || null,
-          complex_name: form.complexName.trim() || null,
-          country:      form.country,
-          currency:     selectedCountry.currency,
+          phone:             form.phone.trim()       || null,
+          complex_name:      form.complexName.trim() || null,
+          country:           form.country,
+          currency:          selectedCountry.currency,
+          ...(userType === 'owner' ? { terms_accepted_at: new Date().toISOString() } : {}),
         })
         .eq('id', data.user.id)
 
@@ -196,7 +206,7 @@ export default function RegisterPage() {
     } finally {
       setLoading(false)
     }
-  }, [form, isValid, loading, router, userType, selectedCountry])
+  }, [form, isValid, loading, router, userType, selectedCountry, termsAccepted])
 
   return (
     <>
@@ -436,6 +446,21 @@ export default function RegisterPage() {
           </div>
         </div>
       </main>
+
+      {/* ── Terms Modal (solo para owners) ── */}
+      <TermsModal
+        open={termsOpen}
+        context="register"
+        onClose={() => setTermsOpen(false)}
+        onAccept={() => {
+          setTermsAccepted(true)
+          setTermsOpen(false)
+          // Re-submit automáticamente ahora que aceptó
+          setTimeout(() => {
+            document.querySelector<HTMLButtonElement>('button[type="submit"]')?.click()
+          }, 50)
+        }}
+      />
     </>
   )
 }

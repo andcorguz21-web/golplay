@@ -1383,11 +1383,11 @@ export default function Home() {
           <div style={{overflow:'hidden'}}>
             <div style={{display:'flex', animation:'marqueeGo 28s linear infinite', width:'max-content', gap:12, padding:'0 6px'}}>
               {[...Array(2)].flatMap(() => [
-                { name:'Andrés M.', loc:'Ciudad de México', text:'Reservé en 2 minutos desde el celular. Llegué, jugué, no tuve que hablar con nadie.' },
-                { name:'Sofía V.',  loc:'Bogotá, Colombia',  text:'Los horarios son reales. Nunca más llegué y encontré la cancha ocupada.' },
-                { name:'Martín F.', loc:'Buenos Aires, AR',  text:'Encontré una cancha de pádel cerca que ni conocía. La reservé mientras esperaba el bus.' },
+                { name:'Andrés M.', loc:'San José, CR', text:'Reservé en 2 minutos desde el celular. Llegué, jugué, no tuve que hablar con nadie.' },
+                { name:'Sofía V.',  loc:'Heredia, CR',  text:'Los horarios son reales. Nunca más llegué y encontré la cancha ocupada.' },
+                { name:'Martín F.', loc:'Cartago, CR',  text:'Encontré una cancha de pádel cerca que ni conocía. La reservé mientras esperaba el bus.' },
                 { name:'Carlos R.', loc:'San José, CR',      text:'El correo de confirmación llegó al instante. Súper profesional y sin complicaciones.' },
-                { name:'Valeria T.', loc:'Santiago, Chile',   text:'Comparé 4 canchas en 2 minutos y encontré la mejor del barrio. Excelente.' },
+                { name:'Valeria T.', loc:'Alajuela, CR',   text:'Comparé 4 canchas en 2 minutos y encontré la mejor del barrio. Excelente.' },
               ].map((r, i) => (
                 <div key={`${r.name}-${i}`} className="review">
                   <div className="review__stars">★★★★★</div>

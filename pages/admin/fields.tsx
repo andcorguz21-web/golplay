@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef, type CSSProperties } from 're
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/router'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
+import TermsModal from '@/components/ui/TermsModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,8 +20,15 @@ interface Field {
   features?: string[] | null
   hours?: string[] | null
   location?: string | null
+  latitude?: number | null
+  longitude?: number | null
   active?: boolean
   owner_id?: string
+  country?: string
+  city?: string | null
+  timezone?: string
+  currency?: string
+  commission_usd?: number
   monthly_statements?: { status: string }[] | null
 }
 
@@ -90,6 +98,7 @@ export default function AdminFields() {
 
   // UI state
   const [drawerOpen,  setDrawerOpen]  = useState(false)
+  const [termsOpen,   setTermsOpen]   = useState(false)
   const [editingId,   setEditingId]   = useState<number | null>(null)
   const [deleteModal, setDeleteModal] = useState<Field | null>(null)
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
@@ -111,6 +120,8 @@ export default function AdminFields() {
   const [fFeatures,      setFFeatures]      = useState<string[]>([])
   const [fHours,         setFHours]         = useState<string[]>([])
   const [fLocation,      setFLocation]      = useState('')
+  const [fLat,           setFLat]           = useState('')
+  const [fLng,           setFLng]           = useState('')
   const [fActive,        setFActive]        = useState(true)
   const [errors,         setErrors]         = useState<FormErrors>({})
 
@@ -157,7 +168,12 @@ export default function AdminFields() {
     setLoading(true)
     const { data, error } = await supabase
       .from('fields')
-      .select('*, monthly_statements(status)')
+      .select(`
+        id, name, sport, price, price_day, price_night, night_from_hour,
+        description, features, hours, location, latitude, longitude, active, owner_id,
+        country, city, timezone, currency, commission_usd,
+        monthly_statements(status)
+      `)
       .eq('owner_id', userId)   // ✅ scoped a las canchas del owner logueado
       .order('id')
     if (!error && data) setFields(data)
@@ -167,7 +183,7 @@ export default function AdminFields() {
   useEffect(() => { if (userId) loadFields() }, [loadFields, userId])
 
   const isBlocked = (f: Field) =>
-    f.monthly_statements?.some(s => s.status === 'pending') ?? false
+    f.monthly_statements?.some(s => s.status === 'pending' || s.status === 'failed') ?? false
 
   // ── Gallery ─────────────────────────────────────────────────────────────────
   const loadGallery = useCallback(async (fieldId: number) => {
@@ -238,6 +254,8 @@ export default function AdminFields() {
       features:         fFeatures,
       hours:            fHours,
       location:         fLocation || null,
+      latitude:         fLat  ? Number(fLat)  : null,
+      longitude:        fLng  ? Number(fLng)  : null,
       active:           fActive,
     }
 
@@ -289,6 +307,8 @@ export default function AdminFields() {
       features:    field.features,
       hours:       field.hours,
       location:    field.location,
+      latitude:    field.latitude  ?? null,
+      longitude:   field.longitude ?? null,
       active:      false,
     })
     showToast('Cancha duplicada — revisá y activá cuando esté lista')
@@ -297,6 +317,11 @@ export default function AdminFields() {
 
   // ── Open drawer ─────────────────────────────────────────────────────────────
   const openNew = () => {
+    // Mostrar términos antes de abrir el drawer de nueva cancha
+    setTermsOpen(true)
+  }
+
+  const openNewAfterTerms = () => {
     resetForm()
     setDrawerOpen(true)
     setActiveSection('info')
@@ -316,6 +341,8 @@ export default function AdminFields() {
     setFFeatures(field.features ?? [])
     setFHours(field.hours ?? [])
     setFLocation(field.location ?? '')
+    setFLat(field.latitude  != null ? String(field.latitude)  : '')
+    setFLng(field.longitude != null ? String(field.longitude) : '')
     setFActive(field.active !== false)
     await loadGallery(field.id)
     setDrawerOpen(true)
@@ -331,7 +358,7 @@ export default function AdminFields() {
     setEditingId(null); setFName(''); setFSport('futbol5'); setFPrice('')
     setFPriceDay(''); setFPriceNight(''); setFNightFrom(18)
     setFDescription(''); setFFeatures([]); setFHours([])
-    setFLocation(''); setFActive(true); setGallery([]); setErrors({})
+    setFLocation(''); setFLat(''); setFLng(''); setFActive(true); setGallery([]); setErrors({})
   }
 
   const toggle = <T extends string>(val: T, list: T[], set: (v: T[]) => void) =>
@@ -471,6 +498,43 @@ export default function AdminFields() {
                   <option value="">Seleccioná una provincia</option>
                   {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
+              </div>
+
+              {/* Lat / Long */}
+              <div className="f-field">
+                <label className="f-label">
+                  Ubicación en el mapa
+                  <span className="f-label__hint">
+                    Usada para mostrar tu cancha en el mapa · <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" style={{color:'#16a34a',textDecoration:'none'}}>Obtener coordenadas →</a>
+                  </span>
+                </label>
+                <div className="f-price-grid">
+                  <div>
+                    <label className="f-sublabel">Latitud</label>
+                    <input
+                      className="f-input"
+                      type="number"
+                      step="any"
+                      placeholder="Ej: 9.9281"
+                      value={fLat}
+                      onChange={e => setFLat(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="f-sublabel">Longitud</label>
+                    <input
+                      className="f-input"
+                      type="number"
+                      step="any"
+                      placeholder="Ej: -84.0907"
+                      value={fLng}
+                      onChange={e => setFLng(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <p className="f-hint">
+                  💡 Abrí Google Maps, hacé click derecho sobre tu cancha y copiá las coordenadas que aparecen. La primera es la latitud y la segunda la longitud.
+                </p>
               </div>
 
               {/* Prices */}
@@ -903,6 +967,17 @@ export default function AdminFields() {
       <button className="f-fab" onClick={openNew} aria-label="Agregar cancha">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
       </button>
+
+      {/* ── Terms Modal ── */}
+      <TermsModal
+        open={termsOpen}
+        context="field"
+        onClose={() => setTermsOpen(false)}
+        onAccept={() => {
+          setTermsOpen(false)
+          openNewAfterTerms()
+        }}
+      />
     </AdminLayout>
   )
 }

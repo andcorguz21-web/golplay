@@ -3,13 +3,15 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Sin Tailwind. Estilos inline puros. Compatible con cualquier Next.js stack.
  *
- * Arquitectura preparada para dLocal:
- *   - useDLocalPayment hook (mock) listo para conectar con SDK real
- *   - PaymentModal con flujo de 3 pasos: confirm → processing → result
+ * Integración con Paddle Billing:
+ *   - Checkout overlay con Paddle.js (sin redirect)
+ *   - PaymentModal con flujo: confirm → processing → result
+ *   - Webhook en /api/paddle/webhook actualiza estado automáticamente
  *   - Tipos de transacción: commission | subscription | adjustment
  *   - Manejo de estados: paid | pending | failed | processing
  *
- * Dependencias: npm install lucide-react date-fns
+ * Dependencias: npm install lucide-react
+ * Env vars: NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
  */
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
@@ -22,6 +24,21 @@ import {
   TrendingUp, Calendar, DollarSign, AlertTriangle, X,
   Loader2, ArrowUpRight, Lock,
 } from 'lucide-react'
+
+// ─── Load Paddle.js once ──────────────────────────────────────────────────────
+function usePaddleScript() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if ((window as any).Paddle) return // already loaded
+    const script = document.createElement('script')
+    script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js'
+    script.onload = () => {
+      const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+      if (token) (window as any).Paddle.Initialize({ token })
+    }
+    document.head.appendChild(script)
+  }, [])
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,27 +62,54 @@ interface Statement {
 
 type PayStep = 'confirm' | 'processing' | 'success' | 'error'
 
-// ─── dLocal Integration Layer (Mock — ready for real SDK) ─────────────────────
-async function mockDLocalCharge(params: {
-  amount: number
-  currency: string
+// ─── Paddle Checkout ─────────────────────────────────────────────────────────
+async function openPaddleCheckout(params: {
   statementId: string
-  fieldId: number
-}): Promise<{ success: boolean; transactionId?: string; error?: string }> {
-  await new Promise(r => setTimeout(r, 2200))
-  const simulateSuccess = Math.random() > 0.15
-  if (simulateSuccess) {
-    return {
-      success: true,
-      transactionId: `DL-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-    }
-  }
-  return { success: false, error: 'La transacción fue rechazada. Intenta nuevamente.' }
+  onSuccess: (txId: string) => void
+  onError:   (msg: string)  => void
+}) {
+  const { statementId, onSuccess, onError } = params
+
+  // 1. Crear transacción en el servidor
+  const res = await fetch('/api/paddle/create-checkout', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ statementId }),
+  })
+  const data = await res.json()
+  if (!res.ok) { onError(data.error ?? 'Error al iniciar el pago'); return }
+
+  const { transactionId, checkoutUrl } = data
+
+  // 2. Abrir overlay de Paddle
+  const Paddle = (window as any).Paddle
+  if (!Paddle) { onError('Paddle no está cargado. Recargá la página.'); return }
+
+  Paddle.Checkout.open({
+    transactionId,
+    settings: {
+      displayMode: 'overlay',
+      theme:       'light',
+      locale:      'es',
+      successUrl:  checkoutUrl,
+    },
+    events: {
+      onCompleted: (event: any) => {
+        onSuccess(event?.data?.transaction_id ?? transactionId)
+      },
+      onClose: () => {
+        // Usuario cerró sin pagar — no hacemos nada
+      },
+      onError: (err: any) => {
+        onError(err?.detail ?? 'Error en el proceso de pago')
+      },
+    },
+  })
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const formatCRC = (v: number) =>
-  `₡${Number(v).toLocaleString('es-CR', { maximumFractionDigits: 0 })}`
+const fmt = (v: number) =>
+  `$${Number(v).toFixed(2)}`
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -328,33 +372,21 @@ function PaymentModal({
   const [error, setError] = useState<string | null>(null)
   const [txId, setTxId] = useState<string | null>(null)
 
-  const handlePay = async () => {
+  const handlePay = () => {
     setStep('processing')
     setError(null)
-    try {
-      const result = await mockDLocalCharge({
-        amount: statement.amount_due,
-        currency: 'CRC',
-        statementId: statement.id,
-        fieldId: statement.field_id,
-      })
-
-      if (result.success && result.transactionId) {
-        await supabase
-          .from('monthly_statements')
-          .update({ status: 'paid', paid_at: new Date().toISOString(), transaction_id: result.transactionId })
-          .eq('id', statement.id)
-
-        setTxId(result.transactionId)
+    // Paddle abre un overlay — el modal queda en "procesando" mientras el usuario completa el pago
+    openPaddleCheckout({
+      statementId: statement.id,
+      onSuccess: (id) => {
+        setTxId(id)
         setStep('success')
-      } else {
-        setError(result.error ?? 'Error desconocido')
+      },
+      onError: (msg) => {
+        setError(msg)
         setStep('error')
-      }
-    } catch (e: any) {
-      setError(e.message ?? 'Error de conexión')
-      setStep('error')
-    }
+      },
+    })
   }
 
   return (
@@ -400,7 +432,7 @@ function PaymentModal({
               <div style={S.divider} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 700 }}>
                 <span style={{ color: '#374151' }}>Total</span>
-                <span style={{ color: '#0f172a' }}>{formatCRC(statement.amount_due)}</span>
+                <span style={{ color: '#0f172a' }}>{fmt(statement.amount_due)}</span>
               </div>
             </div>
 
@@ -410,13 +442,13 @@ function PaymentModal({
               </button>
               <button style={{ ...S.btnPrimary, flex: 2, justifyContent: 'center' }} onClick={handlePay}>
                 <Lock size={14} />
-                Pagar {formatCRC(statement.amount_due)}
+                Pagar {fmt(statement.amount_due)}
               </button>
             </div>
 
             <div style={S.securityBadge}>
               <Shield size={11} />
-              Transacción cifrada con TLS · Procesado por dLocal
+              Transacción cifrada con TLS · Procesado por Paddle
             </div>
           </>
         )}
@@ -428,7 +460,7 @@ function PaymentModal({
               <Loader2 size={28} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
             </div>
             <p style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: '0 0 8px' }}>Procesando pago…</p>
-            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>No cierres esta ventana. Estamos confirmando tu transacción con dLocal.</p>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Paddle está procesando tu pago. No cierres esta ventana.</p>
           </div>
         )}
 
@@ -440,7 +472,7 @@ function PaymentModal({
             </div>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>¡Pago exitoso!</p>
             <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
-              Tu pago de <strong>{formatCRC(statement.amount_due)}</strong> fue procesado correctamente.
+              Tu pago de <strong>{fmt(statement.amount_due)}</strong> fue procesado correctamente.
             </p>
             {txId && (
               <div style={{ background: '#f8fafc', borderRadius: 10, padding: '10px 14px', marginBottom: 20, fontSize: 11, fontFamily: 'monospace', color: '#64748b' }}>
@@ -481,7 +513,7 @@ function PaymentModal({
 // ─── Export CSV ────────────────────────────────────────────────────────────────
 function exportStatements(statements: Statement[]) {
   const rows = [
-    ['Período', 'Concepto', 'Reservas', 'Monto (CRC)', 'Vencimiento', 'Estado', 'ID Transacción', 'Pagado el'],
+    ['Período', 'Concepto', 'Reservas', 'Monto (USD)', 'Vencimiento', 'Estado', 'ID Transacción', 'Pagado el'],
     ...statements.map(s => [
       `${monthName(s.month)} ${s.year}`,
       typeLabel[s.type ?? 'commission'],
@@ -506,7 +538,7 @@ function downloadReceipt(s: Statement) {
   const paidDate = s.paid_at ? formatDate(s.paid_at) : '—'
   const txId     = s.transaction_id ?? '—'
   const concept  = typeLabel[s.type ?? 'commission']
-  const amount   = formatCRC(s.amount_due)
+  const amount   = fmt(s.amount_due)
   const receiptNo = `GP-${s.year}${String(s.month).padStart(2,'0')}-${s.id.slice(0,6).toUpperCase()}`
 
   const html = `<!DOCTYPE html>
@@ -565,7 +597,7 @@ function downloadReceipt(s: Statement) {
     <div class="info-item"><div class="info-label">Reservas cobradas</div><div class="info-value">${s.reservations_count}</div></div>
     <div class="info-item"><div class="info-label">Fecha de pago</div><div class="info-value">${paidDate}</div></div>
     <div class="info-item"><div class="info-label">Fecha de vencimiento</div><div class="info-value">${formatDate(s.due_date)}</div></div>
-    <div class="info-item"><div class="info-label">Método</div><div class="info-value">${s.payment_method ?? 'Tarjeta (dLocal)'}</div></div>
+    <div class="info-item"><div class="info-label">Método</div><div class="info-value">${s.payment_method ?? 'Tarjeta (Paddle)'}</div></div>
   </div>
 
   <div class="total-box">
@@ -575,7 +607,7 @@ function downloadReceipt(s: Statement) {
 
   <div class="section-title">ID de transacción</div>
   <div class="tx-box">
-    <div class="tx-label">Referencia dLocal</div>
+    <div class="tx-label">Referencia Paddle</div>
     ${txId}
   </div>
 
@@ -606,6 +638,7 @@ function downloadReceipt(s: Statement) {
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function BillingPage() {
   const router = useRouter()
+  usePaddleScript() // load Paddle.js
   const [statements, setStatements] = useState<Statement[]>([])
   const [loading, setLoading] = useState(true)
   const [authReady, setAuthReady] = useState(false)
@@ -724,14 +757,14 @@ export default function BillingPage() {
           {/* ── KPIs ── */}
           <div style={S.kpiGrid}>
             <KPICard icon={DollarSign} iconBg="#fef2f2" iconColor="#dc2626"
-              value={formatCRC(kpis.totalPending)} label="Balance pendiente"
+              value={fmt(kpis.totalPending)} label="Balance pendiente"
               sub={`${kpis.pendingCount} factura${kpis.pendingCount !== 1 ? 's' : ''}`}
               loading={loading} highlight={kpis.totalPending > 0} />
 
             <KPICard icon={Calendar} iconBg="#fffbeb" iconColor="#d97706"
               value={kpis.nextDue ? formatDate(kpis.nextDue.due_date) : 'Al día'}
               label="Próximo vencimiento"
-              sub={kpis.nextDue ? formatCRC(kpis.nextDue.amount_due) : undefined}
+              sub={kpis.nextDue ? fmt(kpis.nextDue.amount_due) : undefined}
               loading={loading} />
 
             <KPICard icon={FileText} iconBg="#eff6ff" iconColor="#2563eb"
@@ -740,7 +773,7 @@ export default function BillingPage() {
               loading={loading} />
 
             <KPICard icon={TrendingUp} iconBg="#f0fdf4" iconColor="#16a34a"
-              value={formatCRC(kpis.paidThisMonthTotal)}
+              value={fmt(kpis.paidThisMonthTotal)}
               label="Pagado este mes"
               loading={loading} />
           </div>
@@ -816,7 +849,7 @@ export default function BillingPage() {
                         </td>
                         <td style={S.td}>{s.reservations_count}</td>
                         <td style={{ ...S.td, fontWeight: 700, color: '#0f172a' }}>
-                          {formatCRC(s.amount_due)}
+                          {fmt(s.amount_due)}
                         </td>
                         <td style={{ ...S.td, color: isOverdue ? '#b91c1c' : '#374151' }}>
                           {isOverdue && <AlertTriangle size={12} color="#b91c1c" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
@@ -878,7 +911,7 @@ export default function BillingPage() {
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                         <TypeBadge type={s.type} />
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{formatCRC(s.amount_due)}</span>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{fmt(s.amount_due)}</span>
                       </div>
                       <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 10 }}>
                         {s.reservations_count} reservas · Vence {formatDate(s.due_date)}
@@ -889,7 +922,7 @@ export default function BillingPage() {
                           onClick={() => setPayingStatement(s)}
                         >
                           <CreditCard size={13} />
-                          Pagar {formatCRC(s.amount_due)}
+                          Pagar {fmt(s.amount_due)}
                         </button>
                       )}
                       {s.status === 'paid' && (
@@ -915,22 +948,22 @@ export default function BillingPage() {
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#94a3b8' }}>
                   <Shield size={11} />
-                  Pagos procesados de forma segura por dLocal
+                  Pagos procesados de forma segura por Paddle
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── Info card: dLocal ── */}
+          {/* ── Info card: Paddle ── */}
           <div style={{ ...S.card, marginTop: 20, border: '1px solid #e0e7ff' }}>
             <div style={{ padding: 20, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Lock size={18} color="#2563eb" />
               </div>
               <div>
-                <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 14, color: '#1e40af' }}>Pagos seguros con dLocal</p>
+                <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 14, color: '#1e40af' }}>Pagos seguros con Paddle</p>
                 <p style={{ margin: 0, fontSize: 13, color: '#3b82f6' }}>
-                  Todos los pagos son procesados de forma segura a través de dLocal, la pasarela de pagos líder en Latinoamérica. Tus datos financieros están encriptados y nunca se almacenan en nuestros servidores.
+                  Todos los pagos son procesados de forma segura a través de Paddle, pasarela de pagos internacional. Tus datos financieros están encriptados y nunca se almacenan en nuestros servidores.
                 </p>
               </div>
             </div>
