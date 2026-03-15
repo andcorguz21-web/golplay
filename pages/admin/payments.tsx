@@ -20,7 +20,7 @@ import {
   CheckCircle, Clock, AlertCircle, XCircle, CreditCard,
   Download, FileText, RefreshCw, Shield, ChevronRight,
   TrendingUp, Calendar, DollarSign, AlertTriangle, X,
-  Loader2, ArrowUpRight, Lock,
+  Loader2, ArrowUpRight, Lock, Upload, Tag,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -327,6 +327,33 @@ function PaymentModal({
   const [error, setError] = useState<string | null>(null)
   const [txId, setTxId] = useState<string | null>(null)
 
+  // Coupon
+  const [couponCode, setCouponCode] = useState('')
+  const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [discount, setDiscount] = useState(0)
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
+
+  const applyCoupon = async () => {
+    setApplyingCoupon(true); setCouponMsg(null)
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
+      .eq('code', couponCode.trim().toUpperCase())
+      .eq('active', true)
+      .maybeSingle()
+    if (error || !data) { setCouponMsg({ ok: false, text: 'Cupón no encontrado o inactivo' }); setApplyingCoupon(false); return }
+    if (data.max_uses && data.current_uses >= data.max_uses) { setCouponMsg({ ok: false, text: 'Cupón agotado' }); setApplyingCoupon(false); return }
+    if (data.valid_until && new Date(data.valid_until) < new Date()) { setCouponMsg({ ok: false, text: 'Cupón expirado' }); setApplyingCoupon(false); return }
+    if (data.valid_from && new Date(data.valid_from) > new Date()) { setCouponMsg({ ok: false, text: 'Cupón aún no es válido' }); setApplyingCoupon(false); return }
+    const disc = data.discount_type === 'percentage' ? statement.amount_due * (data.discount_value / 100) : data.discount_value
+    const finalDisc = Math.min(disc, statement.amount_due)
+    setDiscount(finalDisc)
+    setCouponMsg({ ok: true, text: `${data.discount_type === 'percentage' ? data.discount_value + '%' : '$' + data.discount_value} de descuento — Ahorrás ${fmt(finalDisc)}` })
+    setApplyingCoupon(false)
+  }
+
+  const finalAmount = statement.amount_due - discount
+
   const handlePay = async () => {
     setStep('processing')
     setError(null)
@@ -399,8 +426,40 @@ function PaymentModal({
               <div style={S.divider} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 700 }}>
                 <span style={{ color: '#374151' }}>Total</span>
-                <span style={{ color: '#0f172a' }}>{fmt(statement.amount_due)}</span>
+                <span style={{ color: '#0f172a' }}>
+                  {discount > 0 ? (
+                    <><s style={{ color: '#94a3b8', fontWeight: 400, fontSize: 14 }}>{fmt(statement.amount_due)}</s> {fmt(finalAmount)}</>
+                  ) : fmt(statement.amount_due)}
+                </span>
               </div>
+            </div>
+
+            {/* Coupon field */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                <Tag size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                ¿Tenés un cupón de descuento?
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  placeholder="Ej: GP-XXXXX"
+                  value={couponCode}
+                  onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponMsg(null) }}
+                  style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 13, fontFamily: 'monospace', fontWeight: 600, color: '#0f172a', outline: 'none', textTransform: 'uppercase' }}
+                />
+                <button
+                  onClick={applyCoupon}
+                  disabled={!couponCode.trim() || applyingCoupon}
+                  style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: '#0f172a', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: (!couponCode.trim() || applyingCoupon) ? 0.4 : 1 }}
+                >
+                  {applyingCoupon ? '...' : 'Aplicar'}
+                </button>
+              </div>
+              {couponMsg && (
+                <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 600, color: couponMsg.ok ? '#15803d' : '#b91c1c' }}>
+                  {couponMsg.ok ? '✓' : '✗'} {couponMsg.text}
+                </p>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
@@ -409,7 +468,7 @@ function PaymentModal({
               </button>
               <button style={{ ...S.btnPrimary, flex: 2, justifyContent: 'center' }} onClick={handlePay}>
                 <Lock size={14} />
-                Pagar {fmt(statement.amount_due)}
+                Pagar {fmt(finalAmount)}
               </button>
             </div>
 
@@ -602,6 +661,118 @@ function downloadReceipt(s: Statement) {
   setTimeout(() => { win.focus(); win.print() }, 350)
 }
 
+// ─── Receipt Upload Modal ─────────────────────────────────────────────────────
+function ReceiptUploadModal({
+  statement, onClose, onSuccess,
+}: {
+  statement: Statement; onClose: () => void; onSuccess: () => void
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [method, setMethod] = useState<'sinpe' | 'transfer' | 'deposit' | 'other'>('sinpe')
+  const [notes, setNotes] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > 5 * 1024 * 1024) { setError('El archivo no puede superar 5MB'); return }
+    setFile(f); setError('')
+    if (f.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = () => setPreview(reader.result as string)
+      reader.readAsDataURL(f)
+    } else { setPreview(null) }
+  }
+
+  const handleUpload = async () => {
+    if (!file) { setError('Seleccioná un archivo'); return }
+    setUploading(true); setError('')
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) throw new Error('No autenticado')
+      const ext = file.name.split('.').pop()
+      const path = `receipts/${userData.user.id}/${statement.id}.${ext}`
+      const { error: upErr } = await supabase.storage.from('payment-receipts').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: urlData } = supabase.storage.from('payment-receipts').getPublicUrl(path)
+      await supabase.from('payment_receipts').insert({
+        statement_id: statement.id, owner_id: userData.user.id,
+        file_url: urlData.publicUrl, file_name: file.name,
+        payment_method: method, notes: notes.trim() || null, status: 'pending',
+      })
+      await supabase.from('monthly_statements').update({ status: 'processing', payment_method: method }).eq('id', statement.id)
+      setDone(true); setTimeout(onSuccess, 1500)
+    } catch (e: any) { setError(e.message ?? 'Error al subir comprobante') }
+    finally { setUploading(false) }
+  }
+
+  const METHODS = [
+    { value: 'sinpe' as const, label: 'SINPE Móvil', icon: '📱' },
+    { value: 'transfer' as const, label: 'Transferencia', icon: '🏦' },
+    { value: 'deposit' as const, label: 'Depósito', icon: '💵' },
+    { value: 'other' as const, label: 'Otro', icon: '📋' },
+  ]
+
+  return (
+    <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget && !uploading) onClose() }}>
+      <div style={{ ...S.modal, maxWidth: 440 }} role="dialog" aria-modal="true">
+        {!uploading && !done && (
+          <button onClick={onClose} aria-label="Cerrar" style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={18} /></button>
+        )}
+        {done ? (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}><CheckCircle size={32} color="#16a34a" /></div>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>Comprobante enviado</p>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Lo revisaremos y confirmaremos tu pago pronto.</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Upload size={20} color="#16a34a" /></div>
+              <div><p style={S.modalTitle}>Subir comprobante</p></div>
+            </div>
+            <p style={S.modalSub}>{monthName(statement.month)} {statement.year} · {fmt(statement.amount_due)}</p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Método de pago</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+              {METHODS.map(m => (
+                <button key={m.value} onClick={() => setMethod(m.value)} style={{
+                  padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${method === m.value ? '#16a34a' : '#e2e8f0'}`,
+                  background: method === m.value ? '#f0fdf4' : '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  color: method === m.value ? '#15803d' : '#64748b', display: 'flex', alignItems: 'center', gap: 6,
+                }}><span>{m.icon}</span> {m.label}</button>
+              ))}
+            </div>
+            <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Comprobante *</p>
+            <label style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: preview ? '8px' : '24px', borderRadius: 12,
+              border: `2px dashed ${file ? '#16a34a' : '#e2e8f0'}`, background: file ? '#f0fdf4' : '#fafafa', cursor: 'pointer', transition: 'all .15s',
+            }}>
+              <input type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={handleFile} />
+              {preview ? <img src={preview} alt="Preview" style={{ maxHeight: 160, borderRadius: 8, objectFit: 'contain' }} /> :
+               file ? <p style={{ fontSize: 13, color: '#15803d', fontWeight: 600, margin: 0 }}>📄 {file.name}</p> : (
+                <><Upload size={24} color="#94a3b8" /><p style={{ fontSize: 13, fontWeight: 600, color: '#374151', margin: 0 }}>Subí tu comprobante</p><p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>Imagen o PDF · Máx 5MB</p></>
+              )}
+            </label>
+            <textarea placeholder="Notas adicionales (opcional)" value={notes} onChange={e => setNotes(e.target.value)}
+              style={{ width: '100%', marginTop: 12, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', minHeight: 60, outline: 'none', color: '#0f172a' }} />
+            {error && <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', fontSize: 12, color: '#b91c1c' }}>{error}</div>}
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <button style={{ ...S.btnOutline, flex: 1, justifyContent: 'center' }} onClick={onClose}>Cancelar</button>
+              <button style={{ ...S.btnSuccess, flex: 2, justifyContent: 'center', padding: '12px 16px', fontSize: 14, borderRadius: 12 }}
+                onClick={handleUpload} disabled={!file || uploading}>
+                {uploading ? (<><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo...</>) : (<><Upload size={14} /> Enviar comprobante</>)}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function BillingPage() {
   const router = useRouter()
@@ -610,6 +781,7 @@ export default function BillingPage() {
   const [authReady, setAuthReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [payingStatement, setPayingStatement] = useState<Statement | null>(null)
+  const [uploadingReceipt, setUploadingReceipt] = useState<Statement | null>(null)
   const [isWide, setIsWide] = useState(true)
 
   // Responsive
@@ -825,7 +997,7 @@ export default function BillingPage() {
                           <StatusBadge status={isOverdue && s.status === 'pending' ? 'failed' : s.status} />
                         </td>
                         <td style={S.td}>
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                             {s.status !== 'paid' && s.status !== 'processing' && (
                               <button
                                 style={S.btnPrimary}
@@ -833,6 +1005,15 @@ export default function BillingPage() {
                               >
                                 <CreditCard size={12} />
                                 Pagar
+                              </button>
+                            )}
+                            {s.status !== 'paid' && s.status !== 'processing' && (
+                              <button
+                                style={S.btnOutline}
+                                onClick={() => setUploadingReceipt(s)}
+                              >
+                                <Upload size={12} />
+                                Comprobante
                               </button>
                             )}
                             {s.status === 'paid' && (
@@ -891,6 +1072,15 @@ export default function BillingPage() {
                           Pagar {fmt(s.amount_due)}
                         </button>
                       )}
+                      {s.status !== 'paid' && s.status !== 'processing' && (
+                        <button
+                          style={{ ...S.btnOutline, width: '100%', justifyContent: 'center', marginTop: 8 }}
+                          onClick={() => setUploadingReceipt(s)}
+                        >
+                          <Upload size={13} />
+                          Subir comprobante
+                        </button>
+                      )}
                       {s.status === 'paid' && (
                         <button
                           style={{ ...S.btnOutline, width: '100%', justifyContent: 'center' }}
@@ -937,6 +1127,15 @@ export default function BillingPage() {
 
         </div>
       </div>
+
+      {/* ── Upload Receipt Modal ── */}
+      {uploadingReceipt && (
+        <ReceiptUploadModal
+          statement={uploadingReceipt}
+          onClose={() => setUploadingReceipt(null)}
+          onSuccess={() => { setUploadingReceipt(null); loadStatements() }}
+        />
+      )}
 
       {/* ── Payment Modal ── */}
       {payingStatement && (

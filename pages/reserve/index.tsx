@@ -1179,6 +1179,39 @@ export default function ReserveIndex() {
           </div>
         </>
       )}
+      {/* ── Footer ── */}
+      <footer style={{
+        background: '#1a1d19',
+        color: '#fff',
+        padding: '48px 32px',
+        marginTop: 0,
+      }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 32 }}>
+          <div>
+            <Image src="/logo-golplay1.svg" alt="GolPlay" width={120} height={34} style={{ objectFit: 'contain', marginBottom: 12 }} />
+            <p style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.6 }}>
+              La plataforma de reservas para complejos deportivos en LATAM.
+            </p>
+          </div>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Información</p>
+            <Link href="/about" style={{ display: 'block', fontSize: 13, color: '#9ca3af', textDecoration: 'none', marginBottom: 8 }}>Sobre GolPlay</Link>
+            <Link href="/join" style={{ display: 'block', fontSize: 13, color: '#9ca3af', textDecoration: 'none', marginBottom: 8 }}>Publicá tu cancha</Link>
+            <Link href="/terms" style={{ display: 'block', fontSize: 13, color: '#9ca3af', textDecoration: 'none', marginBottom: 8 }}>Términos y condiciones</Link>
+            <Link href="/privacy" style={{ display: 'block', fontSize: 13, color: '#9ca3af', textDecoration: 'none' }}>Privacidad</Link>
+          </div>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Contacto</p>
+            <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 8 }}>soporte@golplay.com</p>
+            <p style={{ fontSize: 13, color: '#9ca3af' }}>Costa Rica</p>
+          </div>
+        </div>
+        <div style={{ maxWidth: 1280, margin: '24px auto 0', paddingTop: 20, borderTop: '1px solid #374151', textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#6b7280' }}>
+            © {new Date().getFullYear()} GolPlay. Todos los derechos reservados.
+          </p>
+        </div>
+      </footer>
     </>
   )
 }

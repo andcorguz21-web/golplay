@@ -2,24 +2,18 @@
  * GolPlay — AdminSidebar
  * Navegación principal del panel administrativo.
  *
- * - Íconos SVG inline (sin dependencias extra)
- * - Ruta activa destacada con indicador visual
- * - Colapsable en desktop (solo muestra íconos)
- * - Tooltips en estado colapsado
- * - Secciones agrupadas
- * - Rol-aware: admin ve todo, owner ve su subset
+ * v3.0: Logo SVG real en lugar de ícono verde + texto
  */
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import { type Role } from './AdminLayout'
 import {
   LayoutDashboard, CalendarDays, BookOpen, Dumbbell,
   CreditCard, BarChart2, Settings, LogOut, ChevronLeft,
-  ChevronRight, X,
-} from 'lucide-react'
-
+  ChevronRight, X, FileText, Tag,} from 'lucide-react'
 // ─── Nav config ───────────────────────────────────────────────────────────────
 interface NavItem {
   label: string
@@ -54,6 +48,8 @@ const NAV: NavSection[] = [
   {
     title: 'Sistema',
     items: [
+      { label: 'Comprobantes',    path: '/admin/receipts',       icon: FileText,        roles: ['admin'] },
+      { label: 'Cupones',         path: '/admin/coupons',        icon: Tag,             roles: ['admin'] },
       { label: 'Configuración',   path: '/admin/settings',       icon: Settings,        roles: ['admin'] },
     ],
   },
@@ -98,11 +94,28 @@ export default function AdminSidebar({ role, collapsed = false, onToggleCollapse
     >
       {/* ── Logo / Header ── */}
       <div style={{ ...S.logoRow, justifyContent: collapsed ? 'center' : 'space-between' }}>
-        {!collapsed && (
-          <div style={S.logoWrap}>
-            <div style={S.logoDot} />
-            <span style={S.logoText}>GolPlay</span>
-          </div>
+        {!collapsed ? (
+          <Link href="/admin" style={S.logoLink}>
+            <Image
+              src="/logo-golplay1.svg"
+              alt="GolPlay"
+              width={130}
+              height={75}
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </Link>
+        ) : (
+          <Link href="/admin" style={S.logoLink}>
+            <Image
+              src="/logo-golplay1.svg"
+              alt="GolPlay"
+              width={32}
+              height={32}
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </Link>
         )}
 
         {/* Mobile close */}
@@ -113,7 +126,7 @@ export default function AdminSidebar({ role, collapsed = false, onToggleCollapse
         )}
 
         {/* Desktop collapse toggle */}
-        {onToggleCollapse && (
+        {onToggleCollapse && !onClose && (
           <button
             onClick={onToggleCollapse}
             style={S.iconBtn}
@@ -220,23 +233,11 @@ const S: Record<string, React.CSSProperties> = {
     minHeight: 60,
     gap: 8,
   },
-  logoWrap: {
+  logoLink: {
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-  },
-  logoDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+    textDecoration: 'none',
     flexShrink: 0,
-  },
-  logoText: {
-    fontSize: 17,
-    fontWeight: 800,
-    color: '#0f172a',
-    letterSpacing: '-0.02em',
   },
   iconBtn: {
     width: 30,

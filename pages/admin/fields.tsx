@@ -30,6 +30,7 @@ interface Field {
   currency?: string
   commission_usd?: number
   monthly_statements?: { status: string }[] | null
+  field_images?: { url: string; is_main: boolean }[] | null
 }
 
 interface FieldImage {
@@ -47,7 +48,17 @@ interface FormErrors {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PROVINCES = ['San José','Alajuela','Cartago','Heredia','Guanacaste','Puntarenas','Limón']
+const REGIONS: Record<string, { label: string; options: string[] }> = {
+  CR: { label: 'Provincia', options: ['San José','Alajuela','Cartago','Heredia','Guanacaste','Puntarenas','Limón'] },
+  MX: { label: 'Estado', options: ['Ciudad de México','Jalisco','Nuevo León','Estado de México','Puebla','Guanajuato','Querétaro','Yucatán','Quintana Roo','Baja California','Sonora','Chihuahua','Veracruz','Tamaulipas','Michoacán','Oaxaca','Sinaloa','Coahuila','Aguascalientes','Morelos','Tabasco','Durango','San Luis Potosí','Hidalgo','Guerrero','Nayarit','Tlaxcala','Campeche','Colima','Zacatecas','Baja California Sur','Chiapas'] },
+  CO: { label: 'Departamento', options: ['Bogotá D.C.','Antioquia','Valle del Cauca','Atlántico','Santander','Cundinamarca','Bolívar','Nariño','Risaralda','Caldas','Tolima','Norte de Santander','Meta','Boyacá','Huila','Magdalena','Cesar','Córdoba','Quindío','Sucre'] },
+  AR: { label: 'Provincia', options: ['Buenos Aires','CABA','Córdoba','Santa Fe','Mendoza','Tucumán','Entre Ríos','Salta','Misiones','Chaco','Corrientes','Santiago del Estero','San Juan','Jujuy','Río Negro','Neuquén','Formosa','Chubut','San Luis','Catamarca','La Rioja','La Pampa','Santa Cruz','Tierra del Fuego'] },
+  CL: { label: 'Región', options: ['Metropolitana','Valparaíso','Biobío','Maule','La Araucanía','O\'Higgins','Los Lagos','Coquimbo','Antofagasta','Tarapacá','Atacama','Los Ríos','Ñuble','Arica y Parinacota','Aysén','Magallanes'] },
+  PE: { label: 'Departamento', options: ['Lima','Arequipa','La Libertad','Piura','Cusco','Junín','Lambayeque','Callao','Áncash','Cajamarca','Ica','Loreto','Puno','Tacna','San Martín','Ucayali','Huánuco','Madre de Dios','Tumbes','Apurímac','Amazonas','Moquegua','Huancavelica','Ayacucho','Pasco'] },
+  GT: { label: 'Departamento', options: ['Guatemala','Quetzaltenango','Escuintla','Alta Verapaz','San Marcos','Huehuetenango','Sacatepéquez','Chimaltenango','Petén','Sololá','Totonicapán','Retalhuleu','Suchitepéquez','Jutiapa','Izabal','Santa Rosa','Jalapa','Zacapa','Chiquimula','Baja Verapaz','El Progreso'] },
+  PA: { label: 'Provincia', options: ['Panamá','Panamá Oeste','Colón','Chiriquí','Veraguas','Coclé','Herrera','Los Santos','Bocas del Toro','Darién'] },
+  UY: { label: 'Departamento', options: ['Montevideo','Canelones','Maldonado','Salto','Colonia','Paysandú','Rivera','San José','Rocha','Soriano','Tacuarembó','Cerro Largo','Florida','Lavalleja','Durazno','Treinta y Tres','Artigas','Flores','Río Negro'] },
+}
 
 const SPORTS: { value: SportType; label: string; icon: string }[] = [
   { value: 'futbol5',  label: 'Fútbol 5',   icon: '⚽' },
@@ -89,6 +100,7 @@ const fCRC = (v: number) => `₡${Math.round(v).toLocaleString('es-CR')}`
 export default function AdminFields() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
+  const [ownerCountry, setOwnerCountry] = useState<string>('CR')
 
   // Data
   const [fields,  setFields]  = useState<Field[]>([])
@@ -130,9 +142,15 @@ export default function AdminFields() {
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.replace('/login'); return }
       setUserId(data.user.id)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('country')
+        .eq('id', data.user.id)
+        .single()
+      if (profile?.country) setOwnerCountry(profile.country)
     })
   }, [router])
 
@@ -176,8 +194,23 @@ export default function AdminFields() {
       `)
       .eq('owner_id', userId)   // ✅ scoped a las canchas del owner logueado
       .order('id')
-    if (!error && data) setFields(data)
-    setLoading(false)
+      if (!error && data) {
+        // Cargar imágenes principales de todas las canchas
+        const fieldIds = data.map((f: any) => f.id)
+        const { data: images } = await supabase
+          .from('field_images')
+          .select('field_id, url, is_main')
+          .in('field_id', fieldIds)
+          .eq('is_main', true)
+      
+        // Adjuntar imágenes a cada field
+        const fieldsWithImages = data.map((f: any) => ({
+          ...f,
+          field_images: images?.filter(img => img.field_id === f.id) ?? [],
+        }))
+        setFields(fieldsWithImages)
+      }
+      setLoading(false)
   }, [userId])
 
   useEffect(() => { if (userId) loadFields() }, [loadFields, userId])
@@ -488,15 +521,15 @@ export default function AdminFields() {
 
               {/* Location */}
               <div className="f-field">
-                <label className="f-label" htmlFor="f-location">Provincia</label>
+                <label className="f-label" htmlFor="f-location">{REGIONS[ownerCountry]?.label ?? 'Ubicación'}</label>
                 <select
                   id="f-location"
                   className="f-input"
                   value={fLocation}
                   onChange={e => setFLocation(e.target.value)}
                 >
-                  <option value="">Seleccioná una provincia</option>
-                  {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                  <option value="">Seleccioná {(REGIONS[ownerCountry]?.label ?? 'ubicación').toLowerCase()}</option>
+                  {(REGIONS[ownerCountry]?.options ?? []).map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
 
@@ -859,7 +892,7 @@ export default function AdminFields() {
                   {/* Card image */}
                   <div
                     className="f-card__img"
-                    style={{ backgroundImage: `url(${DEFAULT_IMG})`, opacity: active ? 1 : 0.5 }}
+                    style={{ backgroundImage: `url(${field.field_images?.find(img => img.is_main)?.url ?? field.field_images?.[0]?.url ?? DEFAULT_IMG})`, opacity: active ? 1 : 0.5 }}
                   >
                     <div className="f-card__img-overlay">
                       <span className="f-card__sport-badge">

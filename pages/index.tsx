@@ -855,15 +855,55 @@ function FieldSkeleton() {
 function Navbar({ dark }: { dark: boolean }) {
   const router  = useRouter()
   const [scrolled, setScrolled] = useState(false)
+  const [user, setUser] = useState<{ email: string; role?: string } | null>(null)
+  const [dropOpen, setDropOpen] = useState(false)
+  const dropRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session?.user) return
+      const u = data.session.user
+      supabase.from('profiles').select('role').eq('id', u.id).single().then(({ data: p }) => {
+        setUser({ email: u.email ?? '', role: p?.role ?? 'user' })
+      })
+    })
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session?.user) { setUser(null); return }
+      const u = session.user
+      supabase.from('profiles').select('role').eq('id', u.id).single().then(({ data: p }) => {
+        setUser({ email: u.email ?? '', role: p?.role ?? 'user' })
+      })
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', fn, {passive:true})
     return () => window.removeEventListener('scroll', fn)
   }, [])
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false)
+    }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
+
   const isDark = dark && !scrolled
   const cls = dark
     ? (scrolled ? 'nav nav--scrolled' : 'nav nav--transparent')
     : 'nav nav--light'
+
+  const initials = user?.email?.slice(0, 2).toUpperCase() ?? 'U'
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    setUser(null); setDropOpen(false)
+    router.push('/')
+  }
+
   return (
     <nav className={cls}>
       <div className="nav__logo" onClick={() => router.push('/')} style={{cursor:'pointer'}}>
@@ -873,11 +913,67 @@ function Navbar({ dark }: { dark: boolean }) {
           style={{height:100, width:'auto', filter: isDark ? 'brightness(0) invert(1)' : 'none', transition:'filter .3s'}}
         />
       </div>
-      <div className="nav__links">
-        <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Canchas</Link>
-        <Link href="/login"   className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Iniciar sesión</Link>
-        <Link href="/register" className="nav__cta">Registrarse</Link>
-      </div>
+
+      {user ? (
+        <div className="nav__links" style={{gap: 6}}>
+          <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Canchas</Link>
+          <Link href="/favorites" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Favoritos</Link>
+          {(user.role === 'owner' || user.role === 'admin') && (
+            <Link href="/admin" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Mi negocio</Link>
+          )}
+          <div ref={dropRef} style={{position:'relative'}}>
+            <button onClick={() => setDropOpen(!dropOpen)} style={{
+              width:36, height:36, borderRadius:'50%', border:'none', cursor:'pointer',
+              background: 'linear-gradient(135deg,#16a34a,#0B4D2C)', color:'#fff',
+              fontSize:13, fontWeight:800, fontFamily:'inherit',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              boxShadow:'0 2px 8px rgba(22,163,74,.35)',
+            }} aria-label="Menú de usuario">{initials}</button>
+            {dropOpen && (
+              <div style={{
+                position:'absolute', top:'calc(100% + 8px)', right:0, width:220,
+                background:'#fff', borderRadius:14, border:'1px solid #e2e8f0',
+                boxShadow:'0 12px 40px rgba(0,0,0,.15)', overflow:'hidden', zIndex:200,
+                animation:'popIn .15s ease',
+              }}>
+                <div style={{padding:'14px 16px', borderBottom:'1px solid #f1f5f9'}}>
+                  <p style={{fontSize:13, fontWeight:600, color:'#0f172a', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{user.email}</p>
+                  <p style={{fontSize:11, color:'#94a3b8', margin:'2px 0 0', textTransform:'capitalize'}}>{user.role === 'admin' ? 'Administrador' : user.role === 'owner' ? 'Dueño de complejo' : 'Jugador'}</p>
+                </div>
+                {[
+                  { href: '/perfil', icon: '👤', label: 'Mi perfil' },
+                  { href: '/favorites', icon: '❤️', label: 'Favoritos' },
+                  ...(user.role === 'owner' || user.role === 'admin' ? [{ href: '/admin', icon: '🏟️', label: 'Mi negocio' }] : []),
+                ].map(item => (
+                  <Link key={item.href} href={item.href} onClick={() => setDropOpen(false)} style={{
+                    display:'flex', alignItems:'center', gap:10, padding:'10px 16px', fontSize:13, fontWeight:500,
+                    color:'#374151', textDecoration:'none', transition:'background .1s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  ><span>{item.icon}</span>{item.label}</Link>
+                ))}
+                <div style={{borderTop:'1px solid #f1f5f9'}}>
+                  <button onClick={handleSignOut} style={{
+                    display:'flex', alignItems:'center', gap:10, padding:'10px 16px', fontSize:13, fontWeight:500,
+                    color:'#ef4444', background:'none', border:'none', cursor:'pointer', width:'100%', fontFamily:'inherit',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  ><span>↩</span>Cerrar sesión</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="nav__links">
+          <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Canchas</Link>
+          <Link href="/login"   className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Iniciar sesión</Link>
+          <Link href="/register" className="nav__cta">Registrarse</Link>
+        </div>
+      )}
+
       <Link href="/reserve" className="nav__mcta">Buscar</Link>
     </nav>
   )

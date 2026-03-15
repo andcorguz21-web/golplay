@@ -1,11 +1,6 @@
 /**
  * GolPlay — AdminLayout
- * Estructura principal del panel administrativo.
- * 
- * - Auth + role guard centralizado (no duplicar en cada página)
- * - Sidebar fija en desktop, drawer en móvil
- * - Sidebar colapsable con persistencia en localStorage
- * - Inyecta role + userId a children como render prop (opcional)
+ * v3.0: Incluye FAB flotante para crear reservas desde cualquier página admin.
  */
 
 import { useEffect, useState, useCallback } from 'react'
@@ -13,6 +8,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import AdminSidebar from './AdminSidebar'
 import AdminTopbar from './AdminTopbar'
+import CreateBookingModal from './CreateBookingModal'
 
 export type Role = 'admin' | 'owner'
 
@@ -27,21 +23,16 @@ interface UserContext {
   name: string
 }
 
-// ─── Breakpoint ───────────────────────────────────────────────────────────────
 const DESKTOP_BP = 768
-
-// ─── Sidebar width constants ──────────────────────────────────────────────────
 export const SIDEBAR_EXPANDED  = 240
 export const SIDEBAR_COLLAPSED = 64
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
 
-  // Auth state
   const [ctx, setCtx] = useState<UserContext | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
 
-  // Sidebar state
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -49,7 +40,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   })
   const [isDesktop, setIsDesktop] = useState(false)
 
-  // ── Auth + role guard (centralizado aquí, no repetir en páginas) ──
+  // FAB state
+  const [showBookingModal, setShowBookingModal] = useState(false)
+
+  // ── Auth + role guard ──
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -77,7 +71,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     check()
   }, [router])
 
-  // ── Responsive detection ──
+  // ── Responsive ──
   useEffect(() => {
     const check = () => {
       const desktop = window.innerWidth >= DESKTOP_BP
@@ -89,7 +83,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // ── Collapse toggle with persistence ──
   const toggleCollapse = useCallback(() => {
     setCollapsed(prev => {
       const next = !prev
@@ -98,18 +91,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     })
   }, [])
 
-  // ── Close drawer on route change ──
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [router.pathname])
+  useEffect(() => { setMobileOpen(false) }, [router.pathname])
 
-  // ── Prevent body scroll when drawer open ──
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
-  // ── Block render until auth resolves ──
   if (!authChecked || !ctx) return null
 
   const sidebarWidth = isDesktop
@@ -160,7 +148,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* ── Main area ── */}
       <div style={{ ...S.main, marginLeft: 0 }}>
 
-        {/* Topbar — always visible */}
         <AdminTopbar
           userName={ctx.name}
           userEmail={ctx.email}
@@ -169,7 +156,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           showMenu={!isDesktop}
         />
 
-        {/* Page content */}
         <main style={S.content}>
           {typeof children === 'function'
             ? children({ role: ctx.role, userId: ctx.userId })
@@ -177,6 +163,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </main>
 
       </div>
+
+      {/* ── FAB: Nueva reserva ── */}
+      <style>{FAB_CSS}</style>
+      <button
+        className="gp-fab"
+        onClick={() => setShowBookingModal(true)}
+        aria-label="Nueva reserva"
+        title="Nueva reserva"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+      </button>
+
+      {/* ── Create Booking Modal ── */}
+      {showBookingModal && (
+        <CreateBookingModal
+          userId={ctx.userId}
+          onClose={() => setShowBookingModal(false)}
+          onCreated={() => {
+            setShowBookingModal(false)
+            // Reload current page to reflect new booking
+            router.replace(router.asPath)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -215,10 +227,52 @@ const S: Record<string, React.CSSProperties> = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    minWidth: 0, // prevents flex overflow
+    minWidth: 0,
   },
   content: {
     flex: 1,
     padding: '24px 24px',
   },
 }
+
+// ─── FAB CSS ──────────────────────────────────────────────────────────────────
+const FAB_CSS = `
+@keyframes gpFabIn { from { opacity: 0; transform: scale(.8) translateY(10px); } to { opacity: 1; transform: none; } }
+
+.gp-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 90;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(22,163,74,.4), 0 2px 8px rgba(0,0,0,.1);
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+  animation: gpFabIn .3s ease both .5s;
+}
+.gp-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 32px rgba(22,163,74,.5), 0 4px 12px rgba(0,0,0,.15);
+}
+.gp-fab:active {
+  transform: scale(.95);
+}
+
+@media (max-width: 640px) {
+  .gp-fab {
+    bottom: 20px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+  }
+}
+`

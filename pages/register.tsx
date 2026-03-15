@@ -169,9 +169,11 @@ export default function RegisterPage() {
         password: form.password,
         options: {
           data: {
-            role:        userType,
-            first_name:  firstName,
-            last_name:   lastName,
+            role:         userType,
+            first_name:   firstName,
+            last_name:    lastName,
+            phone:        form.phone.trim() || null,
+            complex_name: form.complexName.trim() || null,
           },
         },
       })
