@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/router'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
 import TermsModal from '@/components/ui/TermsModal'
+import RecurringBookings from '@/components/ui/admin/RecurringBookings'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -784,7 +785,13 @@ export default function AdminFields() {
               )}
             </div>
           )}
-
+          {/* Horarios fijos — solo si estamos editando una cancha existente */}
+          {editingId && userId && (
+            <div style={{ padding: '0 24px 20px' }}>
+              <div style={{ height: 1, background: '#f1f5f9', margin: '0 0 20px' }} />
+              <RecurringBookings fieldId={editingId} ownerId={userId} />
+            </div>
+          )}
         </div>
 
         {/* Drawer footer */}
