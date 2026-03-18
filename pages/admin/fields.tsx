@@ -136,6 +136,7 @@ export default function AdminFields() {
   const [fLat,           setFLat]           = useState('')
   const [fLng,           setFLng]           = useState('')
   const [fActive,        setFActive]        = useState(true)
+  const [fSlotDuration,  setFSlotDuration]  = useState(1)
   const [errors,         setErrors]         = useState<FormErrors>({})
 
   const drawerRef = useRef<HTMLDivElement>(null)
@@ -191,7 +192,8 @@ export default function AdminFields() {
         id, name, sport, price, price_day, price_night, night_from_hour,
         description, features, hours, location, latitude, longitude, active, owner_id,
         country, city, timezone, currency, commission_usd,
-        monthly_statements(status)
+        monthly_statements(status),
+        slot_duration
       `)
       .eq('owner_id', userId)   // ✅ scoped a las canchas del owner logueado
       .order('id')
@@ -291,6 +293,7 @@ export default function AdminFields() {
       latitude:         fLat  ? Number(fLat)  : null,
       longitude:        fLng  ? Number(fLng)  : null,
       active:           fActive,
+      slot_duration:    fSlotDuration,
     }
 
     const { error } = editingId
@@ -378,6 +381,7 @@ export default function AdminFields() {
     setFLat(field.latitude  != null ? String(field.latitude)  : '')
     setFLng(field.longitude != null ? String(field.longitude) : '')
     setFActive(field.active !== false)
+    setFSlotDuration((field as any).slot_duration ?? 1)
     await loadGallery(field.id)
     setDrawerOpen(true)
     setActiveSection('info')
@@ -392,8 +396,7 @@ export default function AdminFields() {
     setEditingId(null); setFName(''); setFSport('futbol5'); setFPrice('')
     setFPriceDay(''); setFPriceNight(''); setFNightFrom(18)
     setFDescription(''); setFFeatures([]); setFHours([])
-    setFLocation(''); setFLat(''); setFLng(''); setFActive(true); setGallery([]); setErrors({})
-  }
+    setFLocation(''); setFLat(''); setFLng(''); setFActive(true); setFSlotDuration(1); setGallery([]); setErrors({})  }
 
   const toggle = <T extends string>(val: T, list: T[], set: (v: T[]) => void) =>
     set(list.includes(val) ? list.filter(v => v !== val) : [...list, val])
@@ -505,6 +508,36 @@ export default function AdminFields() {
                   ))}
                 </div>
                 {errors.sport && <span className="f-error">{errors.sport}</span>}
+              </div>
+              
+              {/* Slot duration */}
+              <div className="f-field">
+                <label className="f-label">Duración del turno</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[
+                    { value: 1, label: '1 hora', desc: 'Estándar' },
+                    { value: 2, label: '2 horas', desc: 'Fútbol 11, eventos' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFSlotDuration(opt.value)}
+                      style={{
+                        flex: 1, padding: '10px 12px', borderRadius: 10,
+                        border: `1.5px solid ${fSlotDuration === opt.value ? '#16a34a' : '#e2e8f0'}`,
+                        background: fSlotDuration === opt.value ? '#f0fdf4' : '#fff',
+                        cursor: 'pointer', textAlign: 'center', fontFamily: 'inherit',
+                      }}
+                    >
+                      <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: fSlotDuration === opt.value ? '#15803d' : '#0f172a' }}>
+                        {opt.label}
+                      </span>
+                      <span style={{ display: 'block', fontSize: 11, color: fSlotDuration === opt.value ? '#16a34a' : '#94a3b8', marginTop: 2 }}>
+                        {opt.desc}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Name */}

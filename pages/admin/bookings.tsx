@@ -31,7 +31,9 @@ interface Booking {
   customer_last_name?: string
   customer_phone?: string
   customer_email?: string
+  customer_id_number?: string
   hasConflict?: boolean
+  notes?: string | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -106,6 +108,8 @@ export default function AdminBookings() {
 
   const [detail,  setDetail]  = useState<Booking | null>(null)
   const [confirm, setConfirm] = useState<{ booking: Booking; action: 'cancel' | 'activate' } | null>(null)
+  const [editingNotes, setEditingNotes] = useState<number | null>(null)
+  const [notesText, setNotesText] = useState('')
   const [toast,   setToast]   = useState<{ msg: string; ok: boolean } | null>(null)
   const [acting,  setActing]  = useState<number | null>(null)
 
@@ -144,8 +148,7 @@ export default function AdminBookings() {
 
     let q = supabase
       .from('bookings')
-      .select('id, date, hour, status, price, source, field_id, customer_name, customer_last_name, customer_phone, customer_email')
-      .in('field_id', fieldIds)
+      .select('id, date, hour, status, price, source, field_id, customer_name, customer_last_name, customer_phone, customer_email, customer_id_number, notes')      .in('field_id', fieldIds)
       .order('date', { ascending: false })
       .order('hour', { ascending: true })
 
@@ -176,6 +179,8 @@ export default function AdminBookings() {
         customer_last_name: b.customer_last_name,
         customer_phone:     b.customer_phone,
         customer_email:     b.customer_email,
+        customer_id_number: b.customer_id_number,
+        notes:              b.notes ?? null,
       }
     })
 
@@ -217,6 +222,7 @@ export default function AdminBookings() {
       Cliente:  clientName(b) ?? '—',
       Teléfono: b.customer_phone ?? '—',
       Email:    b.customer_email ?? '—',
+      Cédula:   b.customer_id_number ?? '—',
       Precio:   b.price ?? '',
       Fuente:   b.source ?? '',
     }))
@@ -469,7 +475,7 @@ export default function AdminBookings() {
               ⚠️ Esta reserva tiene un conflicto de horario con otra reserva en la misma cancha y franja horaria
             </div>
           )}
-
+          
           <div className="bk-modal__grid">
             <DetailRow icon="🏟️" label="Cancha"   value={`${SPORT_ICON[detail.sport ?? ''] ?? ''} ${detail.fieldName}`.trim()}/>
             <DetailRow icon="📅" label="Fecha"    value={fmtDate(detail.date)}/>
@@ -477,9 +483,42 @@ export default function AdminBookings() {
             <DetailRow icon="💰" label="Precio"   value={fCRC(detail.price)}/>
             <DetailRow icon="📱" label="Teléfono" value={detail.customer_phone || '—'}/>
 <DetailRow icon="📧" label="Email"    value={detail.customer_email || '—'}/>
+            <DetailRow icon="🪪" label="Cédula"   value={detail.customer_id_number || '—'}/>
             <DetailRow icon="🔌" label="Fuente"   value={detail.source ?? '—'}/>
             <DetailRow icon="🔢" label="ID"       value={`#${detail.id}`}/>
           </div>
+          
+          {/* Notas */}
+          <div style={{ padding: '0 24px 16px' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Notas del owner</p>
+            {editingNotes === detail.id ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <textarea
+                  value={notesText}
+                  onChange={e => setNotesText(e.target.value)}
+                  placeholder="Agregar notas sobre esta reserva..."
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', minHeight: 60, outline: 'none', color: '#0f172a' }}
+                />
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <button className="bk-btn bk-btn--ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setEditingNotes(null)}>Cancelar</button>
+                  <button className="bk-btn bk-btn--primary" style={{ padding: '6px 12px', fontSize: 12 }} onClick={async () => {
+                    await supabase.from('bookings').update({ notes: notesText.trim() || null }).eq('id', detail.id)
+                    setBookings(prev => prev.map(b => b.id === detail.id ? { ...b, notes: notesText.trim() || null } : b))
+                    setDetail({ ...detail, notes: notesText.trim() || null })
+                    setEditingNotes(null)
+                    showToast('Nota guardada')
+                  }}>Guardar</button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => { setEditingNotes(detail.id); setNotesText(detail.notes ?? '') }}
+                style={{ padding: '10px 12px', borderRadius: 10, background: '#f8fafc', border: '1.5px dashed #e2e8f0', cursor: 'pointer', fontSize: 13, color: detail.notes ? '#374151' : '#94a3b8', minHeight: 40, transition: 'border-color .12s' }}
+              >
+                {detail.notes || 'Click para agregar una nota...'}
+              </div>
+            )}
+          </div> 
 
           <div className="bk-modal__actions">
             {detail.status !== 'cancelled' ? (

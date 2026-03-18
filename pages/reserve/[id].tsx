@@ -45,6 +45,7 @@ type Field = {
   night_from_hour: number   // hora desde la que aplica tarifa nocturna (ej: 18)
   latitude:        number | null
   longitude:       number | null
+  slot_duration:   number  // 1 o 2 (horas por bloque)
 }
 
 type BookingStatus = 'idle' | 'sending' | 'success' | 'error'
@@ -99,11 +100,12 @@ const formatDisplay = (s: string) => {
   return `${DAYS_ES[dt.getDay()]} ${dt.getDate()} ${MONTHS_ES[dt.getMonth()].slice(0, 3)}`
 }
 
-function validateForm(n: string, p: string, e: string) {
+function validateForm(n: string, p: string, e: string, idNumber: string) {
   const errs: Record<string, string> = {}
   if (!n.trim() || n.trim().length < 2)              errs.name  = 'Mínimo 2 caracteres'
   if (!p.trim() || !/^\+?[\d\s\-()]{7,}$/.test(p))  errs.phone = 'Teléfono inválido'
   if (!e.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) errs.email = 'Correo inválido'
+  if (!idNumber.trim() || idNumber.trim().length < 5) errs.idNumber = 'Cédula o identificación requerida'
   return errs
 }
 
@@ -595,6 +597,7 @@ export default function ReserveField() {
   const [name,         setName]         = useState('')
   const [phone,        setPhone]        = useState('')
   const [email,        setEmail]        = useState('')
+  const [idNumber,     setIdNumber]     = useState('')
   const [formErrors,   setFormErrors]   = useState<Record<string, string>>({})
   const [status,       setStatus]       = useState<BookingStatus>('idle')
 
@@ -618,7 +621,7 @@ export default function ReserveField() {
         const [{ data: fieldData, error: fe }, { data: imgs }] = await Promise.all([
           supabase
             .from('fields')
-            .select('id,name,sport,location,description,features,hours,price_day,price_night,night_from_hour,latitude,longitude')
+            .select('id,name,sport,location,description,features,hours,price_day,price_night,night_from_hour,latitude,longitude,slot_duration')
             .eq('id', fieldId)
             .eq('active', true)
             .single(),
@@ -642,6 +645,7 @@ export default function ReserveField() {
           night_from_hour: Number(fieldData.night_from_hour ?? 18),
           latitude:    fieldData.latitude  ?? null,
           longitude:   fieldData.longitude ?? null,
+          slot_duration: Number(fieldData.slot_duration ?? 1),
         })
         const urlList = imgs?.map((i: any) => i.url).filter(Boolean) ?? []
         setImages(urlList.length ? urlList : FALLBACK_IMAGES)
@@ -675,7 +679,65 @@ export default function ReserveField() {
 
   const sportMeta = field?.sport ? SPORTS_META[field.sport] : null
   const sortedHours = useMemo(() => [...(field?.hours || [])].sort(), [field])
+
+  // ── Slot-duration-aware time slots ─────────────────────────────────────────
+  // Si slot_duration=2, agrupa horas consecutivas en bloques de 2h
+  // Cada timeSlot tiene: startHour (para enviar a la Edge Function), label (para mostrar), endHour
+  const timeSlots = useMemo(() => {
+    if (!field) return []
+    const dur = field.slot_duration || 1
+    const hours = sortedHours
+
+    if (dur === 1) {
+      return hours.map(h => ({
+        startHour: h,
+        endHour: h,
+        label: h,
+        coveredHours: [h],
+      }))
+    }
+
+    // dur >= 2: agrupar bloques consecutivos
+    const slots: { startHour: string; endHour: string; label: string; coveredHours: string[] }[] = []
+    let i = 0
+    while (i < hours.length) {
+      const start = hours[i]
+      const startNum = Number(start.split(':')[0])
+      // Buscar las siguientes (dur-1) horas consecutivas
+      const block = [start]
+      let valid = true
+      for (let j = 1; j < dur; j++) {
+        const nextExpected = `${String(startNum + j).padStart(2, '0')}:00`
+        if (hours.includes(nextExpected)) {
+          block.push(nextExpected)
+        } else {
+          valid = false
+          break
+        }
+      }
+      if (valid && block.length === dur) {
+        const endNum = startNum + dur
+        const endLabel = `${String(endNum).padStart(2, '0')}:00`
+        slots.push({
+          startHour: start,
+          endHour: block[block.length - 1],
+          label: `${start} - ${endLabel}`,
+          coveredHours: block,
+        })
+        i += dur  // saltar las horas ya agrupadas
+      } else {
+        i++  // hora huérfana, saltar
+      }
+    }
+    return slots
+  }, [field, sortedHours])
+
   const dateDisplay = selDate ? formatDisplay(selDate) : ''
+  const selectedSlotLabel = useMemo(() => {
+    if (!selHour) return ''
+    const slot = timeSlots.find(s => s.startHour === selHour)
+    return slot?.label || selHour
+  }, [selHour, timeSlots])
 
   // ── Booking hold helpers ──────────────────────────────────────────────────
 
@@ -768,7 +830,7 @@ export default function ReserveField() {
     const today = new Date(); today.setHours(0,0,0,0)
     const [sy,sm,sd] = selDate.split("-").map(Number)
     if (new Date(sy, sm-1, sd) < today) { setStatus("error"); return }
-    const errs = validateForm(name, phone, email)
+    const errs = validateForm(name, phone, email, idNumber)
     if (Object.keys(errs).length) { setFormErrors(errs); return }
     setStatus('sending')
     try {
@@ -787,6 +849,7 @@ export default function ReserveField() {
             name:     name.trim(),
             phone:    phone.trim(),
             email:    email.trim().toLowerCase(),
+            customer_id_number: idNumber.trim(),
             price,
             tariff:   isNight ? 'night' : 'day',
           }),
@@ -794,7 +857,8 @@ export default function ReserveField() {
       )
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body?.message || 'Error al crear la reserva')
+        console.error('Booking error:', res.status, body)
+        throw new Error(body?.error || body?.message || 'Error al crear la reserva')
       }
       setStatus('success')
       clearHoldTimer()  // el slot ya está confirmado, liberar timer
@@ -1149,30 +1213,31 @@ export default function ReserveField() {
                     </div>
 
                     {loadingHours ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 7 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: field?.slot_duration === 2 ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 7 }}>
                         {Array.from({ length: 8 }).map((_, i) => (
                           <div key={i} className="skel" style={{ height: 52 }}/>
                         ))}
                       </div>
-                    ) : sortedHours.length === 0 ? (
+                    ) : timeSlots.length === 0 ? (
                       <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: '16px 0' }}>
                         No hay horarios configurados
                       </p>
                     ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 7 }}>
-                        {sortedHours.map(h => {
-                          const blocked  = bookedHours.includes(h)
-                          const selected = selHour === h
-                          const night    = isNightHour(h, field?.night_from_hour)
+                      <div style={{ display: 'grid', gridTemplateColumns: field?.slot_duration === 2 ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 7 }}>
+                        {timeSlots.map(slot => {
+                          // Un bloque está ocupado si CUALQUIERA de sus horas está reservada
+                          const blocked  = slot.coveredHours.some(h => bookedHours.includes(h))
+                          const selected = selHour === slot.startHour
+                          const night    = isNightHour(slot.startHour, field?.night_from_hour)
                           return (
-                            <button key={h} type="button"
+                            <button key={slot.startHour} type="button"
                               disabled={blocked}
-                              onClick={() => handleHourSelect(h)}
+                              onClick={() => handleHourSelect(slot.startHour)}
                               className={`hour-btn${selected ? (night ? ' night-sel' : ' sel') : ''}`}
-                              aria-label={`${h}${blocked ? ', ocupado' : ''}`}
+                              aria-label={`${slot.label}${blocked ? ', ocupado' : ''}`}
                               aria-pressed={selected}
                             >
-                              <span style={{ fontSize: 13 }}>{h}</span>
+                              <span style={{ fontSize: 13 }}>{slot.label}</span>
                               <span className="hour-tag" style={{
                                 color: selected ? 'rgba(255,255,255,.75)' : blocked ? '#c9d3c8' : night ? '#7c3aed' : 'var(--g700)'
                               }}>
@@ -1248,7 +1313,7 @@ export default function ReserveField() {
                           Tu reserva
                         </p>
                         <p style={{ fontSize: 14, fontWeight: 700, color: isNight ? '#4c1d95' : 'var(--g800)' }}>
-                          {dateDisplay} · {selHour}
+                          {dateDisplay} · {selectedSlotLabel}
                         </p>
                         <p style={{ fontSize: 12, fontWeight: 500, color: isNight ? '#7c3aed' : 'var(--g700)', marginTop: 2 }}>
                           {isNight ? '🌙 Tarifa nocturna' : '🌞 Tarifa diurna'}
@@ -1258,7 +1323,7 @@ export default function ReserveField() {
                         <p style={{ fontFamily: 'var(--font-h)', fontSize: 22, fontWeight: 800, color: isNight ? '#4c1d95' : 'var(--g800)', lineHeight: 1 }}>
                           {fmt(price)}
                         </p>
-                        <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>por hora</p>
+                        <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>por {field.slot_duration === 2 ? 'bloque' : 'hora'}</p>
                       </div>
                     </div>
                   </div>
@@ -1321,7 +1386,7 @@ export default function ReserveField() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     {[
                       { l: 'Fecha',  v: dateDisplay },
-                      { l: 'Hora',   v: selHour },
+                      { l: 'Hora',   v: selectedSlotLabel },
                       { l: 'Tarifa', v: isNight ? '🌙 Nocturna' : '🌞 Diurna' },
                       { l: 'Total',  v: fmt(price) },
                     ].map(({ l, v }) => (
@@ -1366,6 +1431,14 @@ export default function ReserveField() {
                       placeholder="Correo electrónico" value={email} type="email" autoComplete="email"
                       onChange={e => { setEmail(e.target.value); setFormErrors(p => ({...p, email:''})) }}/>
                     {formErrors.email && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.email}</p>}
+                  </div>
+
+                  {/* Cédula / ID */}
+                  <div>
+                    <input className={`modal-input${formErrors.idNumber ? ' err' : ''}`}
+                      placeholder="Cédula o identificación" value={idNumber} autoComplete="off"
+                      onChange={e => { setIdNumber(e.target.value); setFormErrors(p => ({...p, idNumber:''})) }}/>
+                    {formErrors.idNumber && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.idNumber}</p>}
                   </div>
 
                   {/* Submit */}
