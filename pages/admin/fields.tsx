@@ -24,6 +24,7 @@ interface Field {
   latitude?: number | null
   longitude?: number | null
   active?: boolean
+  color?: string
   owner_id?: string
   country?: string
   city?: string | null
@@ -81,6 +82,22 @@ const ALL_HOURS = [
 
 const NIGHT_HOURS = ['17','18','19','20','21']
 
+const COLOR_PALETTE = [
+  { hex: '#3B82F6', label: 'Azul' },
+  { hex: '#22C55E', label: 'Verde' },
+  { hex: '#F97316', label: 'Naranja' },
+  { hex: '#A855F7', label: 'Morado' },
+  { hex: '#EC4899', label: 'Rosa' },
+  { hex: '#06B6D4', label: 'Cyan' },
+  { hex: '#EAB308', label: 'Amarillo' },
+  { hex: '#EF4444', label: 'Rojo' },
+  { hex: '#6366F1', label: 'Índigo' },
+  { hex: '#14B8A6', label: 'Teal' },
+]
+
+const DAY_NAMES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+const DAY_KEYS  = ['mon','tue','wed','thu','fri','sat','sun']
+
 const DEFAULT_IMG = 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=800&q=60'
 
 const SPORT_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
@@ -137,6 +154,9 @@ export default function AdminFields() {
   const [fLng,           setFLng]           = useState('')
   const [fActive,        setFActive]        = useState(true)
   const [fSlotDuration,  setFSlotDuration]  = useState(1)
+  const [fColor,         setFColor]         = useState('#3B82F6')
+  const [fRates,         setFRates]         = useState<any[]>([])
+  const [ratesLoading,   setRatesLoading]   = useState(false)
   const [errors,         setErrors]         = useState<FormErrors>({})
 
   const drawerRef = useRef<HTMLDivElement>(null)
@@ -191,7 +211,7 @@ export default function AdminFields() {
       .select(`
         id, name, sport, price, price_day, price_night, night_from_hour,
         description, features, hours, location, latitude, longitude, active, owner_id,
-        country, city, timezone, currency, commission_usd,
+        country, city, timezone, currency, commission_usd, color,
         monthly_statements(status),
         slot_duration
       `)
@@ -294,11 +314,25 @@ export default function AdminFields() {
       longitude:        fLng  ? Number(fLng)  : null,
       active:           fActive,
       slot_duration:    fSlotDuration,
+      color:            fColor,
     }
 
     const { error } = editingId
       ? await supabase.from('fields').update(payload).eq('id', editingId)
-      : await supabase.from('fields').insert({ ...payload, owner_id: userId })
+      : await (async () => {
+          // Auto-assign complex_id from owner's complex
+          const { data: cx } = await supabase
+            .from('complexes')
+            .select('id')
+            .eq('owner_id', userId)
+            .limit(1)
+            .single()
+          return supabase.from('fields').insert({
+            ...payload,
+            owner_id: userId,
+            complex_id: cx?.id ?? null,
+          })
+        })()
 
     setSaving(false)
     if (error) { showToast('Error al guardar la cancha', false); return }
@@ -382,7 +416,18 @@ export default function AdminFields() {
     setFLng(field.longitude != null ? String(field.longitude) : '')
     setFActive(field.active !== false)
     setFSlotDuration((field as any).slot_duration ?? 1)
+    setFColor((field as any).color || '#3B82F6')
     await loadGallery(field.id)
+    // Load field_rates
+    setRatesLoading(true)
+    const { data: ratesData } = await supabase
+      .from('field_rates')
+      .select('*')
+      .eq('field_id', field.id)
+      .order('day_of_week')
+      .order('start_time')
+    setFRates(ratesData || [])
+    setRatesLoading(false)
     setDrawerOpen(true)
     setActiveSection('info')
   }
@@ -396,7 +441,7 @@ export default function AdminFields() {
     setEditingId(null); setFName(''); setFSport('futbol5'); setFPrice('')
     setFPriceDay(''); setFPriceNight(''); setFNightFrom(18)
     setFDescription(''); setFFeatures([]); setFHours([])
-    setFLocation(''); setFLat(''); setFLng(''); setFActive(true); setFSlotDuration(1); setGallery([]); setErrors({})  }
+    setFLocation(''); setFLat(''); setFLng(''); setFActive(true); setFSlotDuration(1); setFColor('#3B82F6'); setFRates([]); setGallery([]); setErrors({})  }
 
   const toggle = <T extends string>(val: T, list: T[], set: (v: T[]) => void) =>
     set(list.includes(val) ? list.filter(v => v !== val) : [...list, val])
@@ -673,6 +718,90 @@ export default function AdminFields() {
                   ))}
                 </div>
               </div>
+
+              {/* Calendar Color */}
+              <div className="f-field">
+                <label className="f-label">Color en el calendario</label>
+                <p className="f-hint">Este color se usará para identificar esta cancha en el calendario</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+                  {COLOR_PALETTE.map(c => (
+                    <button
+                      key={c.hex}
+                      type="button"
+                      title={c.label}
+                      onClick={() => setFColor(c.hex)}
+                      style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: c.hex,
+                        border: fColor === c.hex ? '3px solid #0f172a' : '2px solid rgba(0,0,0,.1)',
+                        cursor: 'pointer',
+                        transition: 'all .12s',
+                        transform: fColor === c.hex ? 'scale(1.15)' : 'scale(1)',
+                        boxShadow: fColor === c.hex ? '0 2px 8px rgba(0,0,0,.2)' : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+                <div style={{
+                  marginTop: 10, padding: '8px 12px', borderRadius: 10,
+                  background: `${fColor}18`, borderLeft: `3px solid ${fColor}`,
+                  fontSize: 12, color: '#64748b',
+                }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a' }}>{fName || 'Nombre de cancha'}</span>
+                  <span style={{ marginLeft: 8 }}>· Así se verá en el calendario</span>
+                </div>
+              </div>
+
+              {/* Field Rates (solo en modo edición) */}
+              {editingId && (
+                <div className="f-field">
+                  <label className="f-label">Tarifas por horario</label>
+                  <p className="f-hint">Definí precios especiales por franja horaria. Si no hay tarifas, se usa el precio día/noche.</p>
+                  {ratesLoading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 12 }}>
+                      <div className="f-spinner f-spinner--sm" />
+                      <span style={{ fontSize: 12, color: '#94a3b8' }}>Cargando tarifas…</span>
+                    </div>
+                  ) : (
+                    <>
+                      {fRates.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                          {DAY_KEYS.map((dayKey, dayIdx) => {
+                            const dayRates = fRates.filter(r => r.day_of_week === dayKey)
+                            if (dayRates.length === 0) return null
+                            return (
+                              <div key={dayKey} style={{ background: '#f8fafc', borderRadius: 10, padding: '10px 12px', border: '1px solid #f1f5f9' }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>
+                                  {DAY_NAMES[dayIdx]}
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                  {dayRates.map(r => (
+                                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 8, padding: '5px 10px', border: '1px solid #e2e8f0', fontSize: 11 }}>
+                                      <span style={{ fontWeight: 600, color: '#374151' }}>{r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}</span>
+                                      <span style={{ fontWeight: 700, color: '#16a34a' }}>₡{Number(r.price).toLocaleString('es-CR')}</span>
+                                      <button type="button" onClick={async () => { await supabase.from('field_rates').delete().eq('id', r.id); setFRates(prev => prev.filter(x => x.id !== r.id)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: 0, lineHeight: 1 }} title="Eliminar tarifa">×</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '20px 16px', color: '#94a3b8', fontSize: 12, background: '#f8fafc', borderRadius: 10, marginTop: 8 }}>
+                          Sin tarifas especiales. Se usará precio día/noche.
+                        </div>
+                      )}
+                      <details style={{ marginTop: 10 }}>
+                        <summary style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', cursor: 'pointer', padding: '8px 0', userSelect: 'none' }}>
+                          + Agregar tarifa por horario
+                        </summary>
+                        <AddRateForm fieldId={editingId} onAdded={(newRate: any) => setFRates(prev => [...prev, newRate])} showToast={showToast} />
+                      </details>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Active status */}
               <div className="f-field">
@@ -1052,6 +1181,69 @@ export default function AdminFields() {
         }}
       />
     </AdminLayout>
+  )
+}
+
+// ─── AddRateForm ──────────────────────────────────────────────────────────────
+
+function AddRateForm({ fieldId, onAdded, showToast }: { fieldId: number; onAdded: (r: any) => void; showToast: (msg: string, ok?: boolean) => void }) {
+  const [days, setDays] = useState<string[]>([])
+  const [startH, setStartH] = useState('06:00')
+  const [endH, setEndH] = useState('23:59')
+  const [price, setPrice] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (days.length === 0) { showToast('Seleccioná al menos un día', false); return }
+    if (!price || Number(price) <= 0) { showToast('Ingresá un precio válido', false); return }
+    setSaving(true)
+    const inserts = days.map(d => ({ field_id: fieldId, day_of_week: d, start_time: startH, end_time: endH, price: Number(price) }))
+    const { data, error } = await supabase.from('field_rates').insert(inserts).select()
+    setSaving(false)
+    if (error) { showToast('Error al guardar tarifa', false); return }
+    data?.forEach(r => onAdded(r))
+    showToast(`Tarifa creada para ${days.length} día${days.length > 1 ? 's' : ''} ✓`)
+    setDays([]); setPrice('')
+  }
+
+  return (
+    <div style={{ background: '#f8fafc', borderRadius: 12, padding: 14, border: '1px solid #f1f5f9', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div>
+        <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 6 }}>Días</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {DAY_KEYS.map((d, i) => (
+            <button key={d} type="button" onClick={() => setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])}
+              style={{ padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, border: days.includes(d) ? '1.5px solid #16a34a' : '1.5px solid #e2e8f0', background: days.includes(d) ? '#f0fdf4' : '#fff', color: days.includes(d) ? '#15803d' : '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}
+            >{DAY_NAMES[i].slice(0, 3)}</button>
+          ))}
+          <button type="button" onClick={() => setDays(days.length === 7 ? [] : [...DAY_KEYS])}
+            style={{ padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, border: '1.5px solid #e2e8f0', background: '#fff', color: '#2563eb', cursor: 'pointer', fontFamily: 'inherit' }}
+          >{days.length === 7 ? 'Ninguno' : 'Todos'}</button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>Desde</label>
+          <select value={startH} onChange={e => setStartH(e.target.value)} style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: 12, fontFamily: 'inherit' }}>
+            {ALL_HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>Hasta</label>
+          <select value={endH} onChange={e => setEndH(e.target.value)} style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: 12, fontFamily: 'inherit' }}>
+            {ALL_HOURS.map(h => <option key={h} value={`${h.split(':')[0]}:59`}>{h.split(':')[0]}:59</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>Precio ₡</label>
+          <input type="number" min="0" placeholder="26000" value={price} onChange={e => setPrice(e.target.value)}
+            style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: 12, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+        </div>
+      </div>
+      <button type="button" onClick={handleSave} disabled={saving}
+        style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#0f172a', color: '#fff', fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.6 : 1, alignSelf: 'flex-start' }}
+      >{saving ? 'Guardando…' : 'Guardar tarifa'}</button>
+    </div>
   )
 }
 

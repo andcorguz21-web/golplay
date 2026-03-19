@@ -3,6 +3,11 @@
  * pages/admin/calendar/index.tsx
  *
  * Dependencias: npm install react-day-picker
+ *
+ * CAMBIOS v2: Se agrega color por cancha al calendario.
+ * - Query de fields ahora incluye 'color'
+ * - Se construye fieldColors map y se pasa como prop a DailyCalendar y WeeklyCalendar
+ * - Leyenda actualizada con colores de cancha
  */
 
 export const dynamic = 'force-dynamic'
@@ -46,7 +51,7 @@ function weekLabel(base: Date): string {
 
 type View = 'daily' | 'weekly'
 
-interface Field { id: string; name: string }
+interface Field { id: string; name: string; color: string }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const S: any = {
@@ -159,12 +164,19 @@ export default function AdminCalendar() {
     })
   }, [router])
 
-  // Load fields for filter
+  // Load fields for filter — CHANGED: now includes 'color'
   useEffect(() => {
-    supabase.from('fields').select('id, name').eq('active', true).then(({ data }) => {
-      setFields(data?.map((f: any) => ({ id: String(f.id), name: f.name })) ?? [])
+    supabase.from('fields').select('id, name, color').then(({ data }) => {
+      setFields(data?.map((f: any) => ({ id: String(f.id), name: f.name, color: f.color || '#3B82F6' })) ?? [])
     })
   }, [])
+
+  // Build fieldColors map: { fieldId: color }
+  const fieldColors = useMemo(() => {
+    const map: Record<string, string> = {}
+    fields.forEach(f => { map[f.id] = f.color })
+    return map
+  }, [fields])
 
   // Close popover on outside click
   useEffect(() => {
@@ -328,6 +340,7 @@ export default function AdminCalendar() {
 
           {/* ── Legend ── */}
           <div style={S.legend}>
+            {/* Status legend */}
             {[
               { label: 'Confirmada', color: '#16a34a' },
               { label: 'Pendiente',  color: '#d97706' },
@@ -339,23 +352,39 @@ export default function AdminCalendar() {
                 {label}
               </div>
             ))}
+
+            {/* NUEVO: Leyenda de colores por cancha */}
+            {fields.length > 1 && (
+              <>
+                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 4px' }} />
+                {fields.map(f => (
+                  <div key={f.id} style={S.legendItem}>
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: f.color, border: '1px solid rgba(0,0,0,.1)' }} />
+                    {f.name}
+                  </div>
+                ))}
+              </>
+            )}
+
             <div style={{ ...S.legendItem, marginLeft: 'auto' }}>
               <span style={{ width: 24, height: 3, borderRadius: 999, background: 'linear-gradient(90deg,#16a34a,#d97706,#dc2626)', display: 'inline-block' }} />
               <span style={{ marginLeft: 5 }}>Barra de ocupación (semanal)</span>
             </div>
           </div>
 
-          {/* ── Calendar view ── */}
+          {/* ── Calendar view — CHANGED: now passes fieldColors ── */}
           <div style={{ transition: 'opacity 0.2s ease' }}>
             {view === 'daily' ? (
               <DailyCalendar
                 selectedDate={dateStr}
                 fieldFilter={fieldFilter}
+                fieldColors={fieldColors}
               />
             ) : (
               <WeeklyCalendar
                 selectedDate={dateStr}
                 fieldFilter={fieldFilter}
+                fieldColors={fieldColors}
               />
             )}
           </div>

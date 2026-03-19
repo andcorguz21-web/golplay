@@ -5,7 +5,12 @@
  * Props:
  *   selectedDate: string  → "YYYY-MM-DD"
  *   fieldFilter: string   → field_id o 'all'
- *   onBookingClick: (b) → void  (opcional, para abrir modal externo)
+ *   fieldColors: Record<string, string>  → { fieldId: hexColor }
+ *
+ * CAMBIOS v2: Color de cancha en bloques de reserva.
+ * - BookingBlock usa fieldColor para fondo (15% opacidad) y borde izquierdo
+ * - Status se muestra como dot + badge (no como color de fondo)
+ * - Props type actualizado para recibir fieldColors
  */
 
 import { useEffect, useState, useMemo } from 'react'
@@ -30,6 +35,7 @@ export type Booking = {
 type Props = {
   selectedDate: string
   fieldFilter?: string
+  fieldColors?: Record<string, string>
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -38,6 +44,8 @@ const HOURS = [
   '13:00','14:00','15:00','16:00','17:00','18:00','19:00',
   '20:00','21:00','22:00',
 ]
+
+const DEFAULT_FIELD_COLOR = '#3B82F6'
 
 // ─── Status config ─────────────────────────────────────────────────────────────
 export const STATUS_CFG: Record<BookingStatus, {
@@ -56,6 +64,14 @@ function parseLocalDate(s: string) {
 
 const formatCRC = (v: number) =>
   `₡${Number(v).toLocaleString('es-CR', { maximumFractionDigits: 0 })}`
+
+/** Convierte hex a rgba con opacidad */
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function Skeleton() {
@@ -80,14 +96,19 @@ function Skeleton() {
   )
 }
 
-// ─── BookingBlock ─────────────────────────────────────────────────────────────
+// ─── BookingBlock — CHANGED: uses field color ─────────────────────────────────
 function BookingBlock({
-  booking, conflict, onClick,
+  booking, conflict, onClick, fieldColor,
 }: {
-  booking: Booking; conflict: boolean; onClick: () => void
+  booking: Booking; conflict: boolean; onClick: () => void; fieldColor: string
 }) {
   const cfg = STATUS_CFG[booking.status] ?? STATUS_CFG.active
   const [hovered, setHovered] = useState(false)
+
+  // Field color for background (15% opacity) and border-left (100%)
+  const bgColor = conflict ? '#fef2f2' : hexToRgba(fieldColor, hovered ? 0.2 : 0.1)
+  const borderColor = conflict ? '#ef4444' : fieldColor
+  const borderLightColor = conflict ? '#fca5a5' : hexToRgba(fieldColor, 0.3)
 
   return (
     <div
@@ -96,9 +117,9 @@ function BookingBlock({
       onMouseLeave={() => setHovered(false)}
       title={`${booking.fieldName} · ${booking.customerName}`}
       style={{
-        background: hovered ? cfg.border : cfg.bg,
-        border: `1px solid ${conflict ? '#ef4444' : cfg.border}`,
-        borderLeft: `3px solid ${conflict ? '#ef4444' : cfg.dot}`,
+        background: bgColor,
+        border: `1px solid ${borderLightColor}`,
+        borderLeft: `3px solid ${borderColor}`,
         borderRadius: 10,
         padding: '8px 12px',
         cursor: 'pointer',
@@ -109,6 +130,7 @@ function BookingBlock({
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          {/* Status dot */}
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: conflict ? '#ef4444' : cfg.dot, flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {booking.fieldName}
@@ -126,7 +148,7 @@ function BookingBlock({
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function DailyCalendar({ selectedDate, fieldFilter = 'all' }: Props) {
+export default function DailyCalendar({ selectedDate, fieldFilter = 'all', fieldColors = {} }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Booking | null>(null)
@@ -290,6 +312,7 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all' }: Pro
                         booking={b}
                         conflict={conflictSet.has(b.id)}
                         onClick={() => setSelected(b)}
+                        fieldColor={fieldColors[String(b.fieldId)] || DEFAULT_FIELD_COLOR}
                       />
                     ))
                   )}
