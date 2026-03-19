@@ -95,7 +95,7 @@ export const COUNTRY_MAP: Record<string, CountryConfig> = Object.fromEntries(
  * Cron diario: fetch('https://open.er-api.com/v6/latest/USD') → upsert.
  */
 export const USD_RATES: Record<string, number> = {
-  CRC: 540,  MXN: 17.2, COP: 3900, ARS: 900,
+  CRC: 500,  MXN: 17.2, COP: 3900, ARS: 900,
   CLP: 920,  PEN: 3.75, USD: 1,    BOB: 6.9,
   PYG: 7400, UYU: 38.5, PAB: 1,    GTQ: 7.8,
   HNL: 24.7, NIO: 36.5, DOP: 57,   CUP: 24,

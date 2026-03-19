@@ -608,6 +608,7 @@ export default function ReserveField() {
       : Math.random().toString(36).slice(2)
   )
   const [holdSecondsLeft, setHoldSecondsLeft] = useState<number | null>(null)
+  const [fieldRates, setFieldRates] = useState<any[]>([])
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const heroRef  = useRef<HTMLDivElement>(null)
@@ -649,6 +650,13 @@ export default function ReserveField() {
         })
         const urlList = imgs?.map((i: any) => i.url).filter(Boolean) ?? []
         setImages(urlList.length ? urlList : FALLBACK_IMAGES)
+ 
+        // Load field_rates for dynamic pricing
+        const { data: rates } = await supabase
+          .from('field_rates')
+          .select('day_of_week, start_time, end_time, price')
+          .eq('field_id', fieldId)
+        setFieldRates(rates || [])
       } catch { setLoadError(true) }
       finally  { setLoading(false) }
     })()
@@ -674,8 +682,25 @@ export default function ReserveField() {
   const { isNight, price } = useMemo(() => {
     if (!field || !selHour) return { isNight: false, price: 0 }
     const night = isNightHour(selHour, field.night_from_hour)
+ 
+    // Check field_rates first (highest priority)
+    if (fieldRates.length > 0 && selDate) {
+      const dayNames = ['sun','mon','tue','wed','thu','fri','sat']
+      const [y, m, d] = selDate.split('-').map(Number)
+      const dayKey = dayNames[new Date(y, m - 1, d).getDay()]
+      const hourNum = Number(selHour.split(':')[0])
+      const rate = fieldRates.find(r => {
+        if (r.day_of_week !== dayKey) return false
+        const startH = Number(r.start_time?.split(':')[0] ?? 0)
+        const endH = Number(r.end_time?.split(':')[0] ?? 23)
+        return hourNum >= startH && hourNum <= endH
+      })
+      if (rate) return { isNight: night, price: Number(rate.price) }
+    }
+ 
+    // Fallback to day/night pricing
     return { isNight: night, price: night ? field.price_night : field.price_day }
-  }, [selHour, field])
+  }, [selHour, selDate, field, fieldRates])
 
   const sportMeta = field?.sport ? SPORTS_META[field.sport] : null
   const sortedHours = useMemo(() => [...(field?.hours || [])].sort(), [field])

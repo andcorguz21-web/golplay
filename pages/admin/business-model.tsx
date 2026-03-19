@@ -50,7 +50,7 @@ interface Field {
 
 // Tasa de cambio: cuántas unidades de moneda local = $1 USD
 const USD_RATES: Record<string, number> = {
-  CRC: 540, USD: 1, MXN: 17, COP: 3900, PEN: 3.75, CLP: 900, ARS: 1000,
+  CRC: 500, USD: 1, MXN: 17, COP: 3900, PEN: 3.75, CLP: 900, ARS: 1000,
 }
 
 const CURRENCY_SYMBOL: Record<string, string> = {
@@ -165,7 +165,7 @@ function useBookings(filters: Filters) {
           .from('fields')
           .select('id, name, sport')
           .eq('owner_id', userId)   // ✅ scoped al owner logueado
-          .eq('active', true),
+          ,
         supabase
           .from('profiles')
           .select('currency')

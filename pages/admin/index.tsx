@@ -107,7 +107,7 @@ export default function AdminDashboard() {
 
   const fMoney      = useCallback((v: number) => formatMoney(v, currency),      [currency])
   const fMoneyShort = useCallback((v: number) => formatMoneyShort(v, currency),  [currency])
-  const usdInLocal  = USD_RATES[currency] ?? 515
+  const usdInLocal  = USD_RATES[currency] ?? 500
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   useEffect(() => {
