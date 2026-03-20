@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
 import * as XLSX from 'xlsx'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -110,6 +111,8 @@ export default function AdminBookings() {
   const [confirm, setConfirm] = useState<{ booking: Booking; action: 'cancel' | 'activate' } | null>(null)
   const [editingNotes, setEditingNotes] = useState<number | null>(null)
   const [notesText, setNotesText] = useState('')
+  const [editingPrice, setEditingPrice] = useState<number | null>(null)
+  const [priceText, setPriceText] = useState('')
   const [toast,   setToast]   = useState<{ msg: string; ok: boolean } | null>(null)
   const [acting,  setActing]  = useState<number | null>(null)
 
@@ -211,6 +214,46 @@ export default function AdminBookings() {
     setConfirm(null)
     setDetail(null)
   }
+
+  // ── Save price inline ──────────────────────────────────────────────────
+  const savePrice = async (bookingId: number) => {
+    const newPrice = Number(priceText)
+    if (isNaN(newPrice) || newPrice < 0) { showToast('Monto inválido', false); return }
+    const { error } = await supabase.from('bookings').update({ price: newPrice, price_source: 'manual' }).eq('id', bookingId)
+    if (error) { showToast('Error al guardar precio', false); return }
+    setBookings(prev => detectConflicts(prev.map(b => b.id === bookingId ? { ...b, price: newPrice } : b)))
+    if (detail?.id === bookingId) setDetail({ ...detail, price: newPrice })
+    setEditingPrice(null)
+    showToast('Precio actualizado ✓')
+  }
+
+  // ── Data validation — congruence checks ────────────────────────────────
+  const validationIssues = useMemo(() => {
+    const issues: { type: 'warn' | 'error'; msg: string; count: number }[] = []
+    const activeBookings = bookings.filter(b => b.status !== 'cancelled')
+
+    // Reservas sin precio
+    const noPrice = activeBookings.filter(b => !b.price || b.price === 0)
+    if (noPrice.length > 0) issues.push({ type: 'error', msg: `${noPrice.length} reserva${noPrice.length > 1 ? 's' : ''} sin precio asignado`, count: noPrice.length })
+
+    // Reservas sin nombre de cliente
+    const noClient = activeBookings.filter(b => !b.customer_name?.trim())
+    if (noClient.length > 0) issues.push({ type: 'warn', msg: `${noClient.length} reserva${noClient.length > 1 ? 's' : ''} sin nombre de cliente`, count: noClient.length })
+
+    // Reservas sin cédula
+    const noCedula = activeBookings.filter(b => !b.customer_id_number?.trim())
+    if (noCedula.length > 0) issues.push({ type: 'warn', msg: `${noCedula.length} reserva${noCedula.length > 1 ? 's' : ''} sin cédula`, count: noCedula.length })
+
+    // Conflictos de horario
+    const conflictCount = activeBookings.filter(b => b.hasConflict).length
+    if (conflictCount > 0) issues.push({ type: 'error', msg: `${conflictCount} reserva${conflictCount > 1 ? 's' : ''} con conflicto de horario (misma cancha, misma hora)`, count: conflictCount })
+
+    // Reservas sin teléfono ni email (no contactable)
+    const noContact = activeBookings.filter(b => !b.customer_phone?.trim() && !b.customer_email?.trim())
+    if (noContact.length > 0) issues.push({ type: 'warn', msg: `${noContact.length} reserva${noContact.length > 1 ? 's' : ''} sin datos de contacto (ni teléfono ni email)`, count: noContact.length })
+
+    return issues
+  }, [bookings])
 
   // ── Export ────────────────────────────────────────────────────────────────
   const exportXLSX = useCallback(() => {
@@ -395,6 +438,39 @@ export default function AdminBookings() {
           )}
         </div>
 
+        {/* ── Global Validation Banner ─────────────────────────────────── */}
+        <ValidationBanner />
+
+        {/* ── Validation Issues Banner (filtered view) ─────────────────── */}
+        {!loading && validationIssues.length > 0 && (
+          <div style={{
+            background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14,
+            padding: '14px 18px', marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 8 }}>
+              <span>🔍</span> Control de datos — {validationIssues.length} observación{validationIssues.length > 1 ? 'es' : ''}
+            </div>
+            {validationIssues.map((issue, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
+                color: issue.type === 'error' ? '#b91c1c' : '#92400e',
+                marginBottom: 4,
+              }}>
+                <span style={{
+                  width: 18, height: 18, borderRadius: 6, flexShrink: 0,
+                  background: issue.type === 'error' ? '#fef2f2' : '#fffbeb',
+                  border: `1px solid ${issue.type === 'error' ? '#fecaca' : '#fde68a'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700,
+                }}>
+                  {issue.type === 'error' ? '!' : '?'}
+                </span>
+                {issue.msg}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ── Error ───────────────────────────────────────────────────── */}
         {error && (
           <div className="bk-error">
@@ -432,6 +508,12 @@ export default function AdminBookings() {
                       key={b.id} booking={b} today={today} acting={acting}
                       onDetail={() => setDetail(b)}
                       onAction={action => setConfirm({ booking: b, action })}
+                      editingPrice={editingPrice}
+                      priceText={priceText}
+                      onStartEditPrice={bk => { setEditingPrice(bk.id); setPriceText(String(bk.price ?? 0)) }}
+                      onPriceChange={setPriceText}
+                      onSavePrice={savePrice}
+                      onCancelEditPrice={() => setEditingPrice(null)}
                     />
                   ))}
                 </tbody>
@@ -480,7 +562,36 @@ export default function AdminBookings() {
             <DetailRow icon="🏟️" label="Cancha"   value={`${SPORT_ICON[detail.sport ?? ''] ?? ''} ${detail.fieldName}`.trim()}/>
             <DetailRow icon="📅" label="Fecha"    value={fmtDate(detail.date)}/>
             <DetailRow icon="🕐" label="Hora"     value={detail.hour}/>
-            <DetailRow icon="💰" label="Precio"   value={fCRC(detail.price)}/>
+            {/* Editable price */}
+            <div className="bk-drow" style={{ background: '#f8fafc', borderRadius: 9 }}>
+              <span className="bk-drow__ico">💰</span>
+              <span className="bk-drow__label">Precio</span>
+              {editingPrice === detail.id ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 13, color: '#94a3b8' }}>₡</span>
+                  <input
+                    type="number"
+                    value={priceText}
+                    onChange={e => setPriceText(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') savePrice(detail.id); if (e.key === 'Escape') setEditingPrice(null) }}
+                    autoFocus
+                    style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '2px solid #16a34a', fontSize: 14, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
+                    min={0}
+                  />
+                  <button onClick={() => savePrice(detail.id)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Guardar</button>
+                  <button onClick={() => setEditingPrice(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 14 }}>✗</button>
+                </div>
+              ) : (
+                <span
+                  className="bk-drow__value"
+                  onClick={() => { setEditingPrice(detail.id); setPriceText(String(detail.price ?? 0)) }}
+                  style={{ cursor: 'pointer', color: '#15803d', fontWeight: 700, borderBottom: '1px dashed #bbf7d0' }}
+                  title="Click para editar"
+                >
+                  {fCRC(detail.price)} ✏️
+                </span>
+              )}
+            </div>
             <DetailRow icon="📱" label="Teléfono" value={detail.customer_phone || '—'}/>
 <DetailRow icon="📧" label="Email"    value={detail.customer_email || '—'}/>
             <DetailRow icon="🪪" label="Cédula"   value={detail.customer_id_number || '—'}/>
@@ -579,13 +690,17 @@ export default function AdminBookings() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function BookingRow({ booking: b, today, acting, onDetail, onAction }: {
+function BookingRow({ booking: b, today, acting, onDetail, onAction, editingPrice, priceText, onStartEditPrice, onPriceChange, onSavePrice, onCancelEditPrice }: {
   booking: Booking; today: string; acting: number | null
   onDetail: () => void; onAction: (a: 'cancel' | 'activate') => void
+  editingPrice: number | null; priceText: string
+  onStartEditPrice: (b: Booking) => void; onPriceChange: (v: string) => void
+  onSavePrice: (id: number) => void; onCancelEditPrice: () => void
 }) {
   const isToday  = b.date === today
   const isFuture = b.date > today
   const cfg = STATUS_CFG[b.status] ?? { label: b.status, cls: '' }
+  const isEditingThis = editingPrice === b.id
   return (
     <tr className={`bk-tr${b.hasConflict ? ' bk-tr--conflict' : ''}${b.status === 'cancelled' ? ' bk-tr--cancelled' : ''}`}>
       <td className="bk-td">
@@ -611,7 +726,32 @@ function BookingRow({ booking: b, today, acting, onDetail, onAction }: {
         </div>
       </td>
       <td className="bk-td"><span className={`b-badge ${cfg.cls}`}>{cfg.label}</span></td>
-      <td className="bk-td bk-td--price">{fCRC(b.price)}</td>
+      <td className="bk-td bk-td--price" style={{ minWidth: 110 }}>
+        {isEditingThis ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 13, color: '#94a3b8' }}>₡</span>
+            <input
+              type="number"
+              value={priceText}
+              onChange={e => onPriceChange(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') onSavePrice(b.id); if (e.key === 'Escape') onCancelEditPrice() }}
+              autoFocus
+              style={{ width: 80, padding: '4px 6px', borderRadius: 6, border: '2px solid #16a34a', fontSize: 13, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
+              min={0}
+            />
+            <button onClick={() => onSavePrice(b.id)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 5, padding: '4px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>✓</button>
+            <button onClick={onCancelEditPrice} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 13 }}>✗</button>
+          </div>
+        ) : (
+          <span
+            onClick={e => { e.stopPropagation(); onStartEditPrice(b) }}
+            title="Click para editar precio"
+            style={{ cursor: 'pointer', borderBottom: '1px dashed #bbf7d0', paddingBottom: 1 }}
+          >
+            {fCRC(b.price)}
+          </span>
+        )}
+      </td>
       <td className="bk-td"><span className="bk-source">{b.source ?? 'online'}</span></td>
       <td className="bk-td bk-td--right">
         <button className="bk-act bk-act--view" onClick={onDetail} title="Ver detalle"><IcoEye/></button>

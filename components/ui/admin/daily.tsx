@@ -27,15 +27,22 @@ export type Booking = {
   fieldName: string
   fieldId: number
   customerName: string
+  customerLastName: string
   customerPhone: string
+  customerEmail: string
+  customerIdNumber: string
+  notes: string
   status: BookingStatus
   price: number
+  priceSource: string
+  source: string
 }
 
 type Props = {
   selectedDate: string
   fieldFilter?: string
   fieldColors?: Record<string, string>
+  fieldSlotDurations?: Record<string, number>
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -148,7 +155,7 @@ function BookingBlock({
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function DailyCalendar({ selectedDate, fieldFilter = 'all', fieldColors = {} }: Props) {
+export default function DailyCalendar({ selectedDate, fieldFilter = 'all', fieldColors = {}, fieldSlotDurations = {} }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Booking | null>(null)
@@ -172,8 +179,8 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
 
     supabase
       .from('bookings')
-      .select(`id, date, hour, status, price,
-        customer_name, customer_phone,
+      .select(`id, date, hour, status, price, price_source, source, notes,
+        customer_name, customer_last_name, customer_phone, customer_email, customer_id_number,
         fields:field_id (id, name)
       `)
       .eq('date', selectedDate)
@@ -188,10 +195,16 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
             hour: b.hour,
             status: (b.status as BookingStatus) ?? 'active',
             price: Number(b.price ?? 0),
+            priceSource: b.price_source ?? '',
+            source: b.source ?? '',
+            notes: b.notes ?? '',
             fieldId: b.fields?.id ?? 0,
             fieldName: Array.isArray(b.fields) ? b.fields[0]?.name : b.fields?.name ?? '—',
             customerName: b.customer_name ?? '',
+            customerLastName: b.customer_last_name ?? '',
             customerPhone: b.customer_phone ?? '',
+            customerEmail: b.customer_email ?? '',
+            customerIdNumber: b.customer_id_number ?? '',
           }))
 
         setBookings(normalized)
@@ -219,6 +232,11 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
     await supabase.from('bookings').delete().eq('id', id)
     setBookings(prev => prev.filter(b => b.id !== id))
     setSelected(null)
+  }
+
+  const updateBooking = (updated: Booking) => {
+    setBookings(prev => prev.map(b => b.id === updated.id ? updated : b))
+    setSelected(updated)
   }
 
   const now = new Date()
@@ -269,7 +287,16 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
           </div>
 
           {HOURS.map(hour => {
-            const slotBookings = bookings.filter(b => b.hour === hour)
+            const thisH = Number(hour.split(':')[0])
+            const slotBookings = bookings.filter(b => {
+              const bookingStartH = Number(b.hour.split(':')[0])
+              // Exact match: booking starts at this hour
+              if (b.hour === hour) return true
+              // Span match: booking started earlier but its slot_duration covers this hour
+              const dur = fieldSlotDurations[String(b.fieldId)] || 1
+              if (dur <= 1) return false
+              return thisH > bookingStartH && thisH < bookingStartH + dur
+            })
             const isPast = isToday && hour < currentHour
             const isCurrent = isToday && hour === currentHour
 
@@ -306,15 +333,51 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
                       </span>
                     </div>
                   ) : (
-                    slotBookings.map(b => (
-                      <BookingBlock
-                        key={b.id}
-                        booking={b}
-                        conflict={conflictSet.has(b.id)}
-                        onClick={() => setSelected(b)}
-                        fieldColor={fieldColors[String(b.fieldId)] || DEFAULT_FIELD_COLOR}
-                      />
-                    ))
+                    slotBookings.map(b => {
+                      const isContinuation = b.hour !== hour
+                      if (isContinuation) {
+                        // Render a subtle continuation bar instead of full block
+                        const fc = fieldColors[String(b.fieldId)] || DEFAULT_FIELD_COLOR
+                        return (
+                          <div
+                            key={`${b.id}-cont`}
+                            onClick={() => setSelected(b)}
+                            title={`${b.fieldName} · continuación (turno de ${fieldSlotDurations[String(b.fieldId)] || 1}h)`}
+                            style={{
+                              background: hexToRgba(fc, 0.07),
+                              borderLeft: `3px solid ${fc}`,
+                              borderRadius: 10,
+                              padding: '6px 12px',
+                              cursor: 'pointer',
+                              maxWidth: 340,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hexToRgba(fc, 0.14) }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = hexToRgba(fc, 0.07) }}
+                          >
+                            <span style={{ fontSize: 11, color: '#94a3b8' }}>↕</span>
+                            <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>
+                              {b.fieldName}
+                            </span>
+                            <span style={{ fontSize: 10, color: '#94a3b8' }}>
+                              (cont. desde {b.hour})
+                            </span>
+                          </div>
+                        )
+                      }
+                      return (
+                        <BookingBlock
+                          key={b.id}
+                          booking={b}
+                          conflict={conflictSet.has(b.id)}
+                          onClick={() => setSelected(b)}
+                          fieldColor={fieldColors[String(b.fieldId)] || DEFAULT_FIELD_COLOR}
+                        />
+                      )
+                    })
                   )}
                 </div>
               </div>
@@ -338,6 +401,7 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
           booking={selected}
           onClose={() => setSelected(null)}
           onDelete={deleteBooking}
+          onUpdate={updateBooking}
         />
       )}
     </>

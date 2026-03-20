@@ -14,6 +14,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
   BarElement, Tooltip, Filler, LineElement, PointElement,
@@ -26,6 +27,7 @@ import {
   getSportEmoji, getSportLabel,
   formatMoney, formatMoneyShort,
   USD_RATES, LATAM_COUNTRIES,
+  getPlanPriceLocal, PLAN_PRICE_USD,
 } from '@/sports'
 
 ChartJS.register(
@@ -107,7 +109,6 @@ export default function AdminDashboard() {
 
   const fMoney      = useCallback((v: number) => formatMoney(v, currency),      [currency])
   const fMoneyShort = useCallback((v: number) => formatMoneyShort(v, currency),  [currency])
-  const usdInLocal  = USD_RATES[currency] ?? 500
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -200,12 +201,12 @@ export default function AdminDashboard() {
     const pending = data.filter(b => b.status === 'pending')
 
     const grossRev   = active.reduce((s, b) => s + (b.price ?? nField(b.fields)?.price_day ?? 0), 0)
-    const commission = active.length * usdInLocal
-    const netRev     = Math.max(0, grossRev - commission)
+    const planMonthly = getPlanPriceLocal(currency)
+    const netRev     = Math.max(0, grossRev - planMonthly)
 
     const prevAct = prev.filter((b: any) => b.status !== 'cancelled')
     const prevRev = prevAct.reduce((s: number, b: any) => s + (b.price ?? 0), 0)
-    const prevNet = Math.max(0, prevRev - prevAct.length * usdInLocal)
+    const prevNet = Math.max(0, prevRev - planMonthly)
 
     const periodDays   = Math.ceil((rangeTo.getTime() - rangeFrom.getTime()) / 86400000) + 1
     const activeFields = fieldList.filter(isFieldActive)
@@ -226,7 +227,7 @@ export default function AdminDashboard() {
 
     setKpis({
       todayCount: today.length, rangeCount: active.length, pendingCount: pending.length,
-      grossRev, commission, netRev, occupancyPct, totalSlots,
+      grossRev, planMonthly, netRev, occupancyPct, totalSlots,
       peakHour: peakEntry?.[0] ?? '—', peakCount: peakEntry?.[1] ?? 0,
       sportMap,
       revChange:   pct(grossRev, prevRev),
@@ -260,6 +261,7 @@ export default function AdminDashboard() {
 
   // ── Export ──────────────────────────────────────────────────────────────────
   const exportXLSX = useCallback(() => {
+    const planMonthly = getPlanPriceLocal(currency)
     const rows = bookings.map(b => ({
       ID:      b.id,
       Cliente: b.customer_name ? `${b.customer_name} ${b.customer_last_name ?? ''}`.trim() : '—',
@@ -268,15 +270,18 @@ export default function AdminDashboard() {
       Deporte: getSportLabel(nField(b.fields)?.sport),
       Fecha:   b.date, Hora: b.hour, Estado: b.status,
       Precio:  b.price ?? nField(b.fields)?.price_day ?? 0,
-      Comisión: usdInLocal,
-      Neto:    (b.price ?? nField(b.fields)?.price_day ?? 0) - usdInLocal,
     }))
     const ws = XLSX.utils.json_to_sheet(rows)
+    // Add plan info as a summary row
+    const summaryRow = rows.length + 3
+    XLSX.utils.sheet_add_aoa(ws, [
+      ['Plan GolPlay (mensual)', formatMoney(planMonthly, currency), `$${PLAN_PRICE_USD} USD/mes`],
+    ], { origin: `A${summaryRow}` })
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Reservas')
     XLSX.writeFile(wb, `golplay_${fISO(new Date())}.xlsx`)
     showToast('Exportado correctamente')
-  }, [bookings, usdInLocal, showToast])
+  }, [bookings, currency, showToast])
 
   // ── Presets ─────────────────────────────────────────────────────────────────
   const setPreset = (p: 'today' | 'week' | 'month' | 'prev') => {
@@ -426,14 +431,14 @@ export default function AdminDashboard() {
             label="Ingreso neto"
             value={kpis ? fMoneyShort(kpis.netRev) : `${currSymbol}0`}
             trend={kpis?.netChange} trendLabel="vs período ant."
-            statusText={kpis ? `Comisión: ${fMoneyShort(kpis.commission)}` : '—'}
+            statusText={kpis ? `Plan: ${fMoneyShort(kpis.planMonthly)}/mes` : '—'}
             icon={<IcoNet/>}
             detail={
               <>
                 <KpiRow label="Ingresos brutos"  value={kpis ? fMoney(kpis.grossRev) : '—'}/>
-                <KpiRow label="Comisión GolPlay" value={kpis ? `− ${fMoney(kpis.commission)}` : '—'} highlight="warn"/>
-                <KpiRow label="Neto para vos"    value={kpis ? fMoney(kpis.netRev) : '—'}           highlight="ok"/>
-                <p className="gp-kpi__note">$1 USD = {fMoney(usdInLocal)} · {kpis?.rangeCount ?? 0} reservas</p>
+                <KpiRow label="Plan GolPlay"      value={kpis ? `− ${fMoney(kpis.planMonthly)}` : '—'} highlight="warn"/>
+                <KpiRow label="Neto para vos"     value={kpis ? fMoney(kpis.netRev) : '—'}            highlight="ok"/>
+                <p className="gp-kpi__note">Plan fijo mensual · {kpis?.rangeCount ?? 0} reservas</p>
               </>
             }
           />
@@ -514,6 +519,11 @@ export default function AdminDashboard() {
           />
 
         </section>
+
+        {/* ══════════════════════ VALIDATION ══════════════════════ */}
+        <div style={{ padding: '0 20px' }}>
+          <ValidationBanner />
+        </div>
 
         {/* ══════════════════════ MAIN GRID ══════════════════════ */}
         <div className="gp-grid">

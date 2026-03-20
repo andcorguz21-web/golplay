@@ -5,8 +5,10 @@
  *              fields(id, name, sport, price)
  *              profiles(id, currency, country) ← moneda del owner leída de acá
  *
- * Modelo de comisiones v2.0: $1 USD por reserva confirmada, sin límite mensual.
- * El monto se convierte a la moneda del owner según exchange_rates.
+ * Modelo de negocio v3.0: Plan fijo mensual.
+ *   - Costa Rica: ₡35,000 CRC/mes
+ *   - Resto LATAM: $75 USD/mes (convertido a moneda local)
+ *   - Trial: 30 días gratis
  *
  * Dependencias: npm install recharts date-fns lucide-react
  */
@@ -14,6 +16,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell,
@@ -21,11 +24,18 @@ import {
 import {
   TrendingUp, TrendingDown, DollarSign, CalendarCheck,
   Activity, Trophy, Clock, AlertTriangle, Download, RefreshCw, ChevronDown,
+  Shield, Gift,
 } from 'lucide-react'
 import {
   format, subDays, eachDayOfInterval,
 } from 'date-fns'
 import { es } from 'date-fns/locale'
+import {
+  formatMoney, formatMoneyShort,
+  USD_RATES, LATAM_COUNTRIES,
+  PLAN_PRICE_CRC, PLAN_PRICE_USD, PLAN_TRIAL_DAYS,
+  getPlanPriceLocal,
+} from '@/sports'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FIELD_COLORS = ['#16a34a', '#15803d', '#4ade80', '#86efac', '#bbf7d0']
@@ -45,20 +55,7 @@ interface Field {
   id: string
   name: string
   sport: string
-  // owner_currency se lee de profiles.currency, no de fields
 }
-
-// Tasa de cambio: cuántas unidades de moneda local = $1 USD
-const USD_RATES: Record<string, number> = {
-  CRC: 500, USD: 1, MXN: 17, COP: 3900, PEN: 3.75, CLP: 900, ARS: 1000,
-}
-
-const CURRENCY_SYMBOL: Record<string, string> = {
-  CRC: '₡', USD: '$', MXN: '$', COP: '$', PEN: 'S/', CLP: '$', ARS: '$',
-}
-
-// Comisión fija en USD por reserva confirmada (fuente: platform_settings)
-const COMMISSION_USD = 1.00
 
 interface FieldStats {
   id: string
@@ -88,15 +85,6 @@ interface Filters {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const formatCRC = (v: number) =>
-  `₡${Number(v).toLocaleString('es-CR', { maximumFractionDigits: 0 })}`
-
-const formatCRCShort = (v: number) => {
-  if (v >= 1_000_000) return `₡${(v / 1_000_000).toFixed(1)}M`
-  if (v >= 1_000) return `₡${(v / 1_000).toFixed(0)}K`
-  return formatCRC(v)
-}
-
 const getDelta = (current: number, previous: number): number | null => {
   if (previous === 0) return null
   return ((current - previous) / previous) * 100
@@ -107,12 +95,11 @@ function useBookings(filters: Filters) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [prevBookings, setPrevBookings] = useState<Booking[]>([])
   const [fields, setFields] = useState<Field[]>([])
-  const [ownerCurrencyFromDB, setOwnerCurrencyFromDB] = useState<string>('CRC')
+  const [ownerCurrency, setOwnerCurrency] = useState<string>('CRC')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
-  // ── Auth ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setUserId(data.session.user.id)
@@ -156,16 +143,13 @@ function useBookings(filters: Filters) {
         prevQ = prevQ.eq('field_id', filters.fieldId)
       }
 
-      // ✅ FIX: owner_currency no existe en fields. Se lee de profiles.currency
-      // Los fields se scopean al owner con owner_id = userId
       const [curr, prev, fieldsRes, profileRes] = await Promise.all([
         currQ,
         prevQ,
         supabase
           .from('fields')
           .select('id, name, sport')
-          .eq('owner_id', userId)   // ✅ scoped al owner logueado
-          ,
+          .eq('owner_id', userId),
         supabase
           .from('profiles')
           .select('currency')
@@ -176,9 +160,8 @@ function useBookings(filters: Filters) {
       if (curr.error) throw curr.error
       if (prev.error) throw prev.error
 
-      // ✅ FIX: currency viene de profiles, no de fields
       if (profileRes.data?.currency) {
-        setOwnerCurrencyFromDB(profileRes.data.currency)
+        setOwnerCurrency(profileRes.data.currency)
       }
 
       setBookings(curr.data ?? [])
@@ -193,7 +176,7 @@ function useBookings(filters: Filters) {
 
   useEffect(() => { if (userId) fetchData() }, [fetchData, userId])
 
-  return { bookings, prevBookings, fields, ownerCurrencyFromDB, loading, error, refetch: fetchData }
+  return { bookings, prevBookings, fields, ownerCurrency, loading, error, refetch: fetchData }
 }
 
 // ─── Hook: analytics ──────────────────────────────────────────────────────────
@@ -202,7 +185,7 @@ function useAnalytics(
   prevBookings: Booking[],
   fields: Field[],
   filters: Filters,
-  ownerCurrency: string,   // ✅ viene de profiles.currency via el hook useBookings
+  ownerCurrency: string,
 ) {
   return useMemo(() => {
     const totalRevenue = bookings.reduce((s, b) => s + Number(b.price ?? 0), 0)
@@ -210,7 +193,7 @@ function useAnalytics(
     const totalCount = bookings.length
     const prevCount = prevBookings.length
 
-    // Field map (join with fields table for name)
+    // Field map
     const fieldLookup: Record<string, string> = {}
     fields.forEach(f => { fieldLookup[String(f.id)] = f.name })
 
@@ -231,32 +214,37 @@ function useAnalytics(
     const fieldStats = Object.values(fieldMap).sort((a, b) => b.revenue - a.revenue)
     const topField = fieldStats[0]?.name ?? '—'
 
-    // ✅ Comisión v2.0 — $1 USD por reserva confirmada, sin límite
-    // ownerCurrency viene de profiles.currency (leído en el hook useBookings)
-    const usdRate = USD_RATES[ownerCurrency] ?? 540
-    const currencySymbol = CURRENCY_SYMBOL[ownerCurrency] ?? '₡'
-    const commissionPerBooking = COMMISSION_USD * usdRate  // en moneda local
-    const commissionTotal = totalCount * commissionPerBooking
-    const commissionTotalUSD = totalCount * COMMISSION_USD
+    // ✅ Plan v3.0 — Precio fijo mensual
+    const planPriceLocal = getPlanPriceLocal(ownerCurrency)
+    const currencySymbol = LATAM_COUNTRIES.find(c => c.currency === ownerCurrency)?.symbol ?? '₡'
 
-    // Occupancy — basado en horas teóricas disponibles (17 horas * canchas)
-    const totalFields = fields.length || 1
-    const hoursPerDay = 17 // 06:00 - 22:00
+    // Net revenue = gross - plan mensual
     const daysInRange = filters.dateRange === '7d' ? 7 : filters.dateRange === '90d' ? 90 : 30
+    const monthsInRange = Math.max(1, Math.round(daysInRange / 30))
+    const planCostPeriod = planPriceLocal * monthsInRange
+    const netRevenue = Math.max(0, totalRevenue - planCostPeriod)
+    const prevNetRevenue = Math.max(0, prevRevenue - planCostPeriod)
+
+    // "Ahorro vs comisión anterior" — lo que habrían pagado con $1 USD/reserva
+    const oldCommissionLocal = totalCount * (USD_RATES[ownerCurrency] ?? 500)
+    const savingsVsOld = oldCommissionLocal - planCostPeriod
+
+    // Occupancy
+    const totalFields = fields.length || 1
+    const hoursPerDay = 17
     const theoreticalMax = totalFields * hoursPerDay * daysInRange
     const occupancyRate = Math.min((totalCount / Math.max(theoreticalMax, 1)) * 100, 100)
     const prevOccupancy = Math.min((prevCount / Math.max(theoreticalMax, 1)) * 100, 100)
 
     // Daily revenue
-    const days = filters.dateRange === '7d' ? 7 : filters.dateRange === '90d' ? 90 : 30
     const now = new Date()
-    const interval = eachDayOfInterval({ start: subDays(now, days - 1), end: now })
+    const interval = eachDayOfInterval({ start: subDays(now, daysInRange - 1), end: now })
     const dailyMap: Record<string, DailyRevenue> = {}
     interval.forEach(d => {
       const key = format(d, 'yyyy-MM-dd')
       dailyMap[key] = {
         date: key,
-        label: format(d, days <= 7 ? 'EEE d' : 'd MMM', { locale: es }),
+        label: format(d, daysInRange <= 7 ? 'EEE d' : 'd MMM', { locale: es }),
         revenue: 0,
         bookings: 0,
       }
@@ -270,7 +258,7 @@ function useAnalytics(
     })
     const dailyRevenue = Object.values(dailyMap)
 
-    // Hourly stats — hour is "HH:00" string
+    // Hourly stats
     const hourMap: Record<string, HourStats> = {}
     for (let h = 6; h <= 22; h++) {
       const key = `${String(h).padStart(2, '0')}:00`
@@ -293,11 +281,19 @@ function useAnalytics(
     const lowOccupancyFields = fieldStats.filter(f => f.bookings < 3)
 
     return {
-      kpi: { totalRevenue, prevRevenue, totalCount, prevCount, occupancyRate, prevOccupancy, topField },
+      kpi: { totalRevenue, prevRevenue, totalCount, prevCount, occupancyRate, prevOccupancy, topField, netRevenue, prevNetRevenue },
       fieldStats,
       dailyRevenue,
       hourlyStats,
-      commission: { totalCount, commissionTotal, commissionTotalUSD, commissionPerBooking, ownerCurrency, currencySymbol },
+      plan: {
+        priceLocal: planPriceLocal,
+        costPeriod: planCostPeriod,
+        monthsInRange,
+        ownerCurrency,
+        currencySymbol,
+        savingsVsOld,
+        trialDays: PLAN_TRIAL_DAYS,
+      },
       insights: { peakHour, deadHours, lowOccupancyFields },
     }
   }, [bookings, prevBookings, fields, filters, ownerCurrency])
@@ -319,7 +315,7 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
     gap: 16,
     marginBottom: 28,
   },
@@ -339,7 +335,7 @@ const S: Record<string, React.CSSProperties> = {
   headerActions: {
     display: 'flex',
     gap: 8,
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
   },
   btnOutline: {
     display: 'flex',
@@ -370,7 +366,7 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
     marginBottom: 24,
   },
   pillGroup: {
@@ -401,9 +397,9 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: 8,
     cursor: 'pointer',
   },
-  selectWrap: { position: 'relative' },
+  selectWrap: { position: 'relative' as const },
   select: {
-    appearance: 'none',
+    appearance: 'none' as const,
     background: '#fff',
     border: '1px solid #e2e8f0',
     borderRadius: 10,
@@ -509,7 +505,7 @@ const S: Record<string, React.CSSProperties> = {
     maxWidth: 150,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap' as const,
   },
   fieldRevenue: {
     fontSize: 13,
@@ -528,64 +524,107 @@ const S: Record<string, React.CSSProperties> = {
     marginTop: 3,
     marginBottom: 0,
   },
-  commissionNumbers: {
+  // Plan card styles
+  planHeader: {
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 14,
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
   },
-  commissionBig: {
-    fontSize: 36,
+  planIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  planName: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: '#0f172a',
+    margin: 0,
+    lineHeight: 1.2,
+  },
+  planTag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#15803d',
+    background: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    padding: '2px 8px',
+    borderRadius: 999,
+    marginTop: 3,
+  },
+  planPrice: {
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: 6,
+    marginBottom: 4,
+  },
+  planPriceBig: {
+    fontSize: 32,
     fontWeight: 700,
     color: '#0f172a',
     lineHeight: 1,
   },
-  commissionSuffix: {
-    fontSize: 16,
+  planPricePer: {
+    fontSize: 14,
     fontWeight: 400,
     color: '#94a3b8',
   },
-  commissionRevenue: {
-    fontSize: 18,
-    fontWeight: 600,
-    color: '#16a34a',
-  },
-  commissionBar: {
-    height: 8,
-    background: '#f1f5f9',
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  commissionMeta: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: 11,
-    color: '#94a3b8',
-    marginBottom: 14,
-  },
-  divider: {
-    height: 1,
-    background: '#f1f5f9',
-    margin: '12px 0',
-  },
-  breakdownTitle: {
-    fontSize: 10,
-    fontWeight: 600,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    marginBottom: 8,
-  },
-  breakdownRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
+  planPriceUSD: {
     fontSize: 12,
     color: '#64748b',
-    marginBottom: 5,
+    margin: '0 0 16px',
+  },
+  planDivider: {
+    height: 1,
+    background: '#f1f5f9',
+    margin: '14px 0',
+  },
+  planRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 8,
+  },
+  planRowValue: {
+    fontWeight: 600,
+    color: '#374151',
+  },
+  planSavingsBanner: {
+    background: '#f0fdf4',
+    borderRadius: 10,
+    padding: '10px 14px',
+    marginTop: 14,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    border: '1px solid #bbf7d0',
+  },
+  planTrialBanner: {
+    background: '#eff6ff',
+    borderRadius: 10,
+    padding: '10px 14px',
+    marginTop: 10,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    border: '1px solid #bfdbfe',
+    fontSize: 12,
+    color: '#1d4ed8',
+    fontWeight: 500,
   },
   footer: {
-    textAlign: 'center',
+    textAlign: 'center' as const,
     fontSize: 12,
     color: '#94a3b8',
     marginTop: 16,
@@ -593,7 +632,7 @@ const S: Record<string, React.CSSProperties> = {
 }
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
-const ChartTooltip = ({ active, payload, label }: any) => {
+const ChartTooltip = ({ active, payload, label, currency }: any) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{
@@ -603,7 +642,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
       <p style={{ color: '#94a3b8', margin: '0 0 4px' }}>{label}</p>
       {payload.map((p: any) => (
         <p key={p.name} style={{ fontWeight: 600, margin: 0 }}>
-          {p.name === 'revenue' ? formatCRC(p.value) : `${p.value} reservas`}
+          {p.name === 'revenue' ? formatMoney(p.value, currency) : `${p.value} reservas`}
         </p>
       ))}
     </div>
@@ -681,10 +720,13 @@ export default function BusinessModel() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  const { bookings, prevBookings, fields, ownerCurrencyFromDB, loading, error, refetch } = useBookings(filters)
-  const { kpi, fieldStats, dailyRevenue, hourlyStats, commission, insights } = useAnalytics(
-    bookings, prevBookings, fields, filters, ownerCurrencyFromDB,
+  const { bookings, prevBookings, fields, ownerCurrency, loading, error, refetch } = useBookings(filters)
+  const { kpi, fieldStats, dailyRevenue, hourlyStats, plan, insights } = useAnalytics(
+    bookings, prevBookings, fields, filters, ownerCurrency,
   )
+
+  const fMoney = (v: number) => formatMoney(v, ownerCurrency)
+  const fMoneyShort = (v: number) => formatMoneyShort(v, ownerCurrency)
 
   const revDelta = getDelta(kpi.totalRevenue, kpi.prevRevenue)
   const bkDelta = getDelta(kpi.totalCount, kpi.prevCount)
@@ -693,7 +735,7 @@ export default function BusinessModel() {
 
   const exportCSV = () => {
     const csv = [
-      ['Fecha', 'Ingresos (CRC)', 'Reservas'],
+      ['Fecha', `Ingresos (${ownerCurrency})`, 'Reservas'],
       ...dailyRevenue.map(d => [d.date, d.revenue, d.bookings]),
     ].map(r => r.join(',')).join('\n')
     const a = document.createElement('a')
@@ -776,6 +818,9 @@ export default function BusinessModel() {
             )}
           </div>
 
+          {/* Validation */}
+          <ValidationBanner />
+
           {/* Insights */}
           {!loading && (insights.peakHour?.bookings > 0 || insights.deadHours.length > 0 || insights.lowOccupancyFields.length > 0) && (
             <div style={S.insightBanner}>
@@ -797,7 +842,7 @@ export default function BusinessModel() {
 
           {/* KPIs */}
           <div style={S.kpiGrid}>
-            <KPICard value={formatCRCShort(kpi.totalRevenue)} sub={`vs ${formatCRCShort(kpi.prevRevenue)} período ant.`} delta={revDelta} icon={DollarSign} iconBg="#f0fdf4" iconColor="#16a34a" loading={loading} />
+            <KPICard value={fMoneyShort(kpi.totalRevenue)} sub={`vs ${fMoneyShort(kpi.prevRevenue)} período ant.`} delta={revDelta} icon={DollarSign} iconBg="#f0fdf4" iconColor="#16a34a" loading={loading} />
             <KPICard value={String(kpi.totalCount)} sub={`vs ${kpi.prevCount} período ant.`} delta={bkDelta} icon={CalendarCheck} iconBg="#eff6ff" iconColor="#2563eb" loading={loading} />
             <KPICard value={`${kpi.occupancyRate.toFixed(0)}%`} sub={`vs ${kpi.prevOccupancy.toFixed(0)}% período ant.`} delta={occDelta} icon={Activity} iconBg="#fffbeb" iconColor="#d97706" loading={loading} />
             <KPICard value={kpi.topField} sub="Por ingresos generados" delta={null} icon={Trophy} iconBg="#faf5ff" iconColor="#7c3aed" loading={loading} />
@@ -819,8 +864,8 @@ export default function BusinessModel() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={filters.dateRange === '90d' ? 6 : filters.dateRange === '30d' ? 3 : 0} />
-                    <YAxis tickFormatter={formatCRCShort} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={62} />
-                    <Tooltip content={<ChartTooltip />} />
+                    <YAxis tickFormatter={(v) => fMoneyShort(v)} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={62} />
+                    <Tooltip content={<ChartTooltip currency={ownerCurrency} />} />
                     <Area type="monotone" dataKey="revenue" stroke="#16a34a" strokeWidth={2} fill="url(#grad)" dot={false} activeDot={{ r: 4, fill: '#16a34a' }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -841,7 +886,7 @@ export default function BusinessModel() {
                     <div key={f.id} style={S.fieldRow}>
                       <div style={S.fieldRowTop}>
                         <span style={S.fieldName}>{i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : ''}{f.name}</span>
-                        <span style={S.fieldRevenue}>{formatCRCShort(f.revenue)}</span>
+                        <span style={S.fieldRevenue}>{fMoneyShort(f.revenue)}</span>
                       </div>
                       <div style={S.progressTrack}>
                         <div style={{ height: '100%', width: `${(f.revenue / max) * 100}%`, background: FIELD_COLORS[i % FIELD_COLORS.length], borderRadius: 999, transition: 'width 0.5s ease' }} />
@@ -854,7 +899,7 @@ export default function BusinessModel() {
             </SCard>
           </div>
 
-          {/* Row 2: Horarios + Comisión */}
+          {/* Row 2: Horarios + Plan */}
           <div style={chartRowStyle}>
             <SCard
               title="Horarios más rentables"
@@ -869,7 +914,7 @@ export default function BusinessModel() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={1} />
                     <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={22} allowDecimals={false} />
-                    <Tooltip content={<ChartTooltip />} />
+                    <Tooltip content={<ChartTooltip currency={ownerCurrency} />} />
                     <Bar dataKey="bookings" radius={[4, 4, 0, 0]}>
                       {hourlyStats.map((entry, i) => {
                         const max = Math.max(...hourlyStats.map(h => h.bookings), 1)
@@ -882,7 +927,8 @@ export default function BusinessModel() {
               )}
             </SCard>
 
-            <SCard title="Comisión GolPlay" subtitle={`Período · $${COMMISSION_USD} USD por reserva confirmada`}>
+            {/* ✅ NUEVO: Tu Plan GolPlay (reemplaza card de comisión por reserva) */}
+            <SCard title="Tu Plan GolPlay" subtitle="Plan fijo mensual">
               {loading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ height: 48, width: '60%', background: '#f1f5f9', borderRadius: 8, animation: 'pulse 1.5s infinite' }} />
@@ -890,42 +936,93 @@ export default function BusinessModel() {
                 </div>
               ) : (
                 <>
-                  {/* Reservas confirmadas y monto en moneda local */}
-                  <div style={S.commissionNumbers}>
+                  {/* Plan header */}
+                  <div style={S.planHeader}>
+                    <div style={S.planIconWrap}>
+                      <Shield size={20} color="#fff" />
+                    </div>
                     <div>
-                      <span style={S.commissionBig}>{commission.totalCount}</span>
-                      <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0' }}>reservas confirmadas</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ ...S.commissionRevenue, margin: 0 }}>
-                        {commission.currencySymbol}{Math.round(commission.commissionTotal).toLocaleString('es')}
-                      </p>
-                      <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>
-                        ${commission.commissionTotalUSD.toFixed(2)} USD · {commission.ownerCurrency}
-                      </p>
+                      <p style={S.planName}>Plan Pro</p>
+                      <span style={S.planTag}>✓ Activo</span>
                     </div>
                   </div>
 
-                  {/* Info del modelo — sin límite */}
-                  <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#15803d', marginBottom: 14, textAlign: 'center', border: '1px solid #bbf7d0' }}>
-                    ✓ Sin límite mensual · ${COMMISSION_USD} USD ({commission.currencySymbol}{Math.round(commission.commissionPerBooking).toLocaleString('es')} {commission.ownerCurrency}) por reserva
+                  {/* Precio */}
+                  <div style={S.planPrice}>
+                    <span style={S.planPriceBig}>
+                      {plan.currencySymbol}{Math.round(plan.priceLocal).toLocaleString('es')}
+                    </span>
+                    <span style={S.planPricePer}>/ mes</span>
+                  </div>
+                  {ownerCurrency !== 'USD' && (
+                    <p style={S.planPriceUSD}>
+                      ${PLAN_PRICE_USD} USD · Tipo de cambio: {plan.currencySymbol}{USD_RATES[ownerCurrency]?.toLocaleString('es') ?? '—'} por $1
+                    </p>
+                  )}
+                  {ownerCurrency === 'USD' && (
+                    <p style={S.planPriceUSD}>Precio fijo en dólares</p>
+                  )}
+
+                  <div style={S.planDivider} />
+
+                  {/* Desglose del período */}
+                  <div style={S.planRow}>
+                    <span>Período seleccionado</span>
+                    <span style={S.planRowValue}>{daysLabel}</span>
+                  </div>
+                  <div style={S.planRow}>
+                    <span>Meses en rango</span>
+                    <span style={S.planRowValue}>{plan.monthsInRange}</span>
+                  </div>
+                  <div style={S.planRow}>
+                    <span>Costo del período</span>
+                    <span style={{ ...S.planRowValue, color: '#b91c1c' }}>
+                      − {fMoney(plan.costPeriod)}
+                    </span>
                   </div>
 
-                  <div style={S.divider} />
-                  <p style={S.breakdownTitle}>Equivalencia en monedas soportadas</p>
-                  {Object.entries(USD_RATES).map(([cur, rate]) => (
-                    <div key={cur} style={S.breakdownRow}>
-                      <span>{CURRENCY_SYMBOL[cur]}{cur}</span>
-                      <span style={{ fontWeight: 500, color: '#374151' }}>{CURRENCY_SYMBOL[cur]}{Math.round(rate * COMMISSION_USD).toLocaleString()}</span>
+                  <div style={S.planDivider} />
+
+                  {/* Resumen neto */}
+                  <div style={S.planRow}>
+                    <span>Ingresos brutos</span>
+                    <span style={S.planRowValue}>{fMoney(kpi.totalRevenue)}</span>
+                  </div>
+                  <div style={S.planRow}>
+                    <span>Plan GolPlay</span>
+                    <span style={{ ...S.planRowValue, color: '#b91c1c' }}>
+                      − {fMoney(plan.costPeriod)}
+                    </span>
+                  </div>
+                  <div style={{ ...S.planRow, fontSize: 15, fontWeight: 700 }}>
+                    <span style={{ color: '#0f172a' }}>Neto para vos</span>
+                    <span style={{ color: '#16a34a', fontWeight: 700 }}>
+                      {fMoney(kpi.netRevenue)}
+                    </span>
+                  </div>
+
+                  {/* Ahorro vs modelo anterior */}
+                  {plan.savingsVsOld > 0 && (
+                    <div style={S.planSavingsBanner}>
+                      <Gift size={15} color="#15803d" />
+                      <span style={{ fontSize: 12, color: '#15803d', fontWeight: 500 }}>
+                        Ahorrás {fMoney(plan.savingsVsOld)} vs comisión por reserva
+                      </span>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Trial */}
+                  <div style={S.planTrialBanner}>
+                    <CalendarCheck size={14} />
+                    <span>Primeros {PLAN_TRIAL_DAYS} días gratis para nuevos complejos</span>
+                  </div>
                 </>
               )}
             </SCard>
           </div>
 
           <p style={S.footer}>
-            Modelo v2.0 — Febrero 2026.
+            Modelo v3.0 — Marzo 2026. Plan fijo mensual.
           </p>
 
         </div>

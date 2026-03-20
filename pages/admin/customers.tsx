@@ -15,6 +15,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
 import * as XLSX from 'xlsx'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ interface CustomerBooking {
 }
 
 interface CustomerPricing {
-  id: number; field_id: number; field_name: string; price: number; notes: string | null
+  id: number; field_id: number; field_name: string; price: number; hour: string | null; notes: string | null
 }
 
 interface Field { id: number; name: string }
@@ -95,7 +96,10 @@ export default function AdminCustomers() {
 
   const [newPriceField, setNewPriceField] = useState('')
   const [newPriceAmount, setNewPriceAmount] = useState('')
+  const [newPriceHour, setNewPriceHour] = useState('')
   const [newPriceNote, setNewPriceNote] = useState('')
+  const [editPricingId, setEditPricingId] = useState<number | null>(null)
+  const [editPricingAmount, setEditPricingAmount] = useState('')
 
   const showToast = useCallback((msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3200) }, [])
 
@@ -134,8 +138,8 @@ export default function AdminCustomers() {
     setSelected(c); setPanelOpen(true); setDetailTab('info'); setEditing(false); setLoadingDetail(true)
     const { data: bk } = await supabase.from('bookings').select('id, date, hour, status, price, source, fields:field_id(name)').eq('customer_ref', c.id).order('date', { ascending: false }).limit(100)
     setBookingHistory((bk || []).map((b: any) => ({ id: b.id, date: b.date, hour: b.hour, status: b.status, price: b.price ? Number(b.price) : null, source: b.source || null, field_name: Array.isArray(b.fields) ? b.fields[0]?.name : b.fields?.name ?? '—' })))
-    const { data: pr } = await supabase.from('customer_pricing').select('id, field_id, price, notes, fields:field_id(name)').eq('customer_id', c.id)
-    setPricing((pr || []).map((p: any) => ({ id: p.id, field_id: p.field_id, field_name: Array.isArray(p.fields) ? p.fields[0]?.name : p.fields?.name ?? '—', price: Number(p.price), notes: p.notes })))
+    const { data: pr } = await supabase.from('customer_pricing').select('id, field_id, price, hour, notes, fields:field_id(name)').eq('customer_id', c.id)
+    setPricing((pr || []).map((p: any) => ({ id: p.id, field_id: p.field_id, field_name: Array.isArray(p.fields) ? p.fields[0]?.name : p.fields?.name ?? '—', price: Number(p.price), hour: p.hour || null, notes: p.notes })))
     setLoadingDetail(false)
   }
 
@@ -154,12 +158,128 @@ export default function AdminCustomers() {
 
   const addPricing = async () => {
     if (!selected || !newPriceField || !newPriceAmount) return
-    const { error } = await supabase.from('customer_pricing').insert({ customer_id: selected.id, field_id: Number(newPriceField), price: Number(newPriceAmount), notes: newPriceNote.trim() || null })
+    const fieldId = Number(newPriceField)
+    const newPrice = Number(newPriceAmount)
+    const hour = newPriceHour || null
+
+    // 1. Guardar precio especial
+    const { error } = await supabase.from('customer_pricing').insert({
+      customer_id: selected.id, field_id: fieldId, price: newPrice,
+      hour, notes: newPriceNote.trim() || null,
+    })
     if (error) { showToast('Error al agregar', false); return }
-    showToast('Precio especial agregado ✓'); setNewPriceField(''); setNewPriceAmount(''); setNewPriceNote(''); openDetail(selected)
+
+    // 2. Actualizar reservas FUTURAS de este cliente en esta cancha
+    const today = new Date().toISOString().split('T')[0]
+    let updateQuery = supabase
+      .from('bookings')
+      .update({ price: newPrice, price_source: 'customer_pricing' })
+      .eq('customer_ref', selected.id)
+      .eq('field_id', fieldId)
+      .neq('status', 'cancelled')
+      .gte('date', today)
+
+    if (hour) {
+      updateQuery = updateQuery.eq('hour', hour)
+    }
+
+    const { data: updated, error: updateErr } = await updateQuery.select('id')
+    const updatedCount = updated?.length ?? 0
+
+    if (updateErr) {
+      showToast(`Precio guardado, pero error al actualizar reservas futuras`, false)
+    } else if (updatedCount > 0) {
+      showToast(`Precio especial agregado ✓ · ${updatedCount} reserva${updatedCount > 1 ? 's' : ''} futura${updatedCount > 1 ? 's' : ''} actualizada${updatedCount > 1 ? 's' : ''}`)
+    } else {
+      showToast('Precio especial agregado ✓')
+    }
+
+    setNewPriceField(''); setNewPriceAmount(''); setNewPriceHour(''); setNewPriceNote('')
+    openDetail(selected)
   }
 
-  const deletePricing = async (id: number) => { await supabase.from('customer_pricing').delete().eq('id', id); if (selected) openDetail(selected); showToast('Precio eliminado') }
+  const deletePricing = async (pricingId: number) => {
+    // Get the pricing details before deleting
+    const pricingItem = pricing.find(p => p.id === pricingId)
+    if (!pricingItem || !selected) return
+
+    // 1. Delete the pricing rule
+    await supabase.from('customer_pricing').delete().eq('id', pricingId)
+
+    // 2. Revert future bookings to base rate
+    // First get the field's base price
+    const { data: fieldData } = await supabase
+      .from('fields')
+      .select('price_day')
+      .eq('id', pricingItem.field_id)
+      .single()
+
+    if (fieldData) {
+      const today = new Date().toISOString().split('T')[0]
+      let revertQuery = supabase
+        .from('bookings')
+        .update({ price: fieldData.price_day, price_source: 'base' })
+        .eq('customer_ref', selected.id)
+        .eq('field_id', pricingItem.field_id)
+        .eq('price_source', 'customer_pricing')
+        .neq('status', 'cancelled')
+        .gte('date', today)
+
+      if (pricingItem.hour) {
+        revertQuery = revertQuery.eq('hour', pricingItem.hour)
+      }
+
+      const { data: reverted } = await revertQuery.select('id')
+      const revertedCount = reverted?.length ?? 0
+
+      if (revertedCount > 0) {
+        showToast(`Precio eliminado · ${revertedCount} reserva${revertedCount > 1 ? 's' : ''} revertida${revertedCount > 1 ? 's' : ''} a tarifa base`)
+      } else {
+        showToast('Precio eliminado')
+      }
+    } else {
+      showToast('Precio eliminado')
+    }
+
+    openDetail(selected)
+  }
+
+  const updatePricing = async (pricingId: number) => {
+    const newPrice = Number(editPricingAmount)
+    if (isNaN(newPrice) || newPrice <= 0) { showToast('Monto inválido', false); return }
+    const pricingItem = pricing.find(p => p.id === pricingId)
+    if (!pricingItem || !selected) return
+
+    // 1. Update the pricing rule
+    const { error } = await supabase.from('customer_pricing').update({ price: newPrice }).eq('id', pricingId)
+    if (error) { showToast('Error al actualizar', false); return }
+
+    // 2. Update future bookings with this pricing
+    const today = new Date().toISOString().split('T')[0]
+    let updateQuery = supabase
+      .from('bookings')
+      .update({ price: newPrice, price_source: 'customer_pricing' })
+      .eq('customer_ref', selected.id)
+      .eq('field_id', pricingItem.field_id)
+      .eq('price_source', 'customer_pricing')
+      .neq('status', 'cancelled')
+      .gte('date', today)
+
+    if (pricingItem.hour) {
+      updateQuery = updateQuery.eq('hour', pricingItem.hour)
+    }
+
+    const { data: updated } = await updateQuery.select('id')
+    const updatedCount = updated?.length ?? 0
+
+    setEditPricingId(null)
+    if (updatedCount > 0) {
+      showToast(`Precio actualizado ✓ · ${updatedCount} reserva${updatedCount > 1 ? 's' : ''} futura${updatedCount > 1 ? 's' : ''} actualizada${updatedCount > 1 ? 's' : ''}`)
+    } else {
+      showToast('Precio actualizado ✓')
+    }
+    openDetail(selected)
+  }
 
   const toggleSort = (key: SortKey) => { if (sortBy === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortBy(key); setSortDir(key === 'name' ? 'asc' : 'desc') } }
 
@@ -218,6 +338,8 @@ export default function AdminCustomers() {
             </div>
           ))}
         </div>
+
+        <ValidationBanner />
 
         <div className="cx-toolbar">
           <div className="cx-search">
@@ -344,16 +466,55 @@ export default function AdminCustomers() {
               <div>
                 {pricing.length > 0 && <div className="cx-plist">{pricing.map(p => (
                   <div key={p.id} className="cx-pitem">
-                    <div><span className="cx-pitem__name">{p.field_name}</span>{p.notes && <span className="cx-pitem__note">{p.notes}</span>}</div>
-                    <div className="cx-pitem__right"><span className="cx-pitem__price">{fmt(p.price)}</span><button className="cx-pitem__del" onClick={() => deletePricing(p.id)}>×</button></div>
+                    <div>
+                      <span className="cx-pitem__name">{p.field_name}{p.hour ? ` · ${p.hour}` : ''}</span>
+                      {p.hour && <span className="cx-pitem__note">Aplica solo a las {p.hour}</span>}
+                      {!p.hour && <span className="cx-pitem__note">Aplica a cualquier hora</span>}
+                      {p.notes && <span className="cx-pitem__note">{p.notes}</span>}
+                    </div>
+                    <div className="cx-pitem__right">
+                      {editPricingId === p.id ? (
+                        <>
+                          <input
+                            type="number"
+                            value={editPricingAmount}
+                            onChange={e => setEditPricingAmount(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') updatePricing(p.id); if (e.key === 'Escape') setEditPricingId(null) }}
+                            autoFocus
+                            style={{ width: 80, padding: '4px 8px', borderRadius: 6, border: '2px solid #16a34a', fontSize: 13, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
+                            min={0}
+                          />
+                          <button className="cx-btn cx-btn--primary cx-btn--sm" onClick={() => updatePricing(p.id)} style={{ padding: '4px 8px' }}>✓</button>
+                          <button className="cx-pitem__del" onClick={() => setEditPricingId(null)}>✗</button>
+                        </>
+                      ) : (
+                        <>
+                          <span
+                            className="cx-pitem__price"
+                            onClick={() => { setEditPricingId(p.id); setEditPricingAmount(String(p.price)) }}
+                            style={{ cursor: 'pointer', borderBottom: '1px dashed #bbf7d0' }}
+                            title="Click para editar precio"
+                          >
+                            {fmt(p.price)}
+                          </span>
+                          <button className="cx-pitem__del" onClick={() => deletePricing(p.id)}>×</button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}</div>}
                 <div className="cx-padd">
                   <p className="cx-padd__title">+ Agregar precio especial</p>
                   <div className="cx-padd__form">
-                    <select value={newPriceField} onChange={e => setNewPriceField(e.target.value)}><option value="">Cancha…</option>{fields.filter(f => !pricing.some(p => p.field_id === f.id)).map(f => <option key={f.id} value={String(f.id)}>{f.name}</option>)}</select>
+                    <select value={newPriceField} onChange={e => setNewPriceField(e.target.value)}><option value="">Cancha…</option>{fields.map(f => <option key={f.id} value={String(f.id)}>{f.name}</option>)}</select>
+                    <select value={newPriceHour} onChange={e => setNewPriceHour(e.target.value)}>
+                      <option value="">Cualquier hora</option>
+                      {['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'].map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
                     <input type="number" placeholder="₡ Precio" value={newPriceAmount} onChange={e => setNewPriceAmount(e.target.value)} />
-                    <input placeholder="Nota" value={newPriceNote} onChange={e => setNewPriceNote(e.target.value)} />
+                    <input placeholder="Nota (opcional)" value={newPriceNote} onChange={e => setNewPriceNote(e.target.value)} />
                     <button className="cx-btn cx-btn--primary cx-btn--sm" onClick={addPricing} disabled={!newPriceField || !newPriceAmount}>+</button>
                   </div>
                 </div>

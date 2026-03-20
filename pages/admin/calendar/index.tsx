@@ -4,10 +4,10 @@
  *
  * Dependencias: npm install react-day-picker
  *
- * CAMBIOS v2: Se agrega color por cancha al calendario.
- * - Query de fields ahora incluye 'color'
- * - Se construye fieldColors map y se pasa como prop a DailyCalendar y WeeklyCalendar
- * - Leyenda actualizada con colores de cancha
+ * CAMBIOS v3: slot_duration support.
+ * - Field type now includes slot_duration
+ * - Builds fieldSlotDurations map and passes as prop to DailyCalendar and WeeklyCalendar
+ * - Bookings with slot_duration > 1 visually span multiple hour rows
  */
 
 export const dynamic = 'force-dynamic'
@@ -16,6 +16,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
 import DailyCalendar from '@/components/ui/admin/daily'
 import WeeklyCalendar from '@/components/ui/admin/week'
 import { DayPicker } from 'react-day-picker'
@@ -51,7 +52,7 @@ function weekLabel(base: Date): string {
 
 type View = 'daily' | 'weekly'
 
-interface Field { id: string; name: string; color: string }
+interface Field { id: string; name: string; color: string; slotDuration: number }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const S: any = {
@@ -164,10 +165,15 @@ export default function AdminCalendar() {
     })
   }, [router])
 
-  // Load fields for filter — CHANGED: now includes 'color'
+  // Load fields — now includes slot_duration ✅
   useEffect(() => {
-    supabase.from('fields').select('id, name, color').then(({ data }) => {
-      setFields(data?.map((f: any) => ({ id: String(f.id), name: f.name, color: f.color || '#3B82F6' })) ?? [])
+    supabase.from('fields').select('id, name, color, slot_duration').then(({ data }) => {
+      setFields(data?.map((f: any) => ({
+        id: String(f.id),
+        name: f.name,
+        color: f.color || '#3B82F6',
+        slotDuration: f.slot_duration ?? 1,
+      })) ?? [])
     })
   }, [])
 
@@ -175,6 +181,13 @@ export default function AdminCalendar() {
   const fieldColors = useMemo(() => {
     const map: Record<string, string> = {}
     fields.forEach(f => { map[f.id] = f.color })
+    return map
+  }, [fields])
+
+  // ✅ NUEVO: Build fieldSlotDurations map: { fieldId: slotDuration }
+  const fieldSlotDurations = useMemo(() => {
+    const map: Record<string, number> = {}
+    fields.forEach(f => { map[f.id] = f.slotDuration })
     return map
   }, [fields])
 
@@ -338,6 +351,9 @@ export default function AdminCalendar() {
             </div>
           </div>
 
+          {/* ── Validation ── */}
+          <ValidationBanner />
+
           {/* ── Legend ── */}
           <div style={S.legend}>
             {/* Status legend */}
@@ -353,7 +369,7 @@ export default function AdminCalendar() {
               </div>
             ))}
 
-            {/* NUEVO: Leyenda de colores por cancha */}
+            {/* Leyenda de colores por cancha */}
             {fields.length > 1 && (
               <>
                 <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 4px' }} />
@@ -361,6 +377,9 @@ export default function AdminCalendar() {
                   <div key={f.id} style={S.legendItem}>
                     <span style={{ width: 10, height: 10, borderRadius: 3, background: f.color, border: '1px solid rgba(0,0,0,.1)' }} />
                     {f.name}
+                    {f.slotDuration > 1 && (
+                      <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 2 }}>({f.slotDuration}h)</span>
+                    )}
                   </div>
                 ))}
               </>
@@ -372,19 +391,21 @@ export default function AdminCalendar() {
             </div>
           </div>
 
-          {/* ── Calendar view — CHANGED: now passes fieldColors ── */}
+          {/* ── Calendar view — passes fieldColors + fieldSlotDurations ── */}
           <div style={{ transition: 'opacity 0.2s ease' }}>
             {view === 'daily' ? (
               <DailyCalendar
                 selectedDate={dateStr}
                 fieldFilter={fieldFilter}
                 fieldColors={fieldColors}
+                fieldSlotDurations={fieldSlotDurations}
               />
             ) : (
               <WeeklyCalendar
                 selectedDate={dateStr}
                 fieldFilter={fieldFilter}
                 fieldColors={fieldColors}
+                fieldSlotDurations={fieldSlotDurations}
               />
             )}
           </div>

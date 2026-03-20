@@ -154,3 +154,33 @@ export const REGIONS_BY_COUNTRY: Record<string, string[]> = {
   DO: ['Santo Domingo','Santiago','La Vega','San Cristóbal','La Altagracia','Espaillat','Puerto Plata'],
   UY: ['Montevideo','Canelones','Maldonado','Salto','Paysandú','Rivera','Colonia','Tacuarembó'],
 }
+// ─── Plan GolPlay ─────────────────────────────────────────────────────────────
+/**
+ * Modelo v3.0 — Plan fijo mensual.
+ * Costa Rica: ₡35,000 CRC/mes
+ * Resto de LATAM: $75 USD/mes (convertido a moneda local con USD_RATES)
+ * Trial: 30 días gratis desde la fecha de creación del complejo.
+ *
+ * TODO futuro: cupones de descuento por complejo (discount_pct en complexes)
+ */
+
+export const PLAN_PRICE_CRC = 35_000       // precio fijo Costa Rica
+export const PLAN_PRICE_USD = 75            // precio fijo LATAM (en USD)
+export const PLAN_TRIAL_DAYS = 30           // días de prueba gratis
+
+/**
+ * Devuelve el precio mensual del plan en la moneda local del owner.
+ * Costa Rica tiene precio directo en CRC; el resto convierte desde USD.
+ */
+export function getPlanPriceLocal(currency: string): number {
+  if (currency === 'CRC') return PLAN_PRICE_CRC
+  const rate = USD_RATES[currency] ?? 1
+  return PLAN_PRICE_USD * rate
+}
+
+/**
+ * Devuelve el precio del plan formateado en moneda local.
+ */
+export function formatPlanPrice(currency: string): string {
+  return formatMoney(getPlanPriceLocal(currency), currency)
+}

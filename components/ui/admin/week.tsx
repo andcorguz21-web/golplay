@@ -22,6 +22,7 @@ type Props = {
   selectedDate: string
   fieldFilter?: string
   fieldColors?: Record<string, string>
+  fieldSlotDurations?: Record<string, number>
 }
 
 const DEFAULT_FIELD_COLOR = '#3B82F6'
@@ -158,7 +159,7 @@ function OccupationBar({ count, date }: { count: number; date: string }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fieldColors = {} }: Props) {
+export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fieldColors = {}, fieldSlotDurations = {} }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Booking | null>(null)
@@ -177,8 +178,8 @@ export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fiel
 
     supabase
       .from('bookings')
-      .select(`id, date, hour, status, price,
-        customer_name, customer_phone,
+      .select(`id, date, hour, status, price, price_source, source, notes,
+        customer_name, customer_last_name, customer_phone, customer_email, customer_id_number,
         fields:field_id (id, name)
       `)
       .in('date', weekDates)
@@ -193,10 +194,16 @@ export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fiel
             hour: b.hour,
             status: (b.status as BookingStatus) ?? 'active',
             price: Number(b.price ?? 0),
+            priceSource: b.price_source ?? '',
+            source: b.source ?? '',
+            notes: b.notes ?? '',
             fieldId: b.fields?.id ?? 0,
             fieldName: Array.isArray(b.fields) ? b.fields[0]?.name : b.fields?.name ?? '—',
             customerName: b.customer_name ?? '',
+            customerLastName: b.customer_last_name ?? '',
             customerPhone: b.customer_phone ?? '',
+            customerEmail: b.customer_email ?? '',
+            customerIdNumber: b.customer_id_number ?? '',
           }))
 
         setBookings(normalized)
@@ -230,6 +237,11 @@ export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fiel
     await supabase.from('bookings').delete().eq('id', id)
     setBookings(prev => prev.filter(b => b.id !== id))
     setSelected(null)
+  }
+
+  const updateBooking = (updated: Booking) => {
+    setBookings(prev => prev.map(b => b.id === updated.id ? updated : b))
+    setSelected(updated)
   }
 
   // Week range label
@@ -324,7 +336,17 @@ export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fiel
 
                 {/* Day cells */}
                 {weekDates.map(date => {
-                  const slotBookings = bookings.filter(b => b.date === date && b.hour === hour)
+                  const thisH = Number(hour.split(':')[0])
+                  const slotBookings = bookings.filter(b => {
+                    if (b.date !== date) return false
+                    const bookingStartH = Number(b.hour.split(':')[0])
+                    // Exact match
+                    if (b.hour === hour) return true
+                    // Span match: slot_duration > 1
+                    const dur = fieldSlotDurations[String(b.fieldId)] || 1
+                    if (dur <= 1) return false
+                    return thisH > bookingStartH && thisH < bookingStartH + dur
+                  })
                   const isToday = date === today
 
                   return (
@@ -337,15 +359,45 @@ export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fiel
                         background: isToday ? 'rgba(2,132,199,.02)' : 'transparent',
                       }}
                     >
-                      {slotBookings.map(b => (
-                        <BookingCell
-                          key={b.id}
-                          booking={b}
-                          conflict={conflictSet.has(b.id)}
-                          onClick={() => setSelected(b)}
-                          fieldColor={fieldColors[String(b.fieldId)] || DEFAULT_FIELD_COLOR}
-                        />
-                      ))}
+                      {slotBookings.map(b => {
+                        const isContinuation = b.hour !== hour
+                        if (isContinuation) {
+                          // Render compact continuation indicator
+                          const fc = fieldColors[String(b.fieldId)] || DEFAULT_FIELD_COLOR
+                          return (
+                            <div
+                              key={`${b.id}-cont`}
+                              onClick={e => { e.stopPropagation(); setSelected(b) }}
+                              title={`${b.fieldName} · continuación (turno de ${fieldSlotDurations[String(b.fieldId)] || 1}h desde ${b.hour})`}
+                              style={{
+                                background: hexToRgba(fc, 0.07),
+                                borderLeft: `3px solid ${fc}`,
+                                borderRadius: 7,
+                                padding: '4px 7px',
+                                cursor: 'pointer',
+                                fontSize: 10,
+                                marginBottom: 3,
+                                color: '#94a3b8',
+                                transition: 'background 0.12s',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              ↕ {b.fieldName}
+                            </div>
+                          )
+                        }
+                        return (
+                          <BookingCell
+                            key={b.id}
+                            booking={b}
+                            conflict={conflictSet.has(b.id)}
+                            onClick={() => setSelected(b)}
+                            fieldColor={fieldColors[String(b.fieldId)] || DEFAULT_FIELD_COLOR}
+                          />
+                        )
+                      })}
                     </div>
                   )
                 })}
@@ -370,6 +422,7 @@ export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fiel
           booking={selected}
           onClose={() => setSelected(null)}
           onDelete={deleteBooking}
+          onUpdate={updateBooking}
         />
       )}
     </>
