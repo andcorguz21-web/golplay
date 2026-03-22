@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase'
 import BookingModal from '@/components/ui/admin/BookingModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type BookingStatus = 'confirmed' | 'pending' | 'cancelled'
+export type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'active'
 
 export type Booking = {
   id: number
@@ -61,6 +61,14 @@ export const STATUS_CFG: Record<BookingStatus, {
   confirmed: { label: 'Confirmada', dot: '#16a34a', bg: '#f0fdf4', border: '#86efac', text: '#15803d' },
   pending:   { label: 'Pendiente',  dot: '#d97706', bg: '#fffbeb', border: '#fde68a', text: '#92400e' },
   cancelled: { label: 'Cancelada',  dot: '#dc2626', bg: '#fef2f2', border: '#fca5a5', text: '#b91c1c' },
+
+  active: { 
+    label: 'Activa', 
+    dot: '#3b82f6', 
+    bg: '#dbeafe', 
+    border: '#93c5fd', 
+    text: '#1e3a8a' 
+  },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
