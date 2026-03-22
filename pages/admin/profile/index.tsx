@@ -17,7 +17,8 @@ import AdminLayout from '@/components/ui/admin/AdminLayout'
 import type { Role } from '@/components/ui/admin/AdminLayout'
 import {
   LATAM_COUNTRIES,
-  formatMoney,
+  formatMoney, formatMoneyShort,
+  getPlanPriceLocal, PLAN_PRICE_CRC, PLAN_PRICE_USD, PLAN_TRIAL_DAYS,
   type CountryCode,
 } from '@/sports'
 
@@ -61,17 +62,10 @@ function fDate(iso: string) {
   } catch { return iso }
 }
 
-/** Comisión en moneda local: $1 USD × tasa del país */
-function commissionLabel(currency: string) {
-  const country = LATAM_COUNTRIES.find(c => c.currency === currency)
-  if (!country) return '— / reserva'
-  try {
-    const { USD_RATES } = require('@/sports')
-    const rate = USD_RATES[currency] ?? 1
-    return `${formatMoney(rate, currency)} / reserva`
-  } catch {
-    return `1 USD / reserva`
-  }
+/** Plan mensual en moneda local */
+function planLabel(currency: string) {
+  const price = getPlanPriceLocal(currency)
+  return `${formatMoney(price, currency)} / mes`
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -96,6 +90,9 @@ export default function AdminProfile() {
   const [fCountry,     setFCountry]     = useState<CountryCode | ''>('')
   const [fCurrency,    setFCurrency]    = useState('')
   const [fComplexName, setFComplexName] = useState('')
+  const [notifEmails,  setNotifEmails]  = useState<string[]>([])
+  const [newNotifEmail, setNewNotifEmail] = useState('')
+  const [complexId,    setComplexId]    = useState<number | null>(null)
 
   // Password
   const [pw,       setPw]       = useState<PasswordForm>({ current: '', next: '', confirm: '' })
@@ -179,6 +176,18 @@ export default function AdminProfile() {
           bookingsThisMonth: count ?? 0,
           revenueThisMonth: bkgs?.reduce((s, b) => s + (b.price ?? 0), 0) ?? 0,
         })
+
+        // Load complex notification emails
+        const { data: cx } = await supabase
+          .from('complexes')
+          .select('id, notification_emails')
+          .eq('owner_id', user.id)
+          .limit(1)
+          .single()
+        if (cx) {
+          setComplexId(cx.id)
+          setNotifEmails(cx.notification_emails ?? [])
+        }
       }
     }
     load()
@@ -489,6 +498,76 @@ export default function AdminProfile() {
                   </div>
                 </div>
 
+                {/* ── Notification Emails ── */}
+                <div style={{ marginTop: 20, padding: '16px 18px', background: '#f8fafc', borderRadius: 12, border: '1px solid #f1f5f9' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#0f172a' }}>📧 Emails de notificación</p>
+                  <p style={{ margin: '0 0 12px', fontSize: 12, color: '#94a3b8' }}>
+                    Agregá correos adicionales donde quieras recibir notificaciones de nuevas reservas. Tu email principal ({profile.email}) siempre recibe.
+                  </p>
+
+                  {/* Current emails */}
+                  {notifEmails.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                      {notifEmails.map((em, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #f1f5f9' }}>
+                          <span style={{ fontSize: 13, color: '#0f172a', fontWeight: 500 }}>✉️ {em}</span>
+                          <button
+                            onClick={async () => {
+                              const updated = notifEmails.filter((_, j) => j !== i)
+                              setNotifEmails(updated)
+                              if (complexId) {
+                                await supabase.from('complexes').update({ notification_emails: updated }).eq('id', complexId)
+                                showToast('Email eliminado')
+                              }
+                            }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16 }}
+                            title="Eliminar"
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add new email */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="email"
+                      className="p-input"
+                      placeholder="correo@ejemplo.com"
+                      value={newNotifEmail}
+                      onChange={e => setNewNotifEmail(e.target.value)}
+                      onKeyDown={async e => {
+                        if (e.key === 'Enter' && newNotifEmail.includes('@')) {
+                          const updated = [...notifEmails, newNotifEmail.trim().toLowerCase()]
+                          setNotifEmails(updated)
+                          setNewNotifEmail('')
+                          if (complexId) {
+                            await supabase.from('complexes').update({ notification_emails: updated }).eq('id', complexId)
+                            showToast('Email agregado ✓')
+                          }
+                        }
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      className="p-btn p-btn--primary"
+                      disabled={!newNotifEmail.includes('@')}
+                      onClick={async () => {
+                        const updated = [...notifEmails, newNotifEmail.trim().toLowerCase()]
+                        setNotifEmails(updated)
+                        setNewNotifEmail('')
+                        if (complexId) {
+                          await supabase.from('complexes').update({ notification_emails: updated }).eq('id', complexId)
+                          showToast('Email agregado ✓')
+                        }
+                      }}
+                      style={{ padding: '8px 14px' }}
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+                </div>
+
                 <div className="p-form-footer">
                   <button className="p-btn p-btn--primary" onClick={saveProfile} disabled={saving}>
                     {saving ? <><Spinner/> Guardando…</> : '💾 Guardar cambios'}
@@ -605,7 +684,7 @@ export default function AdminProfile() {
                     <div className="p-info-item">
                       <span className="p-info-item__label">Plan activo</span>
                       <span className="p-badge p-badge--plan">
-                        ⚡ Estándar — {commissionLabel(activeCurrency)}
+                        ⚡ Plan Pro — {planLabel(activeCurrency)}
                       </span>
                     </div>
                   )}

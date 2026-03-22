@@ -113,6 +113,10 @@ export default function AdminBookings() {
   const [notesText, setNotesText] = useState('')
   const [editingPrice, setEditingPrice] = useState<number | null>(null)
   const [priceText, setPriceText] = useState('')
+  const [editingDateTime, setEditingDateTime] = useState<number | null>(null)
+  const [newDate, setNewDate] = useState('')
+  const [newHour, setNewHour] = useState('')
+  const [dateTimeError, setDateTimeError] = useState('')
   const [toast,   setToast]   = useState<{ msg: string; ok: boolean } | null>(null)
   const [acting,  setActing]  = useState<number | null>(null)
 
@@ -225,6 +229,38 @@ export default function AdminBookings() {
     if (detail?.id === bookingId) setDetail({ ...detail, price: newPrice })
     setEditingPrice(null)
     showToast('Precio actualizado ✓')
+  }
+
+  // ── Save date/hour change ──────────────────────────────────────────────
+  const saveDateTime = async (bookingId: number) => {
+    if (!newDate || !newHour) { setDateTimeError('Seleccioná fecha y hora'); return }
+    const bk = bookings.find(b => b.id === bookingId)
+    if (!bk) return
+    if (newDate === bk.date && newHour === bk.hour) { setEditingDateTime(null); return }
+
+    const today = todayStr()
+    if (newDate < today) { setDateTimeError('No se puede mover a una fecha pasada'); return }
+
+    setDateTimeError('')
+
+    // Check availability
+    const { data: existing } = await supabase
+      .from('bookings').select('id')
+      .eq('field_id', bk.field_id).eq('date', newDate).eq('hour', newHour)
+      .in('status', ['confirmed', 'pending'])
+      .neq('id', bookingId)
+
+    if (existing && existing.length > 0) {
+      setDateTimeError('Ese horario ya está ocupado'); return
+    }
+
+    const { error } = await supabase.from('bookings').update({ date: newDate, hour: newHour }).eq('id', bookingId)
+    if (error) { showToast('Error al cambiar fecha/hora', false); return }
+
+    setBookings(prev => detectConflicts(prev.map(b => b.id === bookingId ? { ...b, date: newDate, hour: newHour } : b)))
+    if (detail?.id === bookingId) setDetail({ ...detail, date: newDate, hour: newHour })
+    setEditingDateTime(null)
+    showToast('Fecha y hora actualizadas ✓')
   }
 
   // ── Data validation — congruence checks ────────────────────────────────
@@ -560,8 +596,38 @@ export default function AdminBookings() {
           
           <div className="bk-modal__grid">
             <DetailRow icon="🏟️" label="Cancha"   value={`${SPORT_ICON[detail.sport ?? ''] ?? ''} ${detail.fieldName}`.trim()}/>
-            <DetailRow icon="📅" label="Fecha"    value={fmtDate(detail.date)}/>
-            <DetailRow icon="🕐" label="Hora"     value={detail.hour}/>
+            {/* Editable date/hour */}
+            {editingDateTime === detail.id ? (
+              <div className="bk-drow" style={{ background: '#f8fafc', borderRadius: 9, flexDirection: 'column', alignItems: 'stretch', gap: 10, padding: '12px 14px' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#374151', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>📅 Cambiar fecha y hora</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <input type="date" value={newDate} onChange={e => { setNewDate(e.target.value); setDateTimeError('') }} min={todayStr()} style={{ padding: '7px 10px', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+                  <select value={newHour} onChange={e => { setNewHour(e.target.value); setDateTimeError('') }} style={{ padding: '7px 10px', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: 12, fontFamily: 'inherit', outline: 'none', appearance: 'none', background: '#fff' }}>
+                    {['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'].map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                </div>
+                {dateTimeError && <p style={{ fontSize: 11, color: '#b91c1c', margin: 0, fontWeight: 600 }}>⚠️ {dateTimeError}</p>}
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <button className="bk-btn bk-btn--ghost bk-btn--sm" onClick={() => { setEditingDateTime(null); setDateTimeError('') }}>Cancelar</button>
+                  <button className="bk-btn bk-btn--primary bk-btn--sm" onClick={() => saveDateTime(detail.id)}>Guardar</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="bk-drow" onClick={() => { setEditingDateTime(detail.id); setNewDate(detail.date); setNewHour(detail.hour); setDateTimeError('') }} style={{ cursor: 'pointer' }}>
+                  <span className="bk-drow__ico">📅</span>
+                  <span className="bk-drow__label">Fecha</span>
+                  <span className="bk-drow__value" style={{ borderBottom: '1px dashed #bbf7d0' }}>{fmtDate(detail.date)} ✏️</span>
+                </div>
+                <div className="bk-drow" onClick={() => { setEditingDateTime(detail.id); setNewDate(detail.date); setNewHour(detail.hour); setDateTimeError('') }} style={{ cursor: 'pointer' }}>
+                  <span className="bk-drow__ico">🕐</span>
+                  <span className="bk-drow__label">Hora</span>
+                  <span className="bk-drow__value" style={{ borderBottom: '1px dashed #bbf7d0' }}>{detail.hour} ✏️</span>
+                </div>
+              </>
+            )}
             {/* Editable price */}
             <div className="bk-drow" style={{ background: '#f8fafc', borderRadius: 9 }}>
               <span className="bk-drow__ico">💰</span>

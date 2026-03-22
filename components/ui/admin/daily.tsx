@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase'
 import BookingModal from '@/components/ui/admin/BookingModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type BookingStatus = 'active' | 'pending' | 'cancelled'
+export type BookingStatus = 'confirmed' | 'pending' | 'cancelled'
 
 export type Booking = {
   id: number
@@ -58,7 +58,7 @@ const DEFAULT_FIELD_COLOR = '#3B82F6'
 export const STATUS_CFG: Record<BookingStatus, {
   label: string; dot: string; bg: string; border: string; text: string
 }> = {
-  active:    { label: 'Confirmada', dot: '#16a34a', bg: '#f0fdf4', border: '#86efac', text: '#15803d' },
+  confirmed: { label: 'Confirmada', dot: '#16a34a', bg: '#f0fdf4', border: '#86efac', text: '#15803d' },
   pending:   { label: 'Pendiente',  dot: '#d97706', bg: '#fffbeb', border: '#fde68a', text: '#92400e' },
   cancelled: { label: 'Cancelada',  dot: '#dc2626', bg: '#fef2f2', border: '#fca5a5', text: '#b91c1c' },
 }
@@ -109,7 +109,7 @@ function BookingBlock({
 }: {
   booking: Booking; conflict: boolean; onClick: () => void; fieldColor: string
 }) {
-  const cfg = STATUS_CFG[booking.status] ?? STATUS_CFG.active
+  const cfg = STATUS_CFG[booking.status] ?? STATUS_CFG.confirmed
   const [hovered, setHovered] = useState(false)
 
   // Field color for background (15% opacity) and border-left (100%)
@@ -193,7 +193,7 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
             id: b.id,
             date: b.date,
             hour: b.hour,
-            status: (b.status as BookingStatus) ?? 'active',
+            status: (b.status as BookingStatus) ?? 'confirmed',
             price: Number(b.price ?? 0),
             priceSource: b.price_source ?? '',
             source: b.source ?? '',
@@ -225,7 +225,7 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
   }, [bookings])
 
   const totalConflicts = conflictSet.size
-  const activeCount = bookings.filter(b => b.status === 'active').length
+  const activeCount = bookings.filter(b => b.status === 'confirmed').length
   const pendingCount = bookings.filter(b => b.status === 'pending').length
 
   const deleteBooking = async (id: number) => {

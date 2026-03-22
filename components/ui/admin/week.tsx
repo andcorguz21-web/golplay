@@ -192,7 +192,7 @@ export default function WeeklyCalendar({ selectedDate, fieldFilter = 'all', fiel
             id: b.id,
             date: b.date,
             hour: b.hour,
-            status: (b.status as BookingStatus) ?? 'active',
+            status: (b.status as BookingStatus) ?? 'confirmed',
             price: Number(b.price ?? 0),
             priceSource: b.price_source ?? '',
             source: b.source ?? '',

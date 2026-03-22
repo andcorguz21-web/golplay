@@ -27,7 +27,7 @@ interface Props {
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; icon: string }> = {
-  active:    { label: 'Confirmada', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', icon: '✓' },
+  confirmed: { label: 'Confirmada', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', icon: '✓' },
   pending:   { label: 'Pendiente',  color: '#92400e', bg: '#fffbeb', border: '#fde68a', icon: '⏳' },
   cancelled: { label: 'Cancelada',  color: '#b91c1c', bg: '#fef2f2', border: '#fecaca', icon: '✗' },
 }
@@ -70,6 +70,12 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesText, setNotesText] = useState(booking.notes || '')
+  const [editingDateTime, setEditingDateTime] = useState(false)
+  const [newDate, setNewDate] = useState(booking.date)
+  const [newHour, setNewHour] = useState(booking.hour)
+  const [dateTimeError, setDateTimeError] = useState('')
   const priceRef = useRef<HTMLInputElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -135,12 +141,74 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
     setSaving(false)
   }
 
+  // ── Save notes ──
+  const saveNotes = async () => {
+    setSaving(true)
+    const newNotes = notesText.trim() || null
+    const { error } = await supabase
+      .from('bookings')
+      .update({ notes: newNotes })
+      .eq('id', booking.id)
+
+    if (error) {
+      showToast('Error al guardar nota', false)
+    } else {
+      showToast('Nota guardada ✓')
+      onUpdate?.({ ...booking, notes: newNotes ?? '' })
+      setEditingNotes(false)
+    }
+    setSaving(false)
+  }
+
+  // ── Save date/hour change ──
+  const saveDateTime = async () => {
+    if (!newDate || !newHour) { setDateTimeError('Seleccioná fecha y hora'); return }
+    if (newDate === booking.date && newHour === booking.hour) { setEditingDateTime(false); return }
+
+    // Validate not in the past
+    const today = new Date().toISOString().split('T')[0]
+    if (newDate < today) { setDateTimeError('No se puede mover a una fecha pasada'); return }
+
+    setSaving(true)
+    setDateTimeError('')
+
+    // Check availability
+    const { data: existing } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('field_id', booking.fieldId)
+      .eq('date', newDate)
+      .eq('hour', newHour)
+      .in('status', ['confirmed', 'pending'])
+      .neq('id', booking.id)
+
+    if (existing && existing.length > 0) {
+      setDateTimeError('Ese horario ya está ocupado en esa cancha')
+      setSaving(false)
+      return
+    }
+
+    const { error } = await supabase
+      .from('bookings')
+      .update({ date: newDate, hour: newHour })
+      .eq('id', booking.id)
+
+    if (error) {
+      showToast('Error al cambiar fecha/hora', false)
+    } else {
+      showToast('Fecha y hora actualizadas ✓')
+      onUpdate?.({ ...booking, date: newDate, hour: newHour })
+      setEditingDateTime(false)
+    }
+    setSaving(false)
+  }
+
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 2500)
   }
 
-  const status = STATUS_META[booking.status] ?? STATUS_META.active
+  const status = STATUS_META[booking.status] ?? STATUS_META.confirmed
   const priceSrc = priceSourceLabel(booking.priceSource)
   const hasCustomerInfo = booking.customerName || booking.customerIdNumber || booking.customerPhone || booking.customerEmail
 
@@ -210,10 +278,10 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
           </span>
 
           {/* Status quick actions */}
-          {booking.status !== 'active' && (
+          {booking.status !== 'confirmed' && (
             <button
               style={{ ...S.statusAction, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0' }}
-              onClick={() => changeStatus('active')}
+              onClick={() => changeStatus('confirmed')}
               disabled={saving}
             >
               ✓ Confirmar
@@ -242,8 +310,83 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
         {/* ── Booking info grid ── */}
         <div style={S.infoGrid}>
           <InfoItem icon="📍" label="Cancha" value={booking.fieldName} />
-          <InfoItem icon="📅" label="Fecha" value={formatDate(booking.date)} />
-          <InfoItem icon="🕐" label="Hora" value={booking.hour} />
+          {!editingDateTime ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }} onClick={() => { setEditingDateTime(true); setNewDate(booking.date); setNewHour(booking.hour); setDateTimeError('') }}>
+                <span style={{ fontSize: 14, lineHeight: 1, marginTop: 1 }}>📅</span>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Fecha</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', margin: '2px 0 0', borderBottom: '1px dashed #bbf7d0' }}>{formatDate(booking.date)} ✏️</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }} onClick={() => { setEditingDateTime(true); setNewDate(booking.date); setNewHour(booking.hour); setDateTimeError('') }}>
+                <span style={{ fontSize: 14, lineHeight: 1, marginTop: 1 }}>🕐</span>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Hora</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', margin: '2px 0 0', borderBottom: '1px dashed #bbf7d0' }}>{booking.hour} ✏️</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ gridColumn: '1 / -1', background: '#f8fafc', borderRadius: 12, padding: 14, border: '1px solid #e2e8f0' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#374151', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                📅 Cambiar fecha y hora
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>Fecha</label>
+                  <input
+                    type="date"
+                    value={newDate}
+                    onChange={e => { setNewDate(e.target.value); setDateTimeError('') }}
+                    min={new Date().toISOString().split('T')[0]}
+                    style={{
+                      width: '100%', padding: '8px 10px', borderRadius: 8,
+                      border: '1.5px solid #e2e8f0', fontSize: 13, fontFamily: 'inherit',
+                      color: '#0f172a', outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>Hora</label>
+                  <select
+                    value={newHour}
+                    onChange={e => { setNewHour(e.target.value); setDateTimeError('') }}
+                    style={{
+                      width: '100%', padding: '8px 10px', borderRadius: 8,
+                      border: '1.5px solid #e2e8f0', fontSize: 13, fontFamily: 'inherit',
+                      color: '#0f172a', outline: 'none', boxSizing: 'border-box',
+                      appearance: 'none', background: '#fff',
+                    }}
+                  >
+                    {['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'].map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {dateTimeError && (
+                <p style={{ fontSize: 12, color: '#b91c1c', margin: '0 0 8px', fontWeight: 600, background: '#fef2f2', padding: '6px 10px', borderRadius: 8 }}>
+                  ⚠️ {dateTimeError}
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => { setEditingDateTime(false); setDateTimeError('') }}
+                  style={{ fontSize: 12, fontWeight: 600, color: '#64748b', background: '#f1f5f9', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveDateTime}
+                  disabled={saving}
+                  style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#16a34a', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
+                >
+                  {saving ? '...' : 'Guardar cambio'}
+                </button>
+              </div>
+            </div>
+          )}
           {booking.source && (
             <InfoItem icon="📲" label="Origen" value={booking.source === 'admin' ? 'Admin' : booking.source === 'public' ? 'Página pública' : booking.source} />
           )}
@@ -322,13 +465,57 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
           </div>
         )}
 
-        {/* ── Notes ── */}
-        {booking.notes && (
-          <div style={S.notesSection}>
+        {/* ── Notes (editable) ── */}
+        <div style={S.notesSection}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <p style={S.sectionTitle}>Notas</p>
-            <p style={S.notesText}>{booking.notes}</p>
+            {!editingNotes && (
+              <button
+                onClick={() => { setEditingNotes(true); setNotesText(booking.notes || '') }}
+                style={{ background: 'none', border: 'none', fontSize: 11, color: '#2563eb', fontWeight: 600, cursor: 'pointer', padding: '2px 6px' }}
+              >
+                {booking.notes ? '✏️ Editar' : '+ Agregar nota'}
+              </button>
+            )}
           </div>
-        )}
+          {editingNotes ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <textarea
+                value={notesText}
+                onChange={e => setNotesText(e.target.value)}
+                placeholder="Agregar notas sobre esta reserva..."
+                autoFocus
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 10,
+                  border: '2px solid #2563eb', fontSize: 13, fontFamily: 'inherit',
+                  resize: 'vertical', minHeight: 60, outline: 'none', color: '#0f172a',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => { setEditingNotes(false); setNotesText(booking.notes || '') }}
+                  style={{ fontSize: 12, fontWeight: 600, color: '#64748b', background: '#f1f5f9', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveNotes}
+                  disabled={saving}
+                  style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#16a34a', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
+                >
+                  {saving ? '...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          ) : booking.notes ? (
+            <p style={S.notesText}>{booking.notes}</p>
+          ) : (
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, fontStyle: 'italic' }}>
+              Sin notas — click "Agregar nota" para escribir una
+            </p>
+          )}
+        </div>
 
         {/* ── Footer actions ── */}
         <div style={S.footer}>

@@ -1,49 +1,32 @@
 /**
- * GolPlay — Pagos & Facturación
- * ─────────────────────────────────────────────────────────────────────────────
- * Sin Tailwind. Estilos inline puros. Compatible con cualquier Next.js stack.
+ * GolPlay — Pagos & Facturación v3.0
+ * pages/admin/payments.tsx
  *
- * Integración con Paddle Billing:
- *   - Checkout overlay con Paddle.js (sin redirect)
- *   - PaymentModal con flujo: confirm → processing → result
- *   - Webhook en /api/paddle/webhook actualiza estado automáticamente
- *   - Tipos de transacción: commission | subscription | adjustment
- *   - Manejo de estados: paid | pending | failed | processing
+ * Mismo lenguaje visual que el resto del admin:
+ * - DM Sans + Syne headers
+ * - Colores: verde GolPlay, slate, white cards
+ * - Plan fijo mensual: ₡35,000 CRC / $75 USD
+ * - SINPE Móvil como método principal
+ * - Upload de comprobante
+ * - Timeline de historial
  *
- * Dependencias: npm install lucide-react
- * Env vars: NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+ * Sin Tailwind. CSS classes.
  */
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
 import {
-  CheckCircle, Clock, AlertCircle, XCircle, CreditCard,
-  Download, FileText, RefreshCw, Shield, ChevronRight,
-  TrendingUp, Calendar, DollarSign, AlertTriangle, X,
-  Loader2, ArrowUpRight, Lock,
-} from 'lucide-react'
-
-// ─── Load Paddle.js once ──────────────────────────────────────────────────────
-function usePaddleScript() {
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if ((window as any).Paddle) return // already loaded
-    const script = document.createElement('script')
-    script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js'
-    script.onload = () => {
-      const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
-      if (token) (window as any).Paddle.Initialize({ token })
-    }
-    document.head.appendChild(script)
-  }, [])
-}
+  formatMoney, formatMoneyShort,
+  PLAN_PRICE_CRC, PLAN_PRICE_USD, PLAN_TRIAL_DAYS,
+  getPlanPriceLocal, LATAM_COUNTRIES, USD_RATES,
+} from '@/sports'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type PaymentStatus = 'paid' | 'pending' | 'failed' | 'processing'
-type StatementType = 'commission' | 'subscription' | 'adjustment'
 
 interface Statement {
   id: string
@@ -55,931 +38,644 @@ interface Statement {
   due_date: string
   paid_at: string | null
   status: PaymentStatus
-  type?: StatementType
+  type?: string
   transaction_id?: string | null
   payment_method?: string | null
-}
-
-type PayStep = 'confirm' | 'processing' | 'success' | 'error'
-
-// ─── Paddle Checkout ─────────────────────────────────────────────────────────
-async function openPaddleCheckout(params: {
-  statementId: string
-  onSuccess: (txId: string) => void
-  onError:   (msg: string)  => void
-}) {
-  const { statementId, onSuccess, onError } = params
-
-  // 1. Crear transacción en el servidor
-  const res = await fetch('/api/paddle/create-checkout', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ statementId }),
-  })
-  const data = await res.json()
-  if (!res.ok) { onError(data.error ?? 'Error al iniciar el pago'); return }
-
-  const { transactionId, checkoutUrl } = data
-
-  // 2. Abrir overlay de Paddle
-  const Paddle = (window as any).Paddle
-  if (!Paddle) { onError('Paddle no está cargado. Recargá la página.'); return }
-
-  Paddle.Checkout.open({
-    transactionId,
-    settings: {
-      displayMode: 'overlay',
-      theme:       'light',
-      locale:      'es',
-      successUrl:  checkoutUrl,
-    },
-    events: {
-      onCompleted: (event: any) => {
-        onSuccess(event?.data?.transaction_id ?? transactionId)
-      },
-      onClose: () => {
-        // Usuario cerró sin pagar — no hacemos nada
-      },
-      onError: (err: any) => {
-        onError(err?.detail ?? 'Error en el proceso de pago')
-      },
-    },
-  })
+  notes?: string | null
+  currency?: string
+  period_start?: string | null
+  period_end?: string | null
+  discount_amount?: number
+  coupon_code?: string | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const fmt = (v: number) =>
-  `$${Number(v).toFixed(2)}`
 
-const MONTHS = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-]
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const monthName = (m: number) => MONTHS[(m - 1)] ?? ''
 
-const formatDate = (iso: string) => {
-  try {
-    return new Date(iso).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' })
-  } catch { return iso }
+const fmtDate = (iso: string) => {
+  try { return new Date(iso + 'T12:00:00').toLocaleDateString('es-CR', { day: 'numeric', month: 'short', year: 'numeric' }) }
+  catch { return iso }
 }
 
-const typeLabel: Record<StatementType, string> = {
-  commission: 'Comisión reservas',
-  subscription: 'Suscripción mensual',
-  adjustment: 'Ajuste',
+const relativeDate = (iso: string) => {
+  const now = new Date(); now.setHours(0,0,0,0)
+  const target = new Date(iso + 'T12:00:00'); target.setHours(0,0,0,0)
+  const diff = Math.round((target.getTime() - now.getTime()) / 86400000)
+  if (diff < 0) return `Venció hace ${Math.abs(diff)}d`
+  if (diff === 0) return 'Vence hoy'
+  if (diff === 1) return 'Vence mañana'
+  if (diff <= 7) return `Vence en ${diff}d`
+  return fmtDate(iso)
 }
 
-const typeColor: Record<StatementType, string> = {
-  commission: '#2563eb',
-  subscription: '#7c3aed',
-  adjustment: '#0891b2',
+const STATUS_CFG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+  paid:       { label: 'Pagado',     color: '#15803d', bg: '#f0fdf4', dot: '#22c55e' },
+  pending:    { label: 'Pendiente',  color: '#92400e', bg: '#fffbeb', dot: '#f59e0b' },
+  failed:     { label: 'Vencido',    color: '#991b1b', bg: '#fef2f2', dot: '#ef4444' },
+  processing: { label: 'En revisión',color: '#1e40af', bg: '#eff6ff', dot: '#3b82f6' },
 }
 
-// ─── Status config ─────────────────────────────────────────────────────────────
-const STATUS_CFG: Record<PaymentStatus, {
-  label: string; color: string; bg: string; border: string; Icon: any
-}> = {
-  paid:       { label: 'Pagado',     color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', Icon: CheckCircle },
-  pending:    { label: 'Pendiente',  color: '#b45309', bg: '#fffbeb', border: '#fde68a', Icon: Clock },
-  failed:     { label: 'Fallido',    color: '#b91c1c', bg: '#fef2f2', border: '#fecaca', Icon: XCircle },
-  processing: { label: 'Procesando', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe', Icon: Loader2 },
-}
+const SINPE_NUMBER = '7260-4278'
+const SINPE_NAME = 'Andres Emilio Cordero Guzman'
 
-// ─── Skeleton helper (fuera del objeto S para evitar error de tipos) ───────────
-const skel = (h = 16, w: string | number = '60%'): React.CSSProperties => ({
-  height: h,
-  width: w,
-  background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
-  backgroundSize: '200% 100%',
-  borderRadius: 6,
-  animation: 'pulse 1.5s infinite',
-  display: 'block',
-})
+// ─── Main Component ───────────────────────────────────────────────────────────
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
-const S: Record<string, React.CSSProperties> = {
-  page: {
-    background: '#f8fafc',
-    minHeight: '100vh',
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-  },
-  inner: { maxWidth: 1200, margin: '0 auto', padding: '32px 20px' },
-
-  header: {
-    display: 'flex', justifyContent: 'space-between',
-    alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 28,
-  },
-  h1: { fontSize: 24, fontWeight: 700, color: '#0f172a', margin: 0 },
-  headerSub: { fontSize: 13, color: '#94a3b8', marginTop: 4, marginBottom: 0 },
-  headerActions: { display: 'flex', gap: 8, flexWrap: 'wrap' },
-
-  btnPrimary: {
-    display: 'flex', alignItems: 'center', gap: 7,
-    padding: '10px 18px', fontSize: 14, fontWeight: 600,
-    background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
-    color: '#fff', border: 'none', borderRadius: 12,
-    cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,.35)',
-  },
-  btnOutline: {
-    display: 'flex', alignItems: 'center', gap: 7,
-    padding: '10px 16px', fontSize: 13, fontWeight: 500,
-    background: '#fff', color: '#475569',
-    border: '1px solid #e2e8f0', borderRadius: 12, cursor: 'pointer',
-  },
-  btnDanger: {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '6px 12px', fontSize: 12, fontWeight: 600,
-    background: 'linear-gradient(135deg, #dc2626, #ef4444)',
-    color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
-  },
-  btnSuccess: {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '6px 12px', fontSize: 12, fontWeight: 600,
-    background: 'linear-gradient(135deg, #15803d, #16a34a)',
-    color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
-  },
-
-  // Alert banner
-  alertBanner: {
-    display: 'flex', alignItems: 'center', gap: 12,
-    background: '#fef2f2', border: '1px solid #fecaca',
-    borderRadius: 14, padding: '14px 18px', marginBottom: 24,
-  },
-
-  // KPI grid
-  kpiGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-    gap: 16, marginBottom: 28,
-  },
-  kpiCard: {
-    background: '#fff', border: '1px solid #f1f5f9',
-    borderRadius: 16, padding: '18px 20px',
-    boxShadow: '0 1px 4px rgba(0,0,0,.05)',
-  },
-  kpiTop: {
-    display: 'flex', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 12,
-  },
-  kpiValue: { fontSize: 26, fontWeight: 700, color: '#0f172a', lineHeight: 1, margin: 0 },
-  kpiLabel: { fontSize: 12, color: '#94a3b8', marginTop: 4, marginBottom: 0 },
-
-  // Card
-  card: {
-    background: '#fff', border: '1px solid #f1f5f9',
-    borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden',
-  },
-  cardHead: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '18px 20px 16px', borderBottom: '1px solid #f8fafc',
-  },
-  cardTitle: { fontSize: 15, fontWeight: 600, color: '#0f172a', margin: 0 },
-  cardSub: { fontSize: 12, color: '#94a3b8', marginTop: 2, marginBottom: 0 },
-
-  // Table
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: {
-    padding: '12px 16px', fontSize: 11, fontWeight: 600,
-    color: '#94a3b8', textTransform: 'uppercase',
-    letterSpacing: '0.07em', textAlign: 'left',
-    background: '#f8fafc', borderBottom: '1px solid #f1f5f9',
-  },
-  td: {
-    padding: '14px 16px', fontSize: 13, color: '#374151',
-    borderBottom: '1px solid #f8fafc', verticalAlign: 'middle',
-  },
-
-  // Mobile card
-  mobileCard: {
-    border: '1px solid #f1f5f9', borderRadius: 14,
-    padding: 16, marginBottom: 12, background: '#fff',
-  },
-
-  // Empty state
-  empty: {
-    display: 'flex', flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center',
-    padding: '56px 24px', color: '#94a3b8', gap: 12,
-  },
-
-  // Security badge
-  securityBadge: {
-    display: 'flex', alignItems: 'center', gap: 6,
-    fontSize: 11, color: '#94a3b8', marginTop: 16,
-    justifyContent: 'center',
-  },
-
-  // Modal overlay
-  overlay: {
-    position: 'fixed', inset: 0,
-    background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 999, padding: 20,
-  },
-  modal: {
-    background: '#fff', borderRadius: 20, padding: 32,
-    width: '100%', maxWidth: 460,
-    boxShadow: '0 20px 60px rgba(0,0,0,.2)',
-    position: 'relative',
-  },
-  modalTitle: { fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' },
-  modalSub: { fontSize: 13, color: '#64748b', marginBottom: 20 },
-
-  divider: { height: 1, background: '#f1f5f9', margin: '20px 0' },
-}
-
-// ─── StatusBadge ──────────────────────────────────────────────────────────────
-function StatusBadge({ status }: { status: PaymentStatus }) {
-  const cfg = STATUS_CFG[status] ?? STATUS_CFG.pending
-  const { Icon } = cfg
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '4px 10px', borderRadius: 999,
-      fontSize: 11, fontWeight: 600,
-      color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`,
-    }}>
-      <Icon size={11} style={status === 'processing' ? { animation: 'spin 1s linear infinite' } : {}} />
-      {cfg.label}
-    </span>
-  )
-}
-
-// ─── TypeBadge ────────────────────────────────────────────────────────────────
-function TypeBadge({ type }: { type?: StatementType }) {
-  const t = type ?? 'commission'
-  return (
-    <span style={{
-      display: 'inline-block', padding: '2px 8px', borderRadius: 6,
-      fontSize: 10, fontWeight: 600,
-      color: typeColor[t],
-      background: typeColor[t] + '15',
-      letterSpacing: '0.03em',
-    }}>
-      {typeLabel[t].toUpperCase()}
-    </span>
-  )
-}
-
-// ─── KPICard ──────────────────────────────────────────────────────────────────
-function KPICard({
-  icon: Icon, iconBg, iconColor, value, label, sub, loading, highlight,
-}: {
-  icon: any; iconBg: string; iconColor: string
-  value: string; label: string; sub?: string; loading: boolean; highlight?: boolean
-}) {
-  return (
-    <div style={{
-      ...S.kpiCard,
-      ...(highlight ? { border: '1px solid #bfdbfe', boxShadow: '0 0 0 3px rgba(37,99,235,.07)' } : {}),
-    }}>
-      <div style={S.kpiTop}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon size={17} color={iconColor} />
-        </div>
-        {highlight && (
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '2px 8px', borderRadius: 999 }}>
-            ACCIÓN REQUERIDA
-          </span>
-        )}
-      </div>
-      {loading ? (
-        <>
-          <span style={skel(26, '50%')} />
-          <span style={{ ...skel(12, '70%'), marginTop: 8 }} />
-        </>
-      ) : (
-        <>
-          <p style={S.kpiValue}>{value}</p>
-          <p style={S.kpiLabel}>{label}</p>
-          {sub && <p style={{ ...S.kpiLabel, color: '#cbd5e1', marginTop: 2 }}>{sub}</p>}
-        </>
-      )}
-    </div>
-  )
-}
-
-// ─── Payment Modal ─────────────────────────────────────────────────────────────
-function PaymentModal({
-  statement,
-  onClose,
-  onSuccess,
-}: {
-  statement: Statement
-  onClose: () => void
-  onSuccess: (txId: string) => void
-}) {
-  const [step, setStep] = useState<PayStep>('confirm')
-  const [error, setError] = useState<string | null>(null)
-  const [txId, setTxId] = useState<string | null>(null)
-
-  const handlePay = () => {
-    setStep('processing')
-    setError(null)
-    // Paddle abre un overlay — el modal queda en "procesando" mientras el usuario completa el pago
-    openPaddleCheckout({
-      statementId: statement.id,
-      onSuccess: (id) => {
-        setTxId(id)
-        setStep('success')
-      },
-      onError: (msg) => {
-        setError(msg)
-        setStep('error')
-      },
-    })
-  }
-
-  return (
-    <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget && step !== 'processing') onClose() }}>
-      <div style={S.modal} role="dialog" aria-modal="true">
-
-        {/* Close */}
-        {step !== 'processing' && (
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
-          >
-            <X size={18} />
-          </button>
-        )}
-
-        {/* ── Step: Confirm ── */}
-        {step === 'confirm' && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CreditCard size={20} color="#2563eb" />
-              </div>
-              <div>
-                <p style={S.modalTitle}>Confirmar pago</p>
-              </div>
-            </div>
-            <p style={S.modalSub}>Estás por pagar la factura de {monthName(statement.month)} {statement.year}</p>
-
-            {/* Summary */}
-            <div style={{ background: '#f8fafc', borderRadius: 14, padding: 16, marginBottom: 20 }}>
-              {[
-                ['Período', `${monthName(statement.month)} ${statement.year}`],
-                ['Concepto', typeLabel[statement.type ?? 'commission']],
-                ['Reservas', statement.reservations_count.toString()],
-                ['Vencimiento', formatDate(statement.due_date)],
-              ].map(([k, v]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748b', marginBottom: 8 }}>
-                  <span>{k}</span><span style={{ fontWeight: 500, color: '#374151' }}>{v}</span>
-                </div>
-              ))}
-              <div style={S.divider} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 700 }}>
-                <span style={{ color: '#374151' }}>Total</span>
-                <span style={{ color: '#0f172a' }}>{fmt(statement.amount_due)}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button style={{ ...S.btnOutline, flex: 1, justifyContent: 'center' }} onClick={onClose}>
-                Cancelar
-              </button>
-              <button style={{ ...S.btnPrimary, flex: 2, justifyContent: 'center' }} onClick={handlePay}>
-                <Lock size={14} />
-                Pagar {fmt(statement.amount_due)}
-              </button>
-            </div>
-
-            <div style={S.securityBadge}>
-              <Shield size={11} />
-              Transacción cifrada con TLS · Procesado por Paddle
-            </div>
-          </>
-        )}
-
-        {/* ── Step: Processing ── */}
-        {step === 'processing' && (
-          <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <Loader2 size={28} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
-            </div>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: '0 0 8px' }}>Procesando pago…</p>
-            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Paddle está procesando tu pago. No cierres esta ventana.</p>
-          </div>
-        )}
-
-        {/* ── Step: Success ── */}
-        {step === 'success' && (
-          <div style={{ textAlign: 'center', padding: '8px 0' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <CheckCircle size={32} color="#16a34a" />
-            </div>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>¡Pago exitoso!</p>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
-              Tu pago de <strong>{fmt(statement.amount_due)}</strong> fue procesado correctamente.
-            </p>
-            {txId && (
-              <div style={{ background: '#f8fafc', borderRadius: 10, padding: '10px 14px', marginBottom: 20, fontSize: 11, fontFamily: 'monospace', color: '#64748b' }}>
-                ID de transacción: <strong style={{ color: '#374151' }}>{txId}</strong>
-              </div>
-            )}
-            <button
-              style={{ ...S.btnPrimary, width: '100%', justifyContent: 'center' }}
-              onClick={() => { onSuccess(txId ?? ''); onClose() }}
-            >
-              Listo
-            </button>
-          </div>
-        )}
-
-        {/* ── Step: Error ── */}
-        {step === 'error' && (
-          <div style={{ textAlign: 'center', padding: '8px 0' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <XCircle size={32} color="#dc2626" />
-            </div>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 8px' }}>Pago fallido</p>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>{error}</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button style={{ ...S.btnOutline, flex: 1, justifyContent: 'center' }} onClick={onClose}>Cerrar</button>
-              <button style={{ ...S.btnPrimary, flex: 1, justifyContent: 'center' }} onClick={() => setStep('confirm')}>
-                Reintentar
-              </button>
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  )
-}
-
-// ─── Export CSV ────────────────────────────────────────────────────────────────
-function exportStatements(statements: Statement[]) {
-  const rows = [
-    ['Período', 'Concepto', 'Reservas', 'Monto (USD)', 'Vencimiento', 'Estado', 'ID Transacción', 'Pagado el'],
-    ...statements.map(s => [
-      `${monthName(s.month)} ${s.year}`,
-      typeLabel[s.type ?? 'commission'],
-      s.reservations_count,
-      s.amount_due,
-      s.due_date,
-      s.status,
-      s.transaction_id ?? '',
-      s.paid_at ? formatDate(s.paid_at) : '',
-    ]),
-  ]
-  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-  a.download = `golplay-pagos-${new Date().toISOString().slice(0, 10)}.csv`
-  a.click()
-}
-
-// ─── Download Receipt (client-side HTML → print/PDF) ──────────────────────────
-function downloadReceipt(s: Statement) {
-  const period   = `${monthName(s.month)} ${s.year}`
-  const paidDate = s.paid_at ? formatDate(s.paid_at) : '—'
-  const txId     = s.transaction_id ?? '—'
-  const concept  = typeLabel[s.type ?? 'commission']
-  const amount   = fmt(s.amount_due)
-  const receiptNo = `GP-${s.year}${String(s.month).padStart(2,'0')}-${s.id.slice(0,6).toUpperCase()}`
-
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8"/>
-  <title>Comprobante ${receiptNo} — GolPlay</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#0f172a;padding:48px;max-width:680px;margin:0 auto}
-    .logo{display:flex;align-items:center;gap:10px;margin-bottom:40px}
-    .logo-icon{width:40px;height:40px;background:#16a34a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:900;line-height:1}
-    .logo-text{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.03em}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:24px;border-bottom:2px solid #f1f5f9}
-    .title{font-size:28px;font-weight:700;color:#0f172a;margin-bottom:4px}
-    .subtitle{font-size:13px;color:#64748b}
-    .badge-paid{display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;margin-top:8px}
-    .section-title{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
-    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #f1f5f9;border-radius:12px;overflow:hidden;margin-bottom:28px}
-    .info-item{padding:14px 18px;border-bottom:1px solid #f8fafc}
-    .info-item:nth-child(odd){border-right:1px solid #f8fafc}
-    .info-item:nth-last-child(-n+2){border-bottom:none}
-    .info-label{font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:3px}
-    .info-value{font-size:14px;font-weight:600;color:#0f172a}
-    .total-box{background:#f8fafc;border-radius:12px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
-    .total-label{font-size:15px;color:#374151}
-    .total-amount{font-size:28px;font-weight:800;color:#0f172a}
-    .tx-box{background:#f1f5f9;border-radius:10px;padding:12px 16px;font-family:monospace;font-size:11px;color:#64748b;margin-bottom:32px;word-break:break-all}
-    .tx-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-    .footer{text-align:center;font-size:11px;color:#cbd5e1;border-top:1px solid #f1f5f9;padding-top:20px;line-height:1.7}
-    @media print{body{padding:24px}@page{margin:15mm}}
-  </style>
-</head>
-<body>
-  <div class="logo">
-    <div class="logo-icon">⚽</div>
-    <span class="logo-text">GolPlay</span>
-  </div>
-
-  <div class="header">
-    <div>
-      <div class="title">Comprobante de pago</div>
-      <div class="subtitle">N° ${receiptNo}</div>
-      <div class="badge-paid">✓ Pago confirmado</div>
-    </div>
-    <div style="text-align:right">
-      <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Fecha de emisión</div>
-      <div style="font-size:14px;font-weight:600">${new Date().toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'})}</div>
-    </div>
-  </div>
-
-  <div class="section-title">Detalle del cobro</div>
-  <div class="info-grid">
-    <div class="info-item"><div class="info-label">Período</div><div class="info-value">${period}</div></div>
-    <div class="info-item"><div class="info-label">Concepto</div><div class="info-value">${concept}</div></div>
-    <div class="info-item"><div class="info-label">Reservas cobradas</div><div class="info-value">${s.reservations_count}</div></div>
-    <div class="info-item"><div class="info-label">Fecha de pago</div><div class="info-value">${paidDate}</div></div>
-    <div class="info-item"><div class="info-label">Fecha de vencimiento</div><div class="info-value">${formatDate(s.due_date)}</div></div>
-    <div class="info-item"><div class="info-label">Método</div><div class="info-value">${s.payment_method ?? 'Tarjeta (Paddle)'}</div></div>
-  </div>
-
-  <div class="total-box">
-    <span class="total-label">Total pagado</span>
-    <span class="total-amount">${amount}</span>
-  </div>
-
-  <div class="section-title">ID de transacción</div>
-  <div class="tx-box">
-    <div class="tx-label">Referencia Paddle</div>
-    ${txId}
-  </div>
-
-  <div class="footer">
-    GolPlay — Marketplace de canchas deportivas en LATAM<br/>
-    Este comprobante es válido como constancia de pago. Para consultas: soporte@golplay.com<br/>
-    golplay.com · Todos los derechos reservados ${new Date().getFullYear()}
-  </div>
-</body>
-</html>`
-
-  // Abre en nueva pestaña → el usuario puede guardar como PDF con Ctrl+P / Cmd+P
-  const win = window.open('', '_blank', 'width=780,height=900')
-  if (!win) {
-    // Fallback: si el navegador bloquea popups, descarga como archivo .html
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
-    a.download = `comprobante-${receiptNo}.html`
-    a.click()
-    return
-  }
-  win.document.write(html)
-  win.document.close()
-  // Pequeño delay para que el navegador renderice antes de abrir el diálogo de impresión
-  setTimeout(() => { win.focus(); win.print() }, 350)
-}
-
-// ─── Main Component ────────────────────────────────────────────────────────────
-export default function BillingPage() {
+export default function PaymentsPage() {
   const router = useRouter()
-  usePaddleScript() // load Paddle.js
   const [statements, setStatements] = useState<Statement[]>([])
   const [loading, setLoading] = useState(true)
+  const [currency, setCurrency] = useState('CRC')
   const [authReady, setAuthReady] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [payingStatement, setPayingStatement] = useState<Statement | null>(null)
-  const [isWide, setIsWide] = useState(true)
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
-  // Responsive
-  useEffect(() => {
-    const check = () => setIsWide(window.innerWidth >= 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+  // Modals
+  const [payingStatement, setPayingStatement] = useState<Statement | null>(null)
+  const [uploadingReceipt, setUploadingReceipt] = useState<Statement | null>(null)
+  const [viewingDetail, setViewingDetail] = useState<Statement | null>(null)
+
+  const showToast = useCallback((msg: string, ok = true) => {
+    setToast({ msg, ok }); setTimeout(() => setToast(null), 3200)
   }, [])
 
-  // Auth guard
+  // Auth
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { router.replace('/login'); return }
+      const { data: p } = await supabase.from('profiles').select('currency').eq('id', data.session.user.id).single()
+      if (p?.currency) setCurrency(p.currency)
       setAuthReady(true)
     })
   }, [router])
 
-  // Load data
-  const loadStatements = useCallback(async () => {
+  const fMoney = useCallback((v: number) => formatMoney(v, currency), [currency])
+  const fMoneyShort = useCallback((v: number) => formatMoneyShort(v, currency), [currency])
+  const planPrice = getPlanPriceLocal(currency)
+  const currSymbol = LATAM_COUNTRIES.find(c => c.currency === currency)?.symbol ?? '₡'
+
+  // Load
+  const load = useCallback(async () => {
     setLoading(true)
-    setError(null)
-    const { data, error: err } = await supabase
+    const { data } = await supabase
       .from('monthly_statements')
       .select('*')
       .order('year', { ascending: false })
       .order('month', { ascending: false })
-
-    if (err) { setError(err.message); setLoading(false); return }
     setStatements(data ?? [])
     setLoading(false)
   }, [])
 
-  useEffect(() => { if (authReady) loadStatements() }, [authReady, loadStatements])
+  useEffect(() => { if (authReady) load() }, [authReady, load])
 
-  // Derived KPIs
+  // KPIs
   const kpis = useMemo(() => {
+    const now = new Date()
     const pending = statements.filter(s => s.status === 'pending' || s.status === 'failed')
     const paid = statements.filter(s => s.status === 'paid')
+    const overdue = pending.filter(s => new Date(s.due_date + 'T23:59:59') < now)
+    const totalPaid = paid.reduce((s, r) => s + r.amount_due, 0)
     const totalPending = pending.reduce((s, r) => s + r.amount_due, 0)
-    const nextDue = pending.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0]
-    const now = new Date()
-    const paidThisMonth = paid.filter(s => {
-      if (!s.paid_at) return false
-      const d = new Date(s.paid_at)
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-    })
-    const paidThisMonthTotal = paidThisMonth.reduce((s, r) => s + r.amount_due, 0)
-    return { totalPending, nextDue, pendingCount: pending.length, paidThisMonthTotal }
+    const nextDue = pending.sort((a, b) => a.due_date.localeCompare(b.due_date))[0] ?? null
+    return { totalPaid, totalPending, pendingCount: pending.length, overdueCount: overdue.length, nextDue, paidCount: paid.length }
   }, [statements])
 
-  const handlePaySuccess = useCallback(() => { loadStatements() }, [loadStatements])
+  // Export CSV
+  const exportCSV = () => {
+    const csvContent = [['Período','Monto','Estado','Vencimiento','Pagado','Método','Transacción'],
+      ...statements.map(s => [
+        `${monthName(s.month)} ${s.year}`, String(s.amount_due), s.status,
+        s.due_date, s.paid_at ?? '', s.payment_method ?? '', s.transaction_id ?? '',
+      ])
+    ].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv' }))
+    a.download = `golplay-pagos-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    showToast('Exportado ✓')
+  }
+
+  // Download receipt
+  const downloadReceipt = (s: Statement) => {
+    const period = `${monthName(s.month)} ${s.year}`
+    const receiptNo = `GP-${s.year}${String(s.month).padStart(2,'0')}-${s.id.slice(0,6).toUpperCase()}`
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Comprobante ${receiptNo}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#0f172a;padding:48px;max-width:680px;margin:0 auto}
+.logo{font-size:22px;font-weight:800;margin-bottom:32px;color:#16a34a}.hdr{display:flex;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #f1f5f9}
+.title{font-size:24px;font-weight:700}.sub{font-size:12px;color:#64748b;margin-top:4px}.badge{display:inline-block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;margin-bottom:24px}
+.gi{padding:12px 16px;border-bottom:1px solid #f8fafc}.gi:nth-child(odd){border-right:1px solid #f8fafc}.gl{font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px}.gv{font-size:13px;font-weight:600}
+.total{background:#f8fafc;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.total-l{font-size:14px;color:#374151}.total-v{font-size:24px;font-weight:800}
+.ft{text-align:center;font-size:11px;color:#cbd5e1;border-top:1px solid #f1f5f9;padding-top:16px;margin-top:24px}@media print{body{padding:24px}}</style></head>
+<body><div class="logo">⚽ GolPlay</div><div class="hdr"><div><div class="title">Comprobante de pago</div><div class="sub">N° ${receiptNo}</div><div class="badge">✓ Pagado</div></div>
+<div style="text-align:right"><div style="font-size:11px;color:#94a3b8">Emisión</div><div style="font-size:13px;font-weight:600">${new Date().toLocaleDateString('es-CR',{day:'numeric',month:'long',year:'numeric'})}</div></div></div>
+<div class="grid"><div class="gi"><div class="gl">Período</div><div class="gv">${period}</div></div><div class="gi"><div class="gl">Concepto</div><div class="gv">Plan mensual</div></div>
+<div class="gi"><div class="gl">Fecha de pago</div><div class="gv">${s.paid_at ? fmtDate(s.paid_at.split('T')[0]) : '—'}</div></div><div class="gi"><div class="gl">Método</div><div class="gv">${s.payment_method ?? 'SINPE Móvil'}</div></div></div>
+<div class="total"><span class="total-l">Total pagado</span><span class="total-v">${fMoney(s.amount_due)}</span></div>
+${s.transaction_id ? `<div style="background:#f1f5f9;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:11px;color:#64748b;margin-bottom:20px"><div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:3px">Referencia</div>${s.transaction_id}</div>` : ''}
+<div class="ft">GolPlay · golplay.app · © ${new Date().getFullYear()}</div></body></html>`
+    const win = window.open('', '_blank', 'width=780,height=900')
+    if (!win) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = `comprobante-${receiptNo}.html`; a.click(); return }
+    win.document.write(html); win.document.close()
+    setTimeout(() => { win.focus(); win.print() }, 350)
+  }
 
   if (!authReady) return null
 
-  // ── Render ──
   return (
     <AdminLayout>
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
-        @keyframes spin  { to { transform: rotate(360deg) } }
-        * { box-sizing: border-box; }
-        button:hover { opacity: .9; }
-      `}</style>
+      <style>{CSS}</style>
 
-      <div style={S.page}>
-        <div style={S.inner}>
+      {toast && <div className={`py-toast ${toast.ok ? 'py-toast--ok' : 'py-toast--err'}`}>{toast.ok ? '✓' : '✗'} {toast.msg}</div>}
 
-          {/* ── Header ── */}
-          <div style={S.header}>
-            <div>
-              <h1 style={S.h1}>Pagos & Facturación</h1>
-              <p style={S.headerSub}>Historial de comisiones y estados de cuenta · GolPlay</p>
-            </div>
-            <div style={S.headerActions}>
-              <button style={S.btnOutline} onClick={loadStatements} disabled={loading}>
-                <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : {}} />
-                Actualizar
-              </button>
-              <button style={S.btnOutline} onClick={() => exportStatements(statements)} disabled={statements.length === 0}>
-                <Download size={13} />
-                Exportar
-              </button>
-            </div>
+      <div className="py">
+
+        {/* ── Header ── */}
+        <div className="py-hd">
+          <div>
+            <h1 className="py-title">Pagos</h1>
+            <p className="py-sub">Plan mensual GolPlay · {fMoney(planPrice)}/mes</p>
           </div>
-
-          {/* ── Error banner ── */}
-          {error && (
-            <div style={S.alertBanner}>
-              <AlertCircle size={18} color="#dc2626" />
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: '#b91c1c' }}>Error al cargar datos</p>
-                <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{error}</p>
-              </div>
-              <button onClick={loadStatements} style={{ ...S.btnOutline, padding: '6px 12px', fontSize: 12 }}>Reintentar</button>
-            </div>
-          )}
-
-          {/* ── Overdue alert ── */}
-          {!loading && statements.some(s => s.status === 'failed' || (s.status === 'pending' && new Date(s.due_date) < new Date())) && (
-            <div style={{ ...S.alertBanner, marginBottom: 24 }}>
-              <AlertTriangle size={18} color="#dc2626" />
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: '#b91c1c' }}>Tienes pagos vencidos</p>
-                <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>Regulariza tu cuenta para evitar interrupciones del servicio.</p>
-              </div>
-              <ArrowUpRight size={16} color="#dc2626" />
-            </div>
-          )}
-
-          {/* ── KPIs ── */}
-          <div style={S.kpiGrid}>
-            <KPICard icon={DollarSign} iconBg="#fef2f2" iconColor="#dc2626"
-              value={fmt(kpis.totalPending)} label="Balance pendiente"
-              sub={`${kpis.pendingCount} factura${kpis.pendingCount !== 1 ? 's' : ''}`}
-              loading={loading} highlight={kpis.totalPending > 0} />
-
-            <KPICard icon={Calendar} iconBg="#fffbeb" iconColor="#d97706"
-              value={kpis.nextDue ? formatDate(kpis.nextDue.due_date) : 'Al día'}
-              label="Próximo vencimiento"
-              sub={kpis.nextDue ? fmt(kpis.nextDue.amount_due) : undefined}
-              loading={loading} />
-
-            <KPICard icon={FileText} iconBg="#eff6ff" iconColor="#2563eb"
-              value={String(kpis.pendingCount)}
-              label="Facturas pendientes"
-              loading={loading} />
-
-            <KPICard icon={TrendingUp} iconBg="#f0fdf4" iconColor="#16a34a"
-              value={fmt(kpis.paidThisMonthTotal)}
-              label="Pagado este mes"
-              loading={loading} />
+          <div className="py-hd__actions">
+            <button className="py-btn py-btn--ghost" onClick={load}>↻ Actualizar</button>
+            <button className="py-btn py-btn--ghost" onClick={exportCSV} disabled={statements.length === 0}>↓ Exportar</button>
           </div>
-
-          {/* ── Statements table / cards ── */}
-          <div style={S.card}>
-            <div style={S.cardHead}>
-              <div>
-                <p style={S.cardTitle}>Estados de cuenta</p>
-                <p style={S.cardSub}>Historial completo de comisiones y pagos</p>
-              </div>
-              {kpis.pendingCount > 0 && !loading && (
-                <button
-                  style={S.btnPrimary}
-                  onClick={() => {
-                    const next = statements.find(s => s.status === 'pending' || s.status === 'failed')
-                    if (next) setPayingStatement(next)
-                  }}
-                >
-                  <CreditCard size={14} />
-                  Pagar ahora
-                </button>
-              )}
-            </div>
-
-            {/* Loading skeleton */}
-            {loading && (
-              <div style={{ padding: '16px 20px' }}>
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
-                    <span style={skel(14, '12%')} />
-                    <span style={skel(14, '18%')} />
-                    <span style={skel(14, '10%')} />
-                    <span style={skel(14, '12%')} />
-                    <span style={skel(22, '80px')} />
-                    <span style={{ ...skel(28, '70px'), marginLeft: 'auto' }} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Empty state */}
-            {!loading && statements.length === 0 && (
-              <div style={S.empty}>
-                <FileText size={36} color="#cbd5e1" />
-                <p style={{ fontSize: 15, fontWeight: 600, color: '#64748b', margin: 0 }}>Sin estados de cuenta</p>
-                <p style={{ fontSize: 13, margin: 0 }}>GolPlay generará tu primer estado de cuenta al finalizar el primer período.</p>
-              </div>
-            )}
-
-            {/* Desktop table */}
-            {!loading && statements.length > 0 && isWide && (
-              <table style={S.table}>
-                <thead>
-                  <tr>
-                    {['Período', 'Concepto', 'Reservas', 'Monto', 'Vence', 'Estado', 'Acciones'].map(h => (
-                      <th key={h} style={S.th}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {statements.map(s => {
-                    const isOverdue = s.status === 'pending' && new Date(s.due_date) < new Date()
-                    return (
-                      <tr key={s.id} style={{ background: isOverdue ? '#fffbeb' : 'transparent' }}>
-                        <td style={S.td}>
-                          <span style={{ fontWeight: 600, color: '#0f172a' }}>
-                            {monthName(s.month)} {s.year}
-                          </span>
-                        </td>
-                        <td style={S.td}>
-                          <TypeBadge type={s.type} />
-                        </td>
-                        <td style={S.td}>{s.reservations_count}</td>
-                        <td style={{ ...S.td, fontWeight: 700, color: '#0f172a' }}>
-                          {fmt(s.amount_due)}
-                        </td>
-                        <td style={{ ...S.td, color: isOverdue ? '#b91c1c' : '#374151' }}>
-                          {isOverdue && <AlertTriangle size={12} color="#b91c1c" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
-                          {formatDate(s.due_date)}
-                        </td>
-                        <td style={S.td}>
-                          <StatusBadge status={isOverdue && s.status === 'pending' ? 'failed' : s.status} />
-                        </td>
-                        <td style={S.td}>
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            {s.status !== 'paid' && s.status !== 'processing' && (
-                              <button
-                                style={S.btnPrimary}
-                                onClick={() => setPayingStatement(s)}
-                              >
-                                <CreditCard size={12} />
-                                Pagar
-                              </button>
-                            )}
-                            {s.status === 'paid' && (
-                              <button
-                                style={S.btnOutline}
-                                onClick={() => downloadReceipt(s)}
-                                title="Descargar comprobante"
-                              >
-                                <Download size={12} />
-                                Comprobante
-                              </button>
-                            )}
-                            {s.transaction_id && (
-                              <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>
-                                {s.transaction_id.slice(0, 14)}…
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-
-            {/* Mobile cards */}
-            {!loading && statements.length > 0 && !isWide && (
-              <div style={{ padding: 16 }}>
-                {statements.map(s => {
-                  const isOverdue = s.status === 'pending' && new Date(s.due_date) < new Date()
-                  return (
-                    <div key={s.id} style={{
-                      ...S.mobileCard,
-                      ...(isOverdue ? { borderColor: '#fde68a', background: '#fffbeb' } : {}),
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
-                          {monthName(s.month)} {s.year}
-                        </span>
-                        <StatusBadge status={isOverdue && s.status === 'pending' ? 'failed' : s.status} />
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <TypeBadge type={s.type} />
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{fmt(s.amount_due)}</span>
-                      </div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 10 }}>
-                        {s.reservations_count} reservas · Vence {formatDate(s.due_date)}
-                      </div>
-                      {s.status !== 'paid' && s.status !== 'processing' && (
-                        <button
-                          style={{ ...S.btnPrimary, width: '100%', justifyContent: 'center' }}
-                          onClick={() => setPayingStatement(s)}
-                        >
-                          <CreditCard size={13} />
-                          Pagar {fmt(s.amount_due)}
-                        </button>
-                      )}
-                      {s.status === 'paid' && (
-                        <button
-                          style={{ ...S.btnOutline, width: '100%', justifyContent: 'center' }}
-                          onClick={() => downloadReceipt(s)}
-                        >
-                          <Download size={12} />
-                          Descargar comprobante
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Footer */}
-            {!loading && statements.length > 0 && (
-              <div style={{ padding: '12px 20px', borderTop: '1px solid #f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>
-                  {statements.length} estado{statements.length !== 1 ? 's' : ''} de cuenta
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#94a3b8' }}>
-                  <Shield size={11} />
-                  Pagos procesados de forma segura por Paddle
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ── Info card: Paddle ── */}
-          <div style={{ ...S.card, marginTop: 20, border: '1px solid #e0e7ff' }}>
-            <div style={{ padding: 20, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Lock size={18} color="#2563eb" />
-              </div>
-              <div>
-                <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 14, color: '#1e40af' }}>Pagos seguros con Paddle</p>
-                <p style={{ margin: 0, fontSize: 13, color: '#3b82f6' }}>
-                  Todos los pagos son procesados de forma segura a través de Paddle, pasarela de pagos internacional. Tus datos financieros están encriptados y nunca se almacenan en nuestros servidores.
-                </p>
-              </div>
-            </div>
-          </div>
-
         </div>
+
+        <ValidationBanner />
+
+        {/* ── Plan card ── */}
+        <div className="py-plan">
+          <div className="py-plan__left">
+            <div className="py-plan__icon">⚽</div>
+            <div>
+              <p className="py-plan__name">Plan Pro</p>
+              <p className="py-plan__meta">
+                {currency === 'CRC' ? `₡${PLAN_PRICE_CRC.toLocaleString('es-CR')}` : `$${PLAN_PRICE_USD} USD`}/mes
+                {currency !== 'CRC' && currency !== 'USD' && ` · ${fMoney(planPrice)} ${currency}`}
+              </p>
+            </div>
+          </div>
+          <div className="py-plan__right">
+            <span className="py-plan__badge">✓ Activo</span>
+          </div>
+        </div>
+
+        {/* ── Overdue alert ── */}
+        {!loading && kpis.overdueCount > 0 && (
+          <div className="py-alert">
+            <span className="py-alert__icon">⚠️</span>
+            <div className="py-alert__body">
+              <p className="py-alert__title">Tenés {kpis.overdueCount} pago{kpis.overdueCount > 1 ? 's' : ''} vencido{kpis.overdueCount > 1 ? 's' : ''}</p>
+              <p className="py-alert__sub">Regularizá tu cuenta para evitar interrupciones del servicio.</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── KPIs ── */}
+        <div className="py-kpis">
+          {[
+            { value: kpis.pendingCount > 0 ? fMoneyShort(kpis.totalPending) : '✓ Al día', label: 'Balance pendiente', accent: kpis.pendingCount > 0 ? '#ef4444' : '#16a34a' },
+            { value: kpis.nextDue ? relativeDate(kpis.nextDue.due_date) : '—', label: 'Próximo vencimiento', accent: '#f59e0b' },
+            { value: String(kpis.paidCount), label: 'Pagos realizados', accent: '#16a34a' },
+            { value: fMoneyShort(kpis.totalPaid), label: 'Total pagado', accent: '#2563eb' },
+          ].map((k, i) => (
+            <div key={i} className="py-kpi" style={{ animationDelay: `${i * 60}ms` }}>
+              <div className="py-kpi__accent" style={{ background: k.accent }} />
+              <span className="py-kpi__value">{loading ? '—' : k.value}</span>
+              <span className="py-kpi__label">{k.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* ── SINPE info ── */}
+        {kpis.pendingCount > 0 && !loading && (
+          <div className="py-sinpe">
+            <div className="py-sinpe__head">
+              <span className="py-sinpe__emoji">📱</span>
+              <div>
+                <p className="py-sinpe__title">Pagá con SINPE Móvil</p>
+                <p className="py-sinpe__sub">Enviá el monto al siguiente número y subí tu comprobante</p>
+              </div>
+            </div>
+            <div className="py-sinpe__body">
+              <div className="py-sinpe__row">
+                <span className="py-sinpe__label">Número SINPE</span>
+                <span className="py-sinpe__number">{SINPE_NUMBER}</span>
+              </div>
+              <div className="py-sinpe__row">
+                <span className="py-sinpe__label">A nombre de</span>
+                <span className="py-sinpe__value">{SINPE_NAME}</span>
+              </div>
+              <div className="py-sinpe__row">
+                <span className="py-sinpe__label">Monto del plan</span>
+                <span className="py-sinpe__value py-sinpe__value--bold">{fMoney(planPrice)}</span>
+              </div>
+            </div>
+            <p className="py-sinpe__note">💡 Después de enviar el SINPE, subí el comprobante en la factura correspondiente.</p>
+          </div>
+        )}
+
+        {/* ── Statements ── */}
+        <div className="py-card">
+          <div className="py-card__head">
+            <div>
+              <h3 className="py-card__title">Estados de cuenta</h3>
+              <p className="py-card__sub">Historial de facturación</p>
+            </div>
+          </div>
+
+          {/* Loading */}
+          {loading && (
+            <div className="py-sk-rows">
+              {[1,2,3,4].map(i => <div key={i} className="py-sk-row" style={{ animationDelay: `${i * 60}ms` }} />)}
+            </div>
+          )}
+
+          {/* Empty */}
+          {!loading && statements.length === 0 && (
+            <div className="py-empty">
+              <span className="py-empty__ico">📭</span>
+              <p className="py-empty__title">Sin estados de cuenta</p>
+              <p className="py-empty__sub">Tu primer cobro se generará al finalizar los {PLAN_TRIAL_DAYS} días de prueba gratis.</p>
+            </div>
+          )}
+
+          {/* List */}
+          {!loading && statements.length > 0 && (
+            <div className="py-list">
+              {statements.map((s, i) => {
+                const isOverdue = s.status === 'pending' && new Date(s.due_date + 'T23:59:59') < new Date()
+                const effectiveStatus = isOverdue ? 'failed' : s.status
+                const cfg = STATUS_CFG[effectiveStatus] ?? STATUS_CFG.pending
+                return (
+                  <div key={s.id} className={`py-stmt ${isOverdue ? 'py-stmt--overdue' : ''} ${s.status === 'paid' ? 'py-stmt--paid' : ''}`} style={{ animationDelay: `${i * 40}ms` }}>
+                    {/* Timeline dot */}
+                    <div className="py-stmt__dot" style={{ background: cfg.dot }} />
+
+                    {/* Content */}
+                    <div className="py-stmt__body">
+                      <div className="py-stmt__top">
+                        <div className="py-stmt__period">
+                          <span className="py-stmt__month">{monthName(s.month)} {s.year}</span>
+                          <span className={`py-badge py-badge--${effectiveStatus}`}>{cfg.label}</span>
+                        </div>
+                        <span className="py-stmt__amount">{fMoney(s.amount_due)}</span>
+                      </div>
+
+                      <div className="py-stmt__meta">
+                        <span>Plan mensual · {s.reservations_count > 0 ? `${s.reservations_count} reservas` : 'Plan fijo'}</span>
+                        <span>{isOverdue ? relativeDate(s.due_date) : s.status === 'paid' ? `Pagado ${s.paid_at ? fmtDate(s.paid_at.split('T')[0]) : ''}` : relativeDate(s.due_date)}</span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="py-stmt__actions">
+                        {(s.status === 'pending' || s.status === 'failed') && (
+                          <button className="py-btn py-btn--green py-btn--sm" onClick={() => setUploadingReceipt(s)}>
+                            📱 Subir comprobante SINPE
+                          </button>
+                        )}
+                        {s.status === 'processing' && (
+                          <span className="py-stmt__processing">⏳ Comprobante en revisión</span>
+                        )}
+                        {s.status === 'paid' && (
+                          <button className="py-btn py-btn--ghost py-btn--sm" onClick={() => downloadReceipt(s)}>
+                            ↓ Comprobante
+                          </button>
+                        )}
+                        {s.transaction_id && (
+                          <span className="py-stmt__tx">Ref: {s.transaction_id.slice(0, 16)}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Footer */}
+          {!loading && statements.length > 0 && (
+            <div className="py-card__foot">
+              {statements.length} estado{statements.length !== 1 ? 's' : ''} de cuenta
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {/* ── Payment Modal ── */}
-      {payingStatement && (
-        <PaymentModal
-          statement={payingStatement}
-          onClose={() => setPayingStatement(null)}
-          onSuccess={handlePaySuccess}
+      {/* ── Upload Receipt Modal ── */}
+      {uploadingReceipt && (
+        <ReceiptUploadModal
+          statement={uploadingReceipt}
+          currency={currency}
+          fMoney={fMoney}
+          onClose={() => setUploadingReceipt(null)}
+          onSuccess={() => { setUploadingReceipt(null); load(); showToast('Comprobante enviado ✓') }}
         />
       )}
     </AdminLayout>
   )
 }
+
+// ─── Receipt Upload Modal ─────────────────────────────────────────────────────
+
+function ReceiptUploadModal({ statement, currency, fMoney, onClose, onSuccess }: {
+  statement: Statement; currency: string; fMoney: (v: number) => string
+  onClose: () => void; onSuccess: () => void
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [method, setMethod] = useState<'sinpe' | 'transfer' | 'deposit'>('sinpe')
+  const [notes, setNotes] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > 5 * 1024 * 1024) { setError('Máximo 5MB'); return }
+    setFile(f); setError('')
+    if (f.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = () => setPreview(reader.result as string)
+      reader.readAsDataURL(f)
+    } else { setPreview(null) }
+  }
+
+  const handleUpload = async () => {
+    if (!file) { setError('Seleccioná un archivo'); return }
+    setUploading(true); setError('')
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) throw new Error('No autenticado')
+      const ext = file.name.split('.').pop()
+      const path = `receipts/${userData.user.id}/${statement.id}.${ext}`
+      const { error: upErr } = await supabase.storage.from('payment-receipts').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: urlData } = supabase.storage.from('payment-receipts').getPublicUrl(path)
+      await supabase.from('payment_receipts').insert({
+        statement_id: statement.id, owner_id: userData.user.id,
+        file_url: urlData.publicUrl, file_name: file.name,
+        payment_method: method, notes: notes.trim() || null, status: 'pending',
+      })
+      await supabase.from('monthly_statements').update({ status: 'processing', payment_method: method }).eq('id', statement.id)
+      setDone(true)
+      setTimeout(onSuccess, 1500)
+    } catch (e: any) { setError(e.message ?? 'Error al subir') }
+    finally { setUploading(false) }
+  }
+
+  return (
+    <div className="py-overlay" onClick={e => { if (e.target === e.currentTarget && !uploading) onClose() }}>
+      <div className="py-modal">
+        {!uploading && !done && (
+          <button className="py-modal__close" onClick={onClose}>✕</button>
+        )}
+
+        {done ? (
+          <div className="py-modal__done">
+            <div className="py-modal__done-icon">✓</div>
+            <p className="py-modal__done-title">Comprobante enviado</p>
+            <p className="py-modal__done-sub">Lo revisaremos y confirmaremos tu pago pronto.</p>
+          </div>
+        ) : (
+          <>
+            <div className="py-modal__head">
+              <div className="py-modal__head-icon">📱</div>
+              <div>
+                <p className="py-modal__title">Subir comprobante</p>
+                <p className="py-modal__sub">{monthName(statement.month)} {statement.year} · {fMoney(statement.amount_due)}</p>
+              </div>
+            </div>
+
+            {/* SINPE info box */}
+            <div className="py-modal__sinpe">
+              <p className="py-modal__sinpe-title">Datos para SINPE Móvil</p>
+              <div className="py-modal__sinpe-row">
+                <span>Número:</span>
+                <strong>{SINPE_NUMBER}</strong>
+              </div>
+              <div className="py-modal__sinpe-row">
+                <span>Nombre:</span>
+                <strong>{SINPE_NAME}</strong>
+              </div>
+              <div className="py-modal__sinpe-row">
+                <span>Monto:</span>
+                <strong>{fMoney(statement.amount_due)}</strong>
+              </div>
+            </div>
+
+            {/* Method */}
+            <p className="py-modal__label">Método de pago</p>
+            <div className="py-modal__methods">
+              {([
+                { value: 'sinpe' as const, label: 'SINPE Móvil', icon: '📱' },
+                { value: 'transfer' as const, label: 'Transferencia', icon: '🏦' },
+                { value: 'deposit' as const, label: 'Depósito', icon: '💵' },
+              ]).map(m => (
+                <button key={m.value} className={`py-method ${method === m.value ? 'py-method--sel' : ''}`} onClick={() => setMethod(m.value)}>
+                  <span>{m.icon}</span> {m.label}
+                </button>
+              ))}
+            </div>
+
+            {/* File upload */}
+            <p className="py-modal__label">Comprobante *</p>
+            <label className={`py-upload ${file ? 'py-upload--has' : ''}`}>
+              <input type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={handleFile} />
+              {preview ? (
+                <img src={preview} alt="Preview" style={{ maxHeight: 140, borderRadius: 8, objectFit: 'contain' }} />
+              ) : file ? (
+                <p className="py-upload__name">📄 {file.name}</p>
+              ) : (
+                <>
+                  <span className="py-upload__icon">📤</span>
+                  <p className="py-upload__text">Subí tu comprobante</p>
+                  <p className="py-upload__hint">Imagen o PDF · Máx 5MB</p>
+                </>
+              )}
+            </label>
+
+            {/* Notes */}
+            <textarea
+              className="py-modal__textarea"
+              placeholder="Notas adicionales (opcional)"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+            />
+
+            {error && <div className="py-modal__error">⚠️ {error}</div>}
+
+            <div className="py-modal__actions">
+              <button className="py-btn py-btn--ghost" onClick={onClose}>Cancelar</button>
+              <button className="py-btn py-btn--green" onClick={handleUpload} disabled={!file || uploading}>
+                {uploading ? '⏳ Subiendo...' : '📤 Enviar comprobante'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── CSS ──────────────────────────────────────────────────────────────────────
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Syne:wght@700;800&display=swap');
+
+*,*::before,*::after{box-sizing:border-box}
+
+.py{font-family:'DM Sans',sans-serif;padding:24px 24px 80px;color:#0f172a;background:#f0f2f5;min-height:100vh}
+
+/* Header */
+.py-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.py-hd__actions{display:flex;gap:8px}
+.py-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-.5px;margin:0}
+.py-sub{font-size:13px;color:#94a3b8;margin:4px 0 0}
+
+/* Buttons */
+.py-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .14s;white-space:nowrap}
+.py-btn--ghost{background:#fff;color:#374151;border:1.5px solid #e2e8f0}.py-btn--ghost:hover{background:#f8fafc;border-color:#cbd5e1}
+.py-btn--green{background:#16a34a;color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.25)}.py-btn--green:hover{background:#15803d}
+.py-btn--sm{padding:7px 12px;font-size:11px}
+.py-btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* Plan card */
+.py-plan{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1.5px solid #bbf7d0;border-radius:14px;padding:16px 20px;margin-bottom:16px}
+.py-plan__left{display:flex;align-items:center;gap:12px}
+.py-plan__icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#16a34a,#15803d);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.py-plan__name{margin:0;font-size:15px;font-weight:700;color:#0f172a}
+.py-plan__meta{margin:2px 0 0;font-size:12px;color:#64748b}
+.py-plan__badge{font-size:11px;font-weight:700;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;padding:4px 12px;border-radius:999px}
+
+/* Alert */
+.py-alert{display:flex;align-items:center;gap:12px;background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 18px;margin-bottom:16px}
+.py-alert__icon{font-size:20px;flex-shrink:0}
+.py-alert__body{flex:1}
+.py-alert__title{margin:0;font-size:13px;font-weight:700;color:#991b1b}
+.py-alert__sub{margin:2px 0 0;font-size:12px;color:#dc2626}
+
+/* KPIs */
+.py-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.py-kpi{background:#fff;border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;border:1px solid #f1f5f9;box-shadow:0 1px 3px rgba(0,0,0,.03);animation:pyUp .35s ease both}
+.py-kpi__accent{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 3px 3px 0}
+.py-kpi__value{display:block;font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.3px;font-family:'DM Sans',sans-serif}
+.py-kpi__label{display:block;font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+/* SINPE info */
+.py-sinpe{background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:0;margin-bottom:20px;overflow:hidden}
+.py-sinpe__head{display:flex;align-items:center;gap:10px;padding:16px 20px;background:#f8fafc;border-bottom:1px solid #f1f5f9}
+.py-sinpe__emoji{font-size:24px;flex-shrink:0}
+.py-sinpe__title{margin:0;font-size:14px;font-weight:700;color:#0f172a}
+.py-sinpe__sub{margin:2px 0 0;font-size:12px;color:#64748b}
+.py-sinpe__body{padding:16px 20px}
+.py-sinpe__row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f8fafc;font-size:13px}
+.py-sinpe__row:last-child{border-bottom:none}
+.py-sinpe__label{color:#64748b;font-weight:500}
+.py-sinpe__number{font-size:18px;font-weight:800;color:#0f172a;letter-spacing:.02em;font-family:'DM Sans',monospace}
+.py-sinpe__value{font-weight:600;color:#0f172a}
+.py-sinpe__value--bold{font-size:16px;font-weight:800;color:#16a34a}
+.py-sinpe__note{margin:0;padding:12px 20px;font-size:12px;color:#64748b;background:#fffbeb;border-top:1px solid #fef3c7}
+
+/* Card */
+.py-card{background:#fff;border-radius:16px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden}
+.py-card__head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #f1f5f9}
+.py-card__title{margin:0;font-size:15px;font-weight:700;color:#0f172a}
+.py-card__sub{margin:2px 0 0;font-size:12px;color:#94a3b8}
+.py-card__foot{padding:12px 20px;font-size:11px;color:#94a3b8;text-align:center;border-top:1px solid #f8fafc}
+
+/* Statement list — timeline style */
+.py-list{padding:0 20px 12px}
+.py-stmt{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #f8fafc;position:relative;animation:pyUp .3s ease both}
+.py-stmt:last-child{border-bottom:none}
+.py-stmt--overdue{background:#fffbeb;margin:0 -20px;padding:16px 20px;border-radius:0}
+.py-stmt--paid{opacity:.85}
+.py-stmt__dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.py-stmt__body{flex:1;min-width:0}
+.py-stmt__top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.py-stmt__period{display:flex;align-items:center;gap:8px}
+.py-stmt__month{font-size:14px;font-weight:700;color:#0f172a}
+.py-stmt__amount{font-size:16px;font-weight:800;color:#0f172a;font-family:'DM Sans',sans-serif}
+.py-stmt__meta{display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:8px}
+.py-stmt__actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.py-stmt__processing{font-size:11px;font-weight:600;color:#1e40af;background:#eff6ff;padding:4px 10px;border-radius:8px}
+.py-stmt__tx{font-size:10px;color:#94a3b8;font-family:monospace}
+
+/* Badge */
+.py-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
+.py-badge--paid{background:#f0fdf4;color:#15803d}
+.py-badge--pending{background:#fffbeb;color:#92400e}
+.py-badge--failed{background:#fef2f2;color:#991b1b}
+.py-badge--processing{background:#eff6ff;color:#1e40af}
+
+/* Empty & Skeleton */
+.py-empty{text-align:center;padding:48px 20px}
+.py-empty__ico{font-size:40px;display:block;margin-bottom:10px}
+.py-empty__title{font-size:15px;font-weight:700;margin:0 0 4px}
+.py-empty__sub{font-size:12px;color:#94a3b8;margin:0}
+.py-sk-rows{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.py-sk-row{height:56px;border-radius:10px;background:linear-gradient(90deg,#f1f5f9 25%,#e8ecf2 50%,#f1f5f9 75%);background-size:200% 100%;animation:pyShim 1.6s infinite}
+
+/* Modal */
+.py-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px;animation:pyFade .18s ease}
+.py-modal{background:#fff;border-radius:20px;width:100%;max-width:440px;box-shadow:0 24px 80px rgba(0,0,0,.2);animation:pySlide .2s ease;overflow:hidden;padding:24px;position:relative;max-height:90vh;overflow-y:auto}
+.py-modal__close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#94a3b8;transition:all .12s}
+.py-modal__close:hover{background:#f8fafc;color:#0f172a}
+.py-modal__head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.py-modal__head-icon{width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.py-modal__title{margin:0;font-size:16px;font-weight:700;color:#0f172a}
+.py-modal__sub{margin:2px 0 0;font-size:12px;color:#94a3b8}
+.py-modal__sinpe{background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:14px;margin-bottom:16px}
+.py-modal__sinpe-title{margin:0 0 8px;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.04em}
+.py-modal__sinpe-row{display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:4px}
+.py-modal__sinpe-row strong{color:#0f172a}
+.py-modal__label{font-size:12px;font-weight:600;color:#374151;margin:0 0 8px}
+.py-modal__methods{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px}
+.py-method{padding:9px 10px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;display:flex;align-items:center;gap:5px;transition:all .12s}
+.py-method:hover{border-color:#16a34a;color:#15803d}
+.py-method--sel{border-color:#16a34a;background:#f0fdf4;color:#15803d}
+.py-upload{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px;border-radius:12px;border:2px dashed #e2e8f0;background:#fafafa;cursor:pointer;transition:all .15s;margin-bottom:12px}
+.py-upload:hover{border-color:#16a34a;background:#f0fdf4}
+.py-upload--has{border-color:#16a34a;background:#f0fdf4;padding:10px}
+.py-upload__icon{font-size:24px}
+.py-upload__text{font-size:13px;font-weight:600;color:#374151;margin:0}
+.py-upload__hint{font-size:11px;color:#94a3b8;margin:0}
+.py-upload__name{font-size:13px;font-weight:600;color:#15803d;margin:0}
+.py-modal__textarea{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;resize:vertical;min-height:50px;outline:none;color:#0f172a;box-sizing:border-box;margin-bottom:12px}
+.py-modal__textarea:focus{border-color:#16a34a}
+.py-modal__error{padding:8px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;font-size:12px;color:#b91c1c;margin-bottom:12px}
+.py-modal__actions{display:flex;gap:8px}
+.py-modal__actions .py-btn{flex:1;justify-content:center}
+
+/* Done state */
+.py-modal__done{text-align:center;padding:24px 0}
+.py-modal__done-icon{width:56px;height:56px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:24px;color:#16a34a;font-weight:800;margin:0 auto 16px;border:2px solid #bbf7d0}
+.py-modal__done-title{font-size:18px;font-weight:700;color:#0f172a;margin:0 0 4px}
+.py-modal__done-sub{font-size:13px;color:#64748b;margin:0}
+
+/* Toast */
+.py-toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.18);animation:pyUp .2s ease}
+.py-toast--ok{background:#0f172a;color:#fff}.py-toast--err{background:#ef4444;color:#fff}
+
+/* Animations */
+@keyframes pyUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pyFade{from{opacity:0}to{opacity:1}}
+@keyframes pySlide{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pyShim{to{background-position:-200% 0}}
+
+/* Responsive */
+@media(max-width:1100px){.py-kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.py-modal__methods{grid-template-columns:1fr}}
+@media(max-width:640px){
+  .py{padding:16px 12px 80px}
+  .py-kpis{grid-template-columns:repeat(2,1fr);gap:8px}
+  .py-kpi{padding:12px 14px}.py-kpi__value{font-size:17px}
+  .py-sinpe__number{font-size:15px}
+  .py-stmt__amount{font-size:14px}
+  .py-overlay{align-items:flex-end;padding:0}
+  .py-modal{border-radius:20px 20px 0 0;max-height:95vh}
+}
+`

@@ -79,6 +79,10 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
   const [bookedHours, setBookedHours] = useState<Set<string>>(new Set())
   const [loadingHours, setLoadingHours] = useState(false)
 
+  // Customer pricing
+  const [customerPricing, setCustomerPricing] = useState<{ field_id: number; hour: string | null; price: number }[]>([])
+  const [customerRef, setCustomerRef] = useState<number | null>(null)
+
   // ── Load fields ──
   useEffect(() => {
     ;(async () => {
@@ -121,6 +125,39 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
     })()
   }, [fieldId, date])
 
+  // ── Lookup customer pricing by cédula ──
+  useEffect(() => {
+    if (!idNumber || idNumber.trim().length < 5) {
+      setCustomerPricing([]); setCustomerRef(null); return
+    }
+    const timer = setTimeout(async () => {
+      // Find customer by cédula in complex_customers
+      const { data: ownerComplex } = await supabase
+        .from('complexes').select('id').eq('owner_id', userId).limit(1).single()
+      if (!ownerComplex) return
+
+      const { data: customer } = await supabase
+        .from('complex_customers')
+        .select('id')
+        .eq('complex_id', ownerComplex.id)
+        .eq('id_number', idNumber.trim())
+        .limit(1)
+        .single()
+
+      if (!customer) { setCustomerPricing([]); setCustomerRef(null); return }
+      setCustomerRef(customer.id)
+
+      // Get their pricing rules
+      const { data: pricing } = await supabase
+        .from('customer_pricing')
+        .select('field_id, hour, price')
+        .eq('customer_id', customer.id)
+
+      setCustomerPricing(pricing ?? [])
+    }, 500) // debounce 500ms
+    return () => clearTimeout(timer)
+  }, [idNumber, userId])
+
   const selectedField = fields.find(f => f.id === fieldId) ?? null
 
   // ── Build time slots respecting slot_duration ──
@@ -162,12 +199,28 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
     return slots
   }, [selectedField, bookedHours])
 
-  // ── Price calculation with field_rates ──
-  const price = useMemo(() => {
-    if (!selectedField || !hour) return 0
+  // ── Price calculation: customer_pricing > field_rates > base ──
+  const { price, priceSource } = useMemo(() => {
+    if (!selectedField || !hour) return { price: 0, priceSource: '' }
     const hourNum = Number(hour.split(':')[0])
     const nightFrom = selectedField.night_from_hour ?? 18
 
+    // 1. Check customer_pricing (highest priority)
+    if (customerPricing.length > 0 && fieldId) {
+      // First: exact match (field + hour)
+      const exactMatch = customerPricing.find(
+        cp => cp.field_id === fieldId && cp.hour === hour
+      )
+      if (exactMatch) return { price: Number(exactMatch.price), priceSource: 'customer_pricing' }
+
+      // Second: field match with any hour (hour = null)
+      const fieldMatch = customerPricing.find(
+        cp => cp.field_id === fieldId && !cp.hour
+      )
+      if (fieldMatch) return { price: Number(fieldMatch.price), priceSource: 'customer_pricing' }
+    }
+
+    // 2. Check field_rates
     if (fieldRates.length > 0 && date) {
       const [y, m, d] = date.split('-').map(Number)
       const dayKey = DAY_KEYS[new Date(y, m - 1, d).getDay()]
@@ -177,13 +230,15 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
         const endH = Number(r.end_time?.split(':')[0] ?? 23)
         return hourNum >= startH && hourNum <= endH
       })
-      if (rate) return Number(rate.price)
+      if (rate) return { price: Number(rate.price), priceSource: 'field_rate' }
     }
 
-    return hourNum >= nightFrom
+    // 3. Base price
+    const basePrice = hourNum >= nightFrom
       ? Number(selectedField.price_night ?? selectedField.price_day ?? 0)
       : Number(selectedField.price_day ?? 0)
-  }, [selectedField, hour, date, fieldRates])
+    return { price: basePrice, priceSource: 'base' }
+  }, [selectedField, hour, date, fieldRates, customerPricing, fieldId])
 
   const isNight = useMemo(() => {
     if (!selectedField || !hour) return false
@@ -225,6 +280,8 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
           email: email.trim().toLowerCase() || 'admin@golplay.app',
           customer_id_number: idNumber.trim(),
           price,
+          price_source: priceSource,
+          customer_ref: customerRef,
           tariff: isNight ? 'night' : 'day',
         }),
       })
@@ -242,7 +299,7 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
       setSaving(false)
       setError(e.message ?? 'Error de conexión')
     }
-  }, [fieldId, date, hour, name, phone, email, idNumber, price, isNight, onCreated, onClose])
+  }, [fieldId, date, hour, name, phone, email, idNumber, price, priceSource, customerRef, isNight, onCreated, onClose])
 
   // ── Date display ──
   const dateDisplay = date ? (() => {
@@ -276,6 +333,11 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
                   <span className="bm-header__price-tag">
                     {isNight ? '🌙' : '☀️'} {fmt(price)}
                   </span>
+                  {priceSource === 'customer_pricing' && (
+                    <span className="bm-header__price-tag" style={{ background: 'rgba(124,58,237,.2)', borderColor: 'rgba(124,58,237,.3)' }}>
+                      ⭐ Precio especial
+                    </span>
+                  )}
                   {dateDisplay && <span className="bm-header__date">{dateDisplay} · {selectedSlotLabel}</span>}
                 </div>
               )}
@@ -383,6 +445,14 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
                       <div className="bm-field">
                         <label className="bm-label">Cédula <span className="bm-req">*</span></label>
                         <input className="bm-input" placeholder="Ej: 208090240" value={idNumber} onChange={e => setIdNumber(e.target.value)} />
+                        {customerRef && customerPricing.length > 0 && (
+                          <p className="bm-hint" style={{ color: '#7c3aed', fontWeight: 600 }}>
+                            ⭐ Cliente con {customerPricing.length} precio{customerPricing.length > 1 ? 's' : ''} especial{customerPricing.length > 1 ? 'es' : ''}
+                          </p>
+                        )}
+                        {idNumber.trim().length >= 5 && !customerRef && customerPricing.length === 0 && (
+                          <p className="bm-hint">Cliente nuevo — se usará tarifa estándar</p>
+                        )}
                       </div>
                     </div>
 
