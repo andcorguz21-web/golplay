@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show'
+type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show' | 'active'
 type TabId   = 'all' | 'upcoming' | 'today' | 'past' | 'cancelled'
 type SortKey = 'date' | 'field' | 'client' | 'price'
 type SortDir = 'asc' | 'desc'
@@ -51,6 +51,7 @@ const SPORT_ICON: Record<string, string> = {
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
   confirmed: { label: 'Confirmada', cls: 'b-badge--active' },
+  active:    { label: 'Activa',     cls: 'b-badge--active' },
   pending:   { label: 'Pendiente',  cls: 'b-badge--pending' },
   cancelled: { label: 'Cancelada',  cls: 'b-badge--cancelled' },
   completed: { label: 'Completada', cls: 'b-badge--completed' },
@@ -107,6 +108,11 @@ export default function AdminBookings() {
   const [sortKey,      setSortKey]      = useState<SortKey>('date')
   const [sortDir,      setSortDir]      = useState<SortDir>('desc')
 
+  // Pagination
+  const PAGE_SIZE = 50
+  const [page,       setPage]       = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
+
   const [detail,  setDetail]  = useState<Booking | null>(null)
   const [confirm, setConfirm] = useState<{ booking: Booking; action: 'cancel' | 'activate' } | null>(null)
   const [editingNotes, setEditingNotes] = useState<number | null>(null)
@@ -144,7 +150,7 @@ export default function AdminBookings() {
       .then(({ data }) => { if (data) setFields(data) })
   }, [userId])
 
-  // ── Load bookings — two queries, zero joins ───────────────────────────────
+  // ── Load bookings — server-side filtering + pagination ──────────────────
   const load = useCallback(async () => {
     if (!ready || !userId || fields.length === 0) return
     setLoading(true)
@@ -152,23 +158,61 @@ export default function AdminBookings() {
 
     const fieldIds = fields.map(f => f.id)
     const fieldsMap = new Map<number, Field>(fields.map(f => [f.id, f]))
+    const today = todayStr()
 
+    // Build query with server-side filters
     let q = supabase
       .from('bookings')
-      .select('id, date, hour, status, price, source, field_id, customer_name, customer_last_name, customer_phone, customer_email, customer_id_number, notes')      .in('field_id', fieldIds)
-      .order('date', { ascending: false })
-      .order('hour', { ascending: true })
+      .select(
+        'id, date, hour, status, price, source, field_id, customer_name, customer_last_name, customer_phone, customer_email, customer_id_number, notes',
+        { count: 'exact' }
+      )
+      .in('field_id', filterField !== 'all' ? [Number(filterField)] : fieldIds)
 
+    // Tab filters (server-side)
+    if (tab === 'upcoming')  { q = q.gt('date', today).neq('status', 'cancelled') }
+    if (tab === 'today')     { q = q.eq('date', today).neq('status', 'cancelled') }
+    if (tab === 'past')      { q = q.lt('date', today).neq('status', 'cancelled') }
+    if (tab === 'cancelled') { q = q.eq('status', 'cancelled') }
+
+    // Status filter
+    if (filterStatus !== 'all') q = q.eq('status', filterStatus)
+
+    // Date range
     if (fromDate) q = q.gte('date', fromDate)
     if (toDate)   q = q.lte('date', toDate)
 
-    const { data, error: bErr } = await q
+    // Search (server-side ilike on customer_name)
+    if (search.trim()) {
+      q = q.or(`customer_name.ilike.%${search.trim()}%,customer_last_name.ilike.%${search.trim()}%,customer_phone.ilike.%${search.trim()}%,customer_email.ilike.%${search.trim()}%`)
+    }
+
+    // Sorting
+    const ascending = sortDir === 'asc'
+    if (sortKey === 'date') {
+      q = q.order('date', { ascending }).order('hour', { ascending: true })
+    } else if (sortKey === 'field') {
+      q = q.order('field_id', { ascending }).order('date', { ascending: false })
+    } else if (sortKey === 'price') {
+      q = q.order('price', { ascending }).order('date', { ascending: false })
+    } else {
+      q = q.order('customer_name', { ascending }).order('date', { ascending: false })
+    }
+
+    // Pagination
+    const from = page * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+    q = q.range(from, to)
+
+    const { data, error: bErr, count } = await q
 
     if (bErr) {
       setError(`Error al cargar reservas: ${bErr.message}`)
       setLoading(false)
       return
     }
+
+    setTotalCount(count ?? 0)
 
     const raw: Booking[] = (data || []).map((b: any) => {
       const field = fieldsMap.get(b.field_id)
@@ -193,7 +237,7 @@ export default function AdminBookings() {
 
     setBookings(detectConflicts(raw))
     setLoading(false)
-  }, [ready, userId, fields, fromDate, toDate])
+  }, [ready, userId, fields, fromDate, toDate, tab, filterField, filterStatus, search, sortKey, sortDir, page])
 
   useEffect(() => { load() }, [load])
 
@@ -316,33 +360,22 @@ export default function AdminBookings() {
   // ── Derived ────────────────────────────────────────────────────────────────
   const today = todayStr()
 
+  // Reset page when filters change
+  useEffect(() => { setPage(0) }, [tab, filterField, filterStatus, search, fromDate, toDate, sortKey, sortDir])
+
   const counts = useMemo(() => ({
-    all:       bookings.length,
+    all:       totalCount,
     upcoming:  bookings.filter(b => b.date > today && b.status !== 'cancelled').length,
     today:     bookings.filter(b => b.date === today && b.status !== 'cancelled').length,
     past:      bookings.filter(b => b.date < today && b.status !== 'cancelled').length,
     cancelled: bookings.filter(b => b.status === 'cancelled').length,
-  }), [bookings, today])
+  }), [bookings, today, totalCount])
 
   const conflicts = useMemo(() => bookings.filter(b => b.hasConflict).length, [bookings])
 
+  // Server-side filtered — bookings already contains the right page
   const filtered = useMemo(() => {
-    let r = [...bookings]
-    if (tab === 'upcoming')  r = r.filter(b => b.date > today && b.status !== 'cancelled')
-    if (tab === 'today')     r = r.filter(b => b.date === today && b.status !== 'cancelled')
-    if (tab === 'past')      r = r.filter(b => b.date < today && b.status !== 'cancelled')
-    if (tab === 'cancelled') r = r.filter(b => b.status === 'cancelled')
-    if (filterField !== 'all')  r = r.filter(b => String(b.field_id) === filterField)
-    if (filterStatus !== 'all') r = r.filter(b => b.status === filterStatus)
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      r = r.filter(b =>
-        (clientName(b) ?? '').toLowerCase().includes(q) ||
-        b.fieldName.toLowerCase().includes(q) ||
-        (b.customer_email ?? '').toLowerCase().includes(q) ||
-        (b.customer_phone ?? '').includes(q)
-      )
-    }
+    const r = [...bookings]
     r.sort((a, b) => {
       if (sortKey === 'price')
         return sortDir === 'asc' ? (a.price ?? 0) - (b.price ?? 0) : (b.price ?? 0) - (a.price ?? 0)
@@ -351,7 +384,9 @@ export default function AdminBookings() {
       return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
     })
     return r
-  }, [bookings, tab, filterField, filterStatus, search, sortKey, sortDir, today])
+  }, [bookings, sortKey, sortDir])
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -384,7 +419,7 @@ export default function AdminBookings() {
           <div>
             <h1 className="bk-title">Reservas</h1>
             <p className="bk-sub">
-              {loading ? 'Cargando…' : `${bookings.length} en el período seleccionado`}
+              {loading ? 'Cargando…' : `${totalCount.toLocaleString('es-CR')} reservas en total`}
             </p>
           </div>
           <div className="bk-hd__right">
@@ -567,8 +602,49 @@ export default function AdminBookings() {
               ))}
             </div>
 
-            <div className="bk-footer">
-              Mostrando <strong>{filtered.length}</strong> de <strong>{bookings.length}</strong> reservas
+            <div className="bk-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <span>
+                Mostrando <strong>{page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)}</strong> de <strong>{totalCount.toLocaleString('es-CR')}</strong> reservas
+              </span>
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <button
+                    className="bk-btn bk-btn--ghost bk-btn--sm"
+                    disabled={page === 0}
+                    onClick={() => setPage(0)}
+                    aria-label="Primera página"
+                  >
+                    ««
+                  </button>
+                  <button
+                    className="bk-btn bk-btn--ghost bk-btn--sm"
+                    disabled={page === 0}
+                    onClick={() => setPage(p => p - 1)}
+                    aria-label="Página anterior"
+                  >
+                    ‹ Anterior
+                  </button>
+                  <span style={{ padding: '0 10px', fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                    {page + 1} / {totalPages}
+                  </span>
+                  <button
+                    className="bk-btn bk-btn--ghost bk-btn--sm"
+                    disabled={page >= totalPages - 1}
+                    onClick={() => setPage(p => p + 1)}
+                    aria-label="Página siguiente"
+                  >
+                    Siguiente ›
+                  </button>
+                  <button
+                    className="bk-btn bk-btn--ghost bk-btn--sm"
+                    disabled={page >= totalPages - 1}
+                    onClick={() => setPage(totalPages - 1)}
+                    aria-label="Última página"
+                  >
+                    »»
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
