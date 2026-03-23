@@ -100,13 +100,42 @@ const formatDisplay = (s: string) => {
   return `${DAYS_ES[dt.getDay()]} ${dt.getDate()} ${MONTHS_ES[dt.getMonth()].slice(0, 3)}`
 }
 
-function validateForm(n: string, p: string, e: string, idNumber: string) {
+function validateForm(n: string, p: string, e: string, idNumber: string, idType: 'fisica' | 'juridica') {
   const errs: Record<string, string> = {}
   if (!n.trim() || n.trim().length < 2)              errs.name  = 'Mínimo 2 caracteres'
   if (!p.trim() || !/^\+?[\d\s\-()]{7,}$/.test(p))  errs.phone = 'Teléfono inválido'
   if (!e.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) errs.email = 'Correo inválido'
-  if (!idNumber.trim() || idNumber.trim().length < 5) errs.idNumber = 'Cédula o identificación requerida'
+
+  // Cédula validation by type
+  const digits = idNumber.replace(/\D/g, '')
+  if (!digits) {
+    errs.idNumber = 'Cédula o identificación requerida'
+  } else if (idType === 'fisica') {
+    if (digits.length !== 9)
+      errs.idNumber = 'La cédula física debe tener 9 dígitos'
+  } else {
+    if (digits.length !== 10)
+      errs.idNumber = 'La cédula jurídica debe tener 10 dígitos'
+  }
   return errs
+}
+
+/** Formatea cédula automáticamente: física = 1-1234-5678, jurídica = 3-101-123456 */
+function formatCedula(raw: string, type: 'fisica' | 'juridica'): string {
+  const digits = raw.replace(/\D/g, '')
+  if (type === 'fisica') {
+    // Formato: X-XXXX-XXXX (9 dígitos)
+    const limited = digits.slice(0, 9)
+    if (limited.length <= 1) return limited
+    if (limited.length <= 5) return `${limited[0]}-${limited.slice(1)}`
+    return `${limited[0]}-${limited.slice(1, 5)}-${limited.slice(5)}`
+  } else {
+    // Formato: X-XXX-XXXXXX (10 dígitos)
+    const limited = digits.slice(0, 10)
+    if (limited.length <= 1) return limited
+    if (limited.length <= 4) return `${limited[0]}-${limited.slice(1)}`
+    return `${limited[0]}-${limited.slice(1, 4)}-${limited.slice(4)}`
+  }
 }
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
@@ -620,6 +649,7 @@ export default function ReserveField() {
   const [phone,        setPhone]        = useState('')
   const [email,        setEmail]        = useState('')
   const [idNumber,     setIdNumber]     = useState('')
+  const [idType,       setIdType]       = useState<'fisica' | 'juridica'>('fisica')
   const [formErrors,   setFormErrors]   = useState<Record<string, string>>({})
   const [status,       setStatus]       = useState<BookingStatus>('idle')
 
@@ -909,7 +939,7 @@ export default function ReserveField() {
     const today = new Date(); today.setHours(0,0,0,0)
     const [sy,sm,sd] = selDate.split("-").map(Number)
     if (new Date(sy, sm-1, sd) < today) { setStatus("error"); return }
-    const errs = validateForm(name, phone, email, idNumber)
+    const errs = validateForm(name, phone, email, idNumber, idType)
     if (Object.keys(errs).length) { setFormErrors(errs); return }
     setStatus('sending')
     try {
@@ -928,7 +958,7 @@ export default function ReserveField() {
             name:     name.trim(),
             phone:    phone.trim(),
             email:    email.trim().toLowerCase(),
-            customer_id_number: idNumber.trim(),
+            customer_id_number: idNumber.replace(/\D/g, ''),
             price,
             tariff:   isNight ? 'night' : 'day',
           }),
@@ -1525,12 +1555,65 @@ export default function ReserveField() {
                     {formErrors.email && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.email}</p>}
                   </div>
 
-                  {/* Cédula / ID */}
+                  {/* Cédula / ID — tipo + input formateado */}
                   <div>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                      {([
+                        { value: 'fisica' as const, label: 'Persona física', hint: '9 dígitos' },
+                        { value: 'juridica' as const, label: 'Persona jurídica', hint: '10 dígitos' },
+                      ]).map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => { setIdType(opt.value); setIdNumber(''); setFormErrors(p => ({...p, idNumber:''})) }}
+                          style={{
+                            flex: 1,
+                            padding: '9px 10px',
+                            borderRadius: 10,
+                            border: idType === opt.value
+                              ? '2px solid var(--g500)'
+                              : '1.5px solid var(--border)',
+                            background: idType === opt.value ? 'var(--g100)' : 'var(--white)',
+                            cursor: 'pointer',
+                            transition: 'all .15s',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: idType === opt.value ? 700 : 500,
+                            color: idType === opt.value ? 'var(--g700)' : 'var(--ink)',
+                            fontFamily: 'var(--font-h)',
+                          }}>
+                            {opt.value === 'fisica' ? '👤' : '🏢'} {opt.label}
+                          </span>
+                          <span style={{ fontSize: 10, color: 'var(--muted)' }}>{opt.hint}</span>
+                        </button>
+                      ))}
+                    </div>
                     <input className={`modal-input${formErrors.idNumber ? ' err' : ''}`}
-                      placeholder="Cédula o identificación" value={idNumber} autoComplete="off"
-                      onChange={e => { setIdNumber(e.target.value); setFormErrors(p => ({...p, idNumber:''})) }}/>
-                    {formErrors.idNumber && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.idNumber}</p>}
+                      placeholder={idType === 'fisica' ? 'Ej: 1-1234-5678' : 'Ej: 3-101-123456'}
+                      value={idNumber}
+                      autoComplete="off"
+                      inputMode="numeric"
+                      maxLength={idType === 'fisica' ? 11 : 12}
+                      onChange={e => {
+                        const formatted = formatCedula(e.target.value, idType)
+                        setIdNumber(formatted)
+                        setFormErrors(p => ({...p, idNumber:''}))
+                      }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                      {formErrors.idNumber
+                        ? <p style={{ fontSize: 11, color: '#ef4444', fontWeight: 600 }}>⚠ {formErrors.idNumber}</p>
+                        : <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                            {idNumber.replace(/\D/g, '').length}/{idType === 'fisica' ? 9 : 10} dígitos
+                          </span>
+                      }
+                    </div>
                   </div>
 
                   {/* Submit */}
