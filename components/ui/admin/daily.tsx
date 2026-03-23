@@ -237,7 +237,23 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
   const pendingCount = bookings.filter(b => b.status === 'pending').length
 
   const deleteBooking = async (id: number) => {
-    await supabase.from('bookings').delete().eq('id', id)
+    const { error, count } = await supabase
+      .from('bookings')
+      .delete({ count: 'exact' })
+      .eq('id', id)
+
+    if (error) {
+      console.error('Delete failed:', error)
+      alert(`No se pudo eliminar: ${error.message}`)
+      return
+    }
+
+    if (count === 0) {
+      console.warn('Delete returned 0 rows — possible RLS issue')
+      alert('La reserva no se eliminó. Verificá los permisos en Supabase (RLS).')
+      return
+    }
+
     setBookings(prev => prev.filter(b => b.id !== id))
     setSelected(null)
   }
