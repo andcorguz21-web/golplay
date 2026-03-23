@@ -3,8 +3,8 @@
  * pages/index.tsx
  *
  * Modelo de negocio:
- *   $1 USD por reserva · Sin límite · Cobro mensual automático
- *   Conversión automática a moneda local
+ *   Plan fijo mensual: ₡35,000 CRC / $75 USD LATAM
+ *   30 días gratis · Sin límite de reservas
  *
  * Sin Tailwind. Estilos inline + Google Fonts via next/head.
  * Dependencias: npm install lucide-react
@@ -43,7 +43,7 @@ const BENEFITS = [
   { icon: Shield,      title: 'Cero dobles reservas',            desc: 'Validación automática en tiempo real. Si está ocupado, simplemente no se puede reservar.' },
   { icon: Clock,       title: 'Control total de horarios',       desc: 'Configurá disponibilidad, bloqueá horas, ajustá precios día y noche desde el panel.' },
   { icon: BarChart2,   title: 'Métricas que te hacen crecer',    desc: 'Sabé qué canchas rinden más, en qué horarios y cuánto ingresás cada mes.' },
-  { icon: CreditCard,  title: 'Cobro simple y predecible',       desc: '$1 USD por reserva, convertido a tu moneda local. Sabés exactamente cuánto pagás cada mes.' },
+  { icon: CreditCard,  title: 'Plan fijo, sin sorpresas',      desc: 'Un solo monto mensual. Sabés exactamente cuánto pagás — sin importar cuántas reservas tengas.' },
 ]
 
 const STEPS = [
@@ -72,7 +72,7 @@ const TESTIMONIALS = [
   {
     name: 'Andrea Mora',
     role: 'Administradora — Bogotá, Colombia',
-    text: 'Un dólar por reserva suena a nada comparado con lo que ganás en tiempo. El cobro llega solo a mi cuenta cada mes. No tengo que hacer nada.',
+    text: 'El plan mensual fijo es genial. Sabés cuánto pagás y ya. El cobro llega solo a mi cuenta cada mes. No tengo que hacer nada.',
     stars: 5,
   },
   {
@@ -90,16 +90,16 @@ const STATS = [
   { value: '24/7',    label: 'Disponibilidad del sistema' },
 ]
 
-// Países activos con equivalencia de $1 USD
+// Países activos con precio mensual del plan
 const COUNTRIES = [
-  { flag: '🇲🇽', name: 'México',    currency: 'MXN', rate: '~$18 MXN' },
-  { flag: '🇨🇴', name: 'Colombia',  currency: 'COP', rate: '~$4.200 COP' },
-  { flag: '🇦🇷', name: 'Argentina', currency: 'ARS', rate: '~$950 ARS' },
-  { flag: '🇨🇱', name: 'Chile',     currency: 'CLP', rate: '~$960 CLP' },
-  { flag: '🇵🇪', name: 'Perú',      currency: 'PEN', rate: '~S/ 3,7' },
-  { flag: '🇺🇾', name: 'Uruguay',   currency: 'UYU', rate: '~$39 UYU' },
-  { flag: '🇨🇷', name: 'Costa Rica',currency: 'CRC', rate: '~₡530 CRC' },
-  { flag: '🇵🇦', name: 'Panamá',    currency: 'USD', rate: '$1 USD' },
+  { flag: '🇲🇽', name: 'México',    currency: 'MXN', rate: '~$1,350 MXN/mes' },
+  { flag: '🇨🇴', name: 'Colombia',  currency: 'COP', rate: '~$315K COP/mes' },
+  { flag: '🇦🇷', name: 'Argentina', currency: 'ARS', rate: '~$71K ARS/mes' },
+  { flag: '🇨🇱', name: 'Chile',     currency: 'CLP', rate: '~$72K CLP/mes' },
+  { flag: '🇵🇪', name: 'Perú',      currency: 'PEN', rate: '~S/ 280/mes' },
+  { flag: '🇺🇾', name: 'Uruguay',   currency: 'UYU', rate: '~$2,950 UYU/mes' },
+  { flag: '🇨🇷', name: 'Costa Rica',currency: 'CRC', rate: '₡35,000/mes' },
+  { flag: '🇵🇦', name: 'Panamá',    currency: 'USD', rate: '$75 USD/mes' },
 ]
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
@@ -186,12 +186,77 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Pricing Calculator ──────────────────────────────────────────────────────
+function PricingCalculator() {
+  const [reservas, setReservas] = useState(120)
+  const planUSD = 75
+  const costPerReserva = reservas > 0 ? (planUSD / reservas).toFixed(2) : '—'
+
+  return (
+    <div style={{ maxWidth: 960, margin: '20px auto 0', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(34,197,94,.2)', borderRadius: 22, padding: '28px 36px', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+        <span style={{ fontSize: 18 }}>🧮</span>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,.8)' }}>Calculá tu costo real</p>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
+        {/* Input */}
+        <div>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,.4)', marginBottom: 8 }}>Reservas mensuales aproximadas</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <input
+              type="range"
+              min={10}
+              max={500}
+              step={5}
+              value={reservas}
+              onChange={e => setReservas(Number(e.target.value))}
+              style={{ width: 160, accentColor: '#22c55e', cursor: 'pointer' }}
+            />
+            <input
+              type="number"
+              min={1}
+              max={9999}
+              value={reservas}
+              onChange={e => setReservas(Math.max(1, Number(e.target.value) || 1))}
+              style={{
+                width: 72, padding: '8px 10px', borderRadius: 10,
+                border: '1.5px solid rgba(34,197,94,.3)', background: 'rgba(255,255,255,.06)',
+                color: '#fff', fontSize: 18, fontWeight: 800, fontFamily: 'Outfit, sans-serif',
+                textAlign: 'center', outline: 'none',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Results */}
+        <div style={{ display: 'flex', gap: 36, flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Cobrás a tus clientes</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>Tu precio</p>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Le pagás a GolPlay</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#22c55e', fontFamily: 'Outfit, sans-serif' }}>${planUSD} USD</p>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', marginTop: 2 }}>fijo, sin importar cuántas</p>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Tu costo por reserva</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#4ade80', fontFamily: 'Outfit, sans-serif', transition: 'all .15s' }}>${costPerReserva}</p>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', marginTop: 2 }}>mientras más reservás, menos pagás</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function LandingPage() {
   return (
     <>
       <Head>
         <title>GolPlay — La plataforma deportiva de Latinoamérica</title>
-        <meta name="description" content="Gestión de reservas para complejos deportivos en toda LATAM. $1 USD por reserva, cobrado mensualmente en tu moneda local. Sin mensualidades fijas." />
+        <meta name="description" content="Gestión de reservas para complejos deportivos en toda LATAM. Plan mensual fijo desde $75 USD. 30 días gratis para empezar." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -253,7 +318,7 @@ export default function LandingPage() {
 
               {/* ✏️ Descripción con precio $1 USD */}
               <p style={{ fontSize: 18, color: 'rgba(255,255,255,.6)', lineHeight: 1.7, maxWidth: 460, marginBottom: 40, fontWeight: 400 }}>
-                GolPlay automatiza tus reservas, elimina el caos del WhatsApp y te da control total de tu negocio — por solo <strong style={{ color: '#fff' }}>$1 USD por reserva</strong>, cobrado mensualmente en tu moneda local.
+                GolPlay automatiza tus reservas, elimina el caos del WhatsApp y te da control total de tu negocio — con un <strong style={{ color: '#fff' }}>plan fijo mensual</strong> y 30 días gratis para que lo probés sin riesgo.
               </p>
 
               <div className="cta-btns" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 48 }}>
@@ -337,9 +402,9 @@ export default function LandingPage() {
 
               {/* ✏️ Floating card → cobro mensual en USD */}
               <div className="hero-card" style={{ position: 'absolute', bottom: 60, left: -28, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 14, padding: '12px 16px', backdropFilter: 'blur(12px)' }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', marginBottom: 3 }}>Factura mensual GolPlay</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>$84 USD</div>
-                <div style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>84 reservas · $1 c/u · cobro automático</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', marginBottom: 3 }}>Plan mensual GolPlay</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>₡35,000</div>
+                <div style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>Plan fijo · Reservas ilimitadas · 30 días gratis</div>
               </div>
             </div>
           </div>
@@ -354,7 +419,7 @@ export default function LandingPage() {
               <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 28px', borderRight: '1px solid rgba(255,255,255,.06)', whiteSpace: 'nowrap' }}>
                 <span style={{ fontSize: 18 }}>{c.flag}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.75)' }}>{c.name}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,.1)', padding: '2px 8px', borderRadius: 999 }}>{c.rate}/reserva</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,.1)', padding: '2px 8px', borderRadius: 999 }}>{c.rate}</span>
               </div>
             ))}
           </div>
@@ -397,7 +462,7 @@ export default function LandingPage() {
               { icon: '🤖', title: 'Automatización real',   desc: 'Las reservas llegan solas. El sistema confirma, notifica y registra sin que muevas un dedo.' },
               { icon: '🌎', title: 'Diseñado para LATAM',   desc: 'Operamos en 8 países. El cobro se convierte automáticamente a tu moneda local cada mes.' },
               { icon: '📊', title: 'Control de tu negocio', desc: 'Ingresos, ocupación, horarios pico. Datos reales para tomar mejores decisiones.' },
-              { icon: '💵', title: '$1 USD por reserva',     desc: 'Sin mensualidades fijas. Solo pagás por lo que generás. A más reservas, más crecés.' },
+              { icon: '💵', title: 'Plan fijo mensual',          desc: 'Sin cobro por reserva. Un solo monto mensual que incluye todo. 30 días gratis para empezar.' },
             ].map((item, i) => (
               <FadeIn key={item.title} delay={i * 80}>
                 <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 20, padding: 28, transition: 'border-color 0.2s, background 0.2s' }}
@@ -523,16 +588,16 @@ export default function LandingPage() {
                 <div style={{ position: 'absolute', top: 16, right: 16, background: '#22c55e', color: '#0a0a0a', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 999, letterSpacing: '0.05em' }}>ÚNICO PLAN</div>
 
                 <div style={{ marginBottom: 8 }}>
-                  <span style={{ fontSize: 64, fontWeight: 900, color: '#22c55e', fontFamily: 'Outfit, sans-serif', lineHeight: 1 }}>$1</span>
-                  <span style={{ fontSize: 20, color: 'rgba(255,255,255,.5)', marginLeft: 8 }}>USD</span>
+                  <span style={{ fontSize: 52, fontWeight: 900, color: '#22c55e', fontFamily: 'Outfit, sans-serif', lineHeight: 1 }}>$75</span>
+                  <span style={{ fontSize: 20, color: 'rgba(255,255,255,.5)', marginLeft: 8 }}>USD/mes</span>
                 </div>
-                <p style={{ fontSize: 15, color: 'rgba(255,255,255,.5)', marginBottom: 32 }}>por reserva · cobro mensual automático</p>
+                <p style={{ fontSize: 15, color: 'rgba(255,255,255,.5)', marginBottom: 32 }}>Plan fijo mensual · ₡35,000 en Costa Rica</p>
 
                 {[
-                  'Sin mensualidad fija',
-                  'Sin límite de reservas',
+                  '30 días gratis para empezar',
+                  'Reservas ilimitadas',
                   'Sin contratos ni permanencia',
-                  'Cobro en tu moneda local',
+                  'Precio en tu moneda local',
                   'Factura automática cada mes',
                   'Cancelá cuando quieras',
                 ].map(item => (
@@ -553,7 +618,7 @@ export default function LandingPage() {
             <FadeIn delay={120}>
               <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 24, padding: 36 }}>
                 <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
-                  Equivalencia en tu moneda
+                  Precio mensual en tu moneda
                 </p>
                 {COUNTRIES.map(c => (
                   <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
@@ -561,7 +626,7 @@ export default function LandingPage() {
                       <span style={{ fontSize: 17 }}>{c.flag}</span>
                       <span style={{ fontSize: 13, color: 'rgba(255,255,255,.7)' }}>{c.name}</span>
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', fontFamily: 'Outfit, sans-serif' }}>{c.rate}/reserva</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', fontFamily: 'Outfit, sans-serif' }}>{c.rate}</span>
                   </div>
                 ))}
                 <p style={{ fontSize: 11, color: 'rgba(255,255,255,.2)', marginTop: 16, lineHeight: 1.6 }}>
@@ -571,28 +636,9 @@ export default function LandingPage() {
             </FadeIn>
           </div>
 
-          {/* Ejemplo cálculo */}
+          {/* Calculadora interactiva */}
           <FadeIn delay={200}>
-            <div style={{ maxWidth: 960, margin: '20px auto 0', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 18, padding: '22px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
-              <div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Si este mes procesás</p>
-                <p style={{ fontSize: 22, fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>120 reservas</p>
-              </div>
-              <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Cobrás a tus clientes</p>
-                  <p style={{ fontSize: 24, fontWeight: 900, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>Tu precio</p>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Le pagás a GolPlay</p>
-                  <p style={{ fontSize: 24, fontWeight: 900, color: '#22c55e', fontFamily: 'Outfit, sans-serif' }}>$120 USD</p>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 4 }}>Costo unitario</p>
-                  <p style={{ fontSize: 24, fontWeight: 900, color: '#4ade80', fontFamily: 'Outfit, sans-serif' }}>$1 USD</p>
-                </div>
-              </div>
-            </div>
+            <PricingCalculator />
           </FadeIn>
         </div>
       </section>
@@ -637,7 +683,7 @@ export default function LandingPage() {
           <FadeIn>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,.12)', border: '1px solid rgba(34,197,94,.25)', borderRadius: 999, padding: '6px 16px', marginBottom: 28 }}>
               <Zap size={13} color="#22c55e" fill="#22c55e" />
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', letterSpacing: '0.05em' }}>🌎 8 PAÍSES · $1 USD POR RESERVA · COBRO MENSUAL</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', letterSpacing: '0.05em' }}>🌎 8 PAÍSES · PLAN FIJO MENSUAL · 30 DÍAS GRATIS</span>
             </div>
 
             <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.04em', marginBottom: 24 }}>
@@ -653,14 +699,14 @@ export default function LandingPage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 48px rgba(34,197,94,.65)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 0 48px rgba(34,197,94,.5)' }}
               >Empezar gratis ahora <ArrowRight size={18} /></Link>
-              <a href="mailto:hola@golplay.io" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.85)', padding: '17px 32px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 600, border: '1px solid rgba(255,255,255,.15)', transition: 'background 0.2s' }}
+              <a href="mailto:hola@golplay.app" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.85)', padding: '17px 32px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 600, border: '1px solid rgba(255,255,255,.15)', transition: 'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.12)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}
               >Hablar con el equipo</a>
             </div>
 
             <p style={{ marginTop: 28, fontSize: 13, color: 'rgba(255,255,255,.3)' }}>
-              Sin tarjeta para empezar · $1 USD por reserva · Cancelá cuando quieras
+              Sin tarjeta para empezar · 30 días gratis · Cancelá cuando quieras
             </p>
           </FadeIn>
         </div>
@@ -683,7 +729,7 @@ export default function LandingPage() {
       {/* Mobile sticky CTA */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px 20px', background: 'linear-gradient(to top, rgba(5,10,5,1) 60%, transparent)', display: 'none' }} className="mobile-cta">
         <Link href="/register" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, background: '#22c55e', color: '#0a0a0a', padding: '15px', borderRadius: 14, textDecoration: 'none', fontSize: 16, fontWeight: 800, width: '100%', boxShadow: '0 0 32px rgba(34,197,94,.4)' }}>
-          Empezar gratis · $1 por reserva <ArrowRight size={16} />
+          Empezar gratis · 30 días sin costo <ArrowRight size={16} />
         </Link>
       </div>
 

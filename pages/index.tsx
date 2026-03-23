@@ -4,7 +4,7 @@
  * Rediseño completo mobile-first.
  * - Datos reales de Supabase (fields + field_images)
  * - Sin QR ni WhatsApp en el flujo, solo confirmación por correo
- * - Modelo de negocio: comisión al complejo ($1/reserva), gratis para jugadores
+ * - Modelo de negocio: plan fijo mensual, gratis para jugadores
  * - Logo desde /logo-golplay.svg
  */
 
@@ -201,6 +201,8 @@ body {
 }
 .nav__link--dk  { color:rgba(255,255,255,.65); }
 .nav__link--dk:hover { color:#fff; background:rgba(255,255,255,.09); }
+.nav__link--dk.nav__link--keep { color:#fff; font-weight:600; border:1px solid rgba(255,255,255,.2); border-radius:10px; }
+.nav__link--dk.nav__link--keep:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35); }
 .nav__link--lt  { color:var(--ink2); }
 .nav__link--lt:hover { background:rgba(0,0,0,.05); }
 .nav__cta {
@@ -421,14 +423,29 @@ body {
 .gp-swiper .swiper-slide { width:auto!important; }
 .gp-swiper .swiper-button-next,
 .gp-swiper .swiper-button-prev {
-  color:var(--g6)!important; background:var(--white);
-  width:32px!important; height:32px!important;
-  border-radius:50%; box-shadow:var(--sh-sm);
-  border:1.5px solid var(--bd); top:34%!important;
+  color:var(--g7)!important;
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(12px);
+  width:36px!important; height:36px!important;
+  border-radius:50%;
+  box-shadow:0 2px 12px rgba(0,0,0,.1), 0 0 0 1px rgba(0,0,0,.04);
+  border:none!important;
+  top:42%!important;
+  transition: all .2s ease;
 }
+.gp-swiper .swiper-button-next:hover,
+.gp-swiper .swiper-button-prev:hover {
+  background:var(--white)!important;
+  box-shadow:0 4px 20px rgba(0,0,0,.15), 0 0 0 1px rgba(0,0,0,.06);
+  transform:scale(1.06);
+}
+.gp-swiper .swiper-button-next:active,
+.gp-swiper .swiper-button-prev:active { transform:scale(.96); }
+.gp-swiper .swiper-button-next { right:-4px!important; }
+.gp-swiper .swiper-button-prev { left:-4px!important; }
 .gp-swiper .swiper-button-next::after,
-.gp-swiper .swiper-button-prev::after { font-size:10px!important; font-weight:900!important; }
-.gp-swiper .swiper-button-disabled { opacity:.15!important; }
+.gp-swiper .swiper-button-prev::after { font-size:12px!important; font-weight:900!important; color:var(--g7)!important; }
+.gp-swiper .swiper-button-disabled { opacity:0!important; pointer-events:none; }
 
 /* ── Step card ───────────────────────────────────────────────── */
 .step {
@@ -606,9 +623,11 @@ body {
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width:768px) {
-  .nav__links  { display:none!important; }
+  .nav__links  { gap:4px!important; }
+  .nav__link   { display:none!important; }
+  .nav__link--keep { display:flex!important; }
+  .nav__cta    { display:flex!important; }
   .nav__mcta   { display:flex!important; }
-  .sticky-cta  { display:block!important; }
 
   .search-fields    { flex-direction:column!important; }
   .sf               { min-height:46px; }
@@ -969,7 +988,7 @@ function Navbar({ dark }: { dark: boolean }) {
       ) : (
         <div className="nav__links">
           <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Canchas</Link>
-          <Link href="/login"   className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Iniciar sesión</Link>
+          <Link href="/login"   className={`nav__link nav__link--keep ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Iniciar sesión</Link>
           <Link href="/register" className="nav__cta">Registrarse</Link>
         </div>
       )}
@@ -995,6 +1014,7 @@ export default function Home() {
 
   const [modal, setModal] = useState<null | 'date' | 'hour'>(null)
   const [showSticky, setShowSticky] = useState(false)
+  const [liveBookingCount, setLiveBookingCount] = useState<number | null>(null)
   const heroRef = useRef<HTMLElement>(null)
 
   const qText  = (router.query.q     as string) ?? ''
@@ -1013,6 +1033,17 @@ export default function Home() {
     const fn = () => setShowSticky((heroRef.current?.getBoundingClientRect().bottom ?? 0) < 62)
     window.addEventListener('scroll', fn, {passive:true})
     return () => window.removeEventListener('scroll', fn)
+  }, [])
+
+  // Live booking count
+  useEffect(() => {
+    ;(async () => {
+      const { count } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .in('status', ['confirmed', 'pending'])
+      setLiveBookingCount(count ?? 0)
+    })()
   }, [])
 
   // Toast
@@ -1143,7 +1174,7 @@ export default function Home() {
             <div className="hero__left">
               <div className="live-badge">
                 <span className="live-badge__dot"/>
-                <span className="live-badge__text">+500 reservas · Disponible en 8 países LATAM</span>
+                <span className="live-badge__text">{liveBookingCount !== null ? `+${liveBookingCount.toLocaleString()} reservas` : 'Reservas en tiempo real'} · Disponible en 8 países LATAM</span>
               </div>
 
               <h1 className="hero__h1">
@@ -1468,41 +1499,6 @@ export default function Home() {
       )}
 
       {/* ══════════════════════════════════════════════════════════
-          TESTIMONIOS
-      ══════════════════════════════════════════════════════════ */}
-      {!hasFilters && (
-        <section className="sp-sec" style={{background:'var(--dark)', paddingLeft:0, paddingRight:0}}>
-          <FadeIn style={{padding:'0 clamp(16px,4vw,40px) 28px'}}>
-            <p className="eyebrow eyebrow--lt">Lo que dicen</p>
-            <h2 className="h2 h2--lt">+250 jugadores<br/><em>ya reservaron</em></h2>
-          </FadeIn>
-          <div style={{overflow:'hidden'}}>
-            <div style={{display:'flex', animation:'marqueeGo 28s linear infinite', width:'max-content', gap:12, padding:'0 6px'}}>
-              {[...Array(2)].flatMap(() => [
-                { name:'Andrés M.', loc:'San José, CR', text:'Reservé en 2 minutos desde el celular. Llegué, jugué, no tuve que hablar con nadie.' },
-                { name:'Sofía V.',  loc:'Heredia, CR',  text:'Los horarios son reales. Nunca más llegué y encontré la cancha ocupada.' },
-                { name:'Martín F.', loc:'Cartago, CR',  text:'Encontré una cancha de pádel cerca que ni conocía. La reservé mientras esperaba el bus.' },
-                { name:'Carlos R.', loc:'San José, CR',      text:'El correo de confirmación llegó al instante. Súper profesional y sin complicaciones.' },
-                { name:'Valeria T.', loc:'Alajuela, CR',   text:'Comparé 4 canchas en 2 minutos y encontré la mejor del barrio. Excelente.' },
-              ].map((r, i) => (
-                <div key={`${r.name}-${i}`} className="review">
-                  <div className="review__stars">★★★★★</div>
-                  <p className="review__text">"{r.text}"</p>
-                  <div style={{display:'flex', alignItems:'center', gap:8, paddingTop:10, borderTop:'1px solid rgba(255,255,255,.06)'}}>
-                    <div className="review__av">{r.name[0]}</div>
-                    <div>
-                      <p style={{fontSize:12, fontWeight:700, color:'rgba(255,255,255,.75)'}}>{r.name}</p>
-                      <p style={{fontSize:10, color:'rgba(255,255,255,.3)'}}>{r.loc}</p>
-                    </div>
-                  </div>
-                </div>
-              )))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════
           STATS
       ══════════════════════════════════════════════════════════ */}
       {!hasFilters && (
@@ -1511,9 +1507,9 @@ export default function Home() {
             <FadeIn>
               <div className="stat-row" style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2, background:'var(--bd)', borderRadius:20, overflow:'hidden'}}>
                 {[
-                  {n:'+500', l:'Reservas completadas', s:'Disponible en toda LATAM'},
-                  {n:'4.9 ★',   l:'Valoración promedio',  s:'de +300 reseñas'},
+                  {n: liveBookingCount !== null ? `+${liveBookingCount.toLocaleString()}` : '—', l:'Reservas gestionadas', s:'En tiempo real'},
                   {n:'8',       l:'Países activos',        s:'y en crecimiento'},
+                  {n:'24/7',    l:'Siempre disponible',    s:'Reserva online'},
                 ].map(s => (
                   <div key={s.l} style={{background:'var(--white)', padding:'24px 16px', textAlign:'center'}}>
                     <p style={{fontFamily:'var(--font-d)', fontSize:28, fontWeight:800, color:'var(--g6)', marginBottom:3, letterSpacing:'-.02em'}}>{s.n}</p>
@@ -1574,7 +1570,7 @@ export default function Home() {
                   <span style={{color:'var(--g4)'}}>Automatizá todo.</span>
                 </h2>
                 <p style={{fontSize:13, color:'rgba(255,255,255,.42)', lineHeight:1.75, marginBottom:20, maxWidth:340}}>
-                  Miles de jugadores buscan canchas en tu zona. Recibí reservas automáticas 24/7 sin el caos del WhatsApp. Vos solo jugás, nosotros gestionamos. GolPlay cobra <strong style={{color:'rgba(255,255,255,.65)'}}>por reserva confirmada</strong> — sin costos fijos.
+                  Miles de jugadores buscan canchas en tu zona. Recibí reservas automáticas 24/7 sin el caos del WhatsApp. Vos solo jugás, nosotros gestionamos. <strong style={{color:'rgba(255,255,255,.65)'}}>Plan fijo mensual</strong> — 30 días gratis para empezar.
                 </p>
                 <div style={{display:'flex', flexDirection:'column', gap:9, marginBottom:24}}>
                   {[
@@ -1711,18 +1707,6 @@ export default function Home() {
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
         </svg>
       </a>
-
-      {/* ══════════════════════════════════════════════════════════
-          STICKY CTA — mobile
-      ══════════════════════════════════════════════════════════ */}
-      <div className="sticky-cta" style={{display: showSticky ? undefined : 'none'}}>
-        <button className="sticky-cta__btn" onClick={scrollToCanchas}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" style={{flexShrink:0}}>
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          Buscar canchas disponibles
-        </button>
-      </div>
 
       {/* Toast */}
       {showToast && (

@@ -24,6 +24,8 @@ type Field = {
   location: string
   sport: string | null
   image: string | null
+  complexName: string | null
+  complexWhatsapp: string | null
 }
 
 type Availability = {
@@ -274,7 +276,7 @@ const CSS = `
 
   /* Grid */
   .results-grid {
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(320px,1fr));
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr));
     gap:20px; align-items:start;
   }
 
@@ -317,11 +319,15 @@ const CSS = `
 
   @media (max-width:768px) {
     .nav { padding:0 16px; }
-    .nav__links { display:none; }
+    .nav__links { gap:4px!important; }
+    .nav__link { display:none; }
+    .nav__link--login { display:flex!important; color:#fff!important; font-weight:600!important; border:1px solid rgba(255,255,255,.2); border-radius:8px; }
+    .nav__cta { display:flex!important; }
     .filter-bar { padding:12px 16px; }
     .desktop-pills { display:none!important; }
     .mobile-filter-btn { display:inline-flex!important; }
     .main-pad { padding:24px 16px 60px!important; }
+    .results-grid { grid-template-columns:1fr!important; }
   }
   @media (min-width:769px) { .mobile-filter-btn { display:none!important; } }
 `
@@ -437,19 +443,19 @@ function FieldCard({ field, availableHours, queryHour, queryDate, index }: {
       aria-label={`Ver cancha ${field.name}`}
     >
       {/* Image */}
-      <div style={{ position: 'relative', height: 196, background: 'linear-gradient(135deg,#0a1a10,#071210)', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ position: 'relative', height: 220, background: 'linear-gradient(135deg,#0a1a10,#071210)', overflow: 'hidden', flexShrink: 0 }}>
         {field.image
           ? <Image src={field.image} alt={field.name} fill sizes="400px"
               style={{ objectFit: 'cover', transition: 'transform .5s ease', opacity: .9 }} loading="lazy" />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 72, opacity: .12 }}>⚽</div>
         }
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.1) 55%, transparent 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.15) 50%, transparent 100%)' }} />
 
         {sport && (
           <span style={{
             position: 'absolute', top: 12, left: 12,
             background: sport.bg, color: sport.color,
-            fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999,
+            fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 999,
             fontFamily: 'var(--font-h)', letterSpacing: '.06em', textTransform: 'uppercase',
             backdropFilter: 'blur(8px)',
           }}>
@@ -471,8 +477,14 @@ function FieldCard({ field, availableHours, queryHour, queryDate, index }: {
           {isAvail ? 'Disponible' : 'Ocupada'}
         </span>
 
-        <div style={{ position: 'absolute', bottom: 12, right: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-h)', background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(10px)', padding: '5px 12px', borderRadius: 999, border: '1px solid rgba(255,255,255,.12)' }}>
+        {/* Price + complex name at bottom of image */}
+        <div style={{ position: 'absolute', bottom: 12, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          {field.complexName && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.6)', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              🏟️ {field.complexName}
+            </span>
+          )}
+          <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-h)', background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(10px)', padding: '5px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,.12)', marginLeft: 'auto' }}>
             {fmt(field.price_day)}<span style={{ fontSize: 11, fontWeight: 500, opacity: .7 }}>/hr</span>
           </span>
         </div>
@@ -720,7 +732,7 @@ export default function ReserveIndex() {
         const [{ data: fieldsData, error }, { data: images }] = await Promise.all([
           supabase
             .from('fields')
-            .select('id, name, price_day, location, sport')
+            .select('id, name, price_day, location, sport, complex_id, complexes:complex_id (name, whatsapp)')
             .eq('active', true)
             .order('name'),
           supabase
@@ -730,13 +742,15 @@ export default function ReserveIndex() {
         if (error || !fieldsData) throw error
 
         const map = new Map<number, Field>()
-        fieldsData.forEach(f => map.set(f.id, {
+        fieldsData.forEach((f: any) => map.set(f.id, {
           id:        f.id,
           name:      f.name,
           price_day: Number(f.price_day ?? 0),
           location:  f.location ?? 'Sin ubicación',
           sport:     f.sport ?? null,
           image:     null,
+          complexName: f.complexes?.name ?? null,
+          complexWhatsapp: f.complexes?.whatsapp ?? null,
         }))
         images?.forEach(img => {
           const f = map.get(img.field_id)
@@ -817,10 +831,9 @@ export default function ReserveIndex() {
         </Link>
         <div className="nav__links">
           <Link href="/reserve" className="nav__link" style={{ color: 'var(--g4)', fontWeight: 700 }}>Canchas</Link>
-          <Link href="/join"    className="nav__link">Publicá tu cancha</Link>
-          <Link href="/about"   className="nav__link">Nosotros</Link>
+          <Link href="/login" className="nav__link nav__link--login">Iniciar sesión</Link>
+          <Link href="/register" className="nav__cta">Registrarse</Link>
         </div>
-        <Link href="/join" className="nav__cta">Publicá tu cancha</Link>
       </nav>
 
       {/* Filter bar */}
@@ -1026,16 +1039,16 @@ export default function ReserveIndex() {
 
         {!loading && !loadError && filtered.length === 0 && (
           <div className="state-box">
-            <div style={{ fontSize: 60, marginBottom: 16 }}>🏟️</div>
+            <div style={{ fontSize: 64, marginBottom: 16 }}>🏟️</div>
             <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 24, fontWeight: 800, color: 'var(--text)', marginBottom: 10, letterSpacing: '-.02em' }}>
-              No encontramos canchas disponibles
+              No encontramos canchas
             </h2>
             <p style={{ fontSize: 14, color: 'var(--muted)', maxWidth: 380, margin: '0 auto 28px', lineHeight: 1.7 }}>
-              {activeCount > 0 ? 'No hay canchas con estos filtros. Probá ampliar la búsqueda.' : 'Aún no hay canchas publicadas en la plataforma.'}
+              {activeCount > 0 ? 'Probá cambiando los filtros o ampliando la búsqueda.' : 'Aún no hay canchas publicadas. ¡Pronto habrá más!'}
             </p>
             {activeCount > 0 && (
               <button onClick={clearAll}
-                style={{ padding: '12px 28px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 14, letterSpacing: '.03em', boxShadow: '0 3px 20px rgba(34,197,94,.3)' }}>
+                style={{ padding: '13px 32px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 14, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 14, letterSpacing: '.03em', boxShadow: '0 3px 20px rgba(34,197,94,.3)', transition: 'all .15s' }}>
                 Limpiar filtros
               </button>
             )}
@@ -1088,18 +1101,18 @@ export default function ReserveIndex() {
           </div>
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Información</p>
-            {[{ href: '/about', label: 'Sobre GolPlay' }, { href: '/join', label: 'Publicá tu cancha' }, { href: '/terms', label: 'Términos' }, { href: '/privacy', label: 'Privacidad' }].map(({ href, label }) => (
+            {[{ href: '/terms', label: 'Términos de uso' }, { href: '/privacy', label: 'Privacidad' }, { href: '/register?type=owner', label: 'Registrar complejo' }, { href: '/login', label: 'Iniciar sesión' }].map(({ href, label }) => (
               <Link key={href} href={href} style={{ display: 'block', fontSize: 13, color: 'var(--muted)', textDecoration: 'none', marginBottom: 8 }}>{label}</Link>
             ))}
           </div>
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Contacto</p>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>soporte@golplay.com</p>
-            <p style={{ fontSize: 13, color: 'var(--muted)' }}>Costa Rica</p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>soporte@golplay.app</p>
+            <p style={{ fontSize: 13, color: 'var(--muted)' }}>Costa Rica 🇨🇷</p>
           </div>
         </div>
         <div style={{ maxWidth: 1280, margin: '24px auto 0', paddingTop: 20, borderTop: '1px solid var(--bd)', textAlign: 'center' }}>
-          <p style={{ fontSize: 12, color: 'var(--muted2)' }}>© {new Date().getFullYear()} GolPlay. Todos los derechos reservados.</p>
+          <p style={{ fontSize: 12, color: 'var(--muted2)' }}>© {new Date().getFullYear()} GolPlay · golplay.app</p>
         </div>
       </footer>
     </>

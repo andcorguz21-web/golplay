@@ -333,6 +333,7 @@ const CSS = `
   .cal-day.sel    { background:var(--g500)!important; color:#fff!important; font-weight:700; border-radius:10px; }
   .cal-day.out    { color:#d0d8cf; }
   .cal-day:disabled { color:#dce4da; cursor:default; }
+  .cal-day.closed { color:#ef4444!important; text-decoration:line-through; cursor:not-allowed; opacity:.5; }
 
   /* ── Hour buttons ────────────────────────────────────────── */
   .hour-btn {
@@ -499,7 +500,25 @@ const CSS = `
   @media (max-width:480px) {
     .nav { padding:0 16px; }
     .nav__links { display:none; }
+    .wa-bubble { bottom:16px!important; right:16px!important; width:50px!important; height:50px!important; }
+    .wa-bubble svg { width:24px!important; height:24px!important; }
   }
+
+  /* WhatsApp bubble */
+  .wa-bubble {
+    position:fixed; bottom:24px; right:24px; z-index:90;
+    width:56px; height:56px; border-radius:50%;
+    background:#25D366; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 20px rgba(37,211,102,.4);
+    transition: transform .2s, box-shadow .2s;
+    animation: waFloat 3s ease-in-out infinite;
+    text-decoration:none;
+  }
+  .wa-bubble:hover {
+    transform:scale(1.1)!important;
+    box-shadow:0 6px 28px rgba(37,211,102,.55);
+  }
+  @keyframes waFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 `
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -516,7 +535,7 @@ function Spinner() {
   )
 }
 
-function DatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function DatePicker({ value, onChange, closedDates }: { value: string; onChange: (v: string) => void; closedDates?: Set<string> }) {
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const init  = value ? (() => { const [y,m,d]=value.split('-').map(Number); return new Date(y,m-1,d) })() : today
   const [view, setView] = useState(new Date(init.getFullYear(), init.getMonth(), 1))
@@ -539,12 +558,15 @@ function DatePicker({ value, onChange }: { value: string; onChange: (v: string) 
           const dt    = new Date(view.getFullYear(), view.getMonth(), day)
           const isPast = dt < today
           const str   = dateToStr(dt)
+          const isClosed = closedDates?.has(str) ?? false
+          const isDisabled = isPast || isClosed
           const isSel = sel ? str === dateToStr(sel) : false
           const isTod = str === dateToStr(today)
           return (
-            <button key={day} type="button" disabled={isPast}
-              className={`cal-day${isTod?' today':''}${isSel?' sel':''}`}
+            <button key={day} type="button" disabled={isDisabled}
+              className={`cal-day${isTod?' today':''}${isSel?' sel':''}${isClosed?' closed':''}`}
               onClick={() => onChange(str)}
+              title={isClosed ? 'Cerrado' : undefined}
             >{day}</button>
           )
         })}
@@ -609,6 +631,9 @@ export default function ReserveField() {
   )
   const [holdSecondsLeft, setHoldSecondsLeft] = useState<number | null>(null)
   const [fieldRates, setFieldRates] = useState<any[]>([])
+  const [complexWhatsapp, setComplexWhatsapp] = useState<string | null>(null)
+  const [complexPhone, setComplexPhone] = useState<string | null>(null)
+  const [closedDates, setClosedDates] = useState<Set<string>>(new Set())
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const heroRef  = useRef<HTMLDivElement>(null)
@@ -657,6 +682,35 @@ export default function ReserveField() {
           .select('day_of_week, start_time, end_time, price')
           .eq('field_id', fieldId)
         setFieldRates(rates || [])
+
+        // Load complex info (whatsapp, phone) via fields → owner → complexes
+        const { data: fieldOwner } = await supabase
+          .from('fields')
+          .select('owner_id')
+          .eq('id', fieldId)
+          .single()
+        if (fieldOwner?.owner_id) {
+          const { data: cx } = await supabase
+            .from('complexes')
+            .select('id, whatsapp, phone')
+            .eq('owner_id', fieldOwner.owner_id)
+            .limit(1)
+            .single()
+          if (cx) {
+            setComplexWhatsapp(cx.whatsapp || null)
+            setComplexPhone(cx.phone || null)
+
+            // Load closed dates for this field + complex-wide
+            const today = new Date().toISOString().split('T')[0]
+            const { data: closed } = await supabase
+              .from('closed_dates')
+              .select('date')
+              .eq('complex_id', cx.id)
+              .or(`field_id.eq.${fieldId},field_id.is.null`)
+              .gte('date', today)
+            setClosedDates(new Set((closed ?? []).map((d: any) => d.date)))
+          }
+        }
       } catch { setLoadError(true) }
       finally  { setLoading(false) }
     })()
@@ -1204,7 +1258,7 @@ export default function ReserveField() {
 
                 {/* ── Calendar ─────────────────────────────────────────────── */}
                 <div style={{ border: '1.5px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 18 }}>
-                  <DatePicker value={selDate} onChange={handleDateChange}/>
+                  <DatePicker value={selDate} onChange={handleDateChange} closedDates={closedDates}/>
                   {selDate && (
                     <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--g700)', fontFamily: 'var(--font-h)' }}>
@@ -1351,6 +1405,19 @@ export default function ReserveField() {
                         <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>por {field.slot_duration === 2 ? 'bloque' : 'hora'}</p>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* ── FUT11 deposit notice ──────────────────────────────── */}
+                {field.sport === 'futbol11' && selDate && selHour && (
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 10,
+                    background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)',
+                    fontSize: 12, color: '#92400e', fontWeight: 600, marginBottom: 4,
+                    display: 'flex', alignItems: 'flex-start', gap: 8, lineHeight: 1.5,
+                  }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+                    <span>Para confirmar la reserva de cancha FUT11, se requiere un adelanto del <strong>50%</strong> del monto total ({fmt(Math.round(price / 2))}). El complejo se pondrá en contacto para coordinar el pago.</span>
                   </div>
                 )}
 
@@ -1504,6 +1571,21 @@ export default function ReserveField() {
             )}
           </div>
         </div>
+      )}
+
+      {/* ── WhatsApp Floating Bubble ── */}
+      {complexWhatsapp && (
+        <a
+          href={`https://wa.me/${complexWhatsapp.replace(/[^0-9]/g, '')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Escribinos por WhatsApp"
+          className="wa-bubble"
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+        </a>
       )}
     </>
   )

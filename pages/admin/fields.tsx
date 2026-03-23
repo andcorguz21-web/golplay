@@ -4,6 +4,8 @@ import { useRouter } from 'next/router'
 import AdminLayout from '@/components/ui/admin/AdminLayout'
 import TermsModal from '@/components/ui/TermsModal'
 import RecurringBookings from '@/components/ui/admin/RecurringBookings'
+import ClosedDates from '@/components/ui/admin/ClosedDates'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -119,6 +121,7 @@ export default function AdminFields() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [ownerCountry, setOwnerCountry] = useState<string>('CR')
+  const [complexId, setComplexId] = useState<number | null>(null)
 
   // Data
   const [fields,  setFields]  = useState<Field[]>([])
@@ -173,6 +176,15 @@ export default function AdminFields() {
         .eq('id', data.user.id)
         .single()
       if (profile?.country) setOwnerCountry(profile.country)
+
+      // Load complex ID
+      const { data: cx } = await supabase
+        .from('complexes')
+        .select('id')
+        .eq('owner_id', data.user.id)
+        .limit(1)
+        .single()
+      if (cx) setComplexId(cx.id)
     })
   }, [router])
 
@@ -954,6 +966,18 @@ export default function AdminFields() {
               <RecurringBookings fieldId={editingId} ownerId={userId} />
             </div>
           )}
+
+          {/* Días cerrados — solo si estamos editando una cancha existente */}
+          {editingId && complexId && (
+            <div style={{ padding: '0 24px 20px' }}>
+              <div style={{ height: 1, background: '#f1f5f9', margin: '0 0 20px' }} />
+              <ClosedDates
+                complexId={complexId}
+                fieldId={editingId}
+                fieldName={fName}
+              />
+            </div>
+          )}
         </div>
 
         {/* Drawer footer */}
@@ -985,6 +1009,8 @@ export default function AdminFields() {
             Agregar cancha
           </button>
         </div>
+
+        <ValidationBanner />
 
         {/* Filters */}
         <div className="f-filters">
