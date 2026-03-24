@@ -105,6 +105,7 @@ export default function AdminBookings() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [fromDate,     setFromDate]     = useState('')
   const [toDate,       setToDate]       = useState('')
+  const [createdFilter, setCreatedFilter] = useState<'' | 'today' | 'yesterday'>('')
   const [sortKey,      setSortKey]      = useState<SortKey>('date')
   const [sortDir,      setSortDir]      = useState<SortDir>('desc')
 
@@ -164,7 +165,7 @@ export default function AdminBookings() {
     let q = supabase
       .from('bookings')
       .select(
-        'id, date, hour, status, price, source, field_id, customer_name, customer_last_name, customer_phone, customer_email, customer_id_number, notes',
+        'id, date, hour, status, price, source, field_id, customer_name, customer_last_name, customer_phone, customer_email, customer_id_number, notes, created_at',
         { count: 'exact' }
       )
       .in('field_id', filterField !== 'all' ? [Number(filterField)] : fieldIds)
@@ -178,9 +179,18 @@ export default function AdminBookings() {
     // Status filter
     if (filterStatus !== 'all') q = q.eq('status', filterStatus)
 
-    // Date range
+    // Date range (fecha de la reserva)
     if (fromDate) q = q.gte('date', fromDate)
     if (toDate)   q = q.lte('date', toDate)
+
+    // Created filter (fecha de creación)
+    if (createdFilter === 'today') {
+      q = q.gte('created_at', today + 'T00:00:00').lte('created_at', today + 'T23:59:59')
+    } else if (createdFilter === 'yesterday') {
+      const yd = new Date(); yd.setDate(yd.getDate() - 1)
+      const yStr = yd.toISOString().split('T')[0]
+      q = q.gte('created_at', yStr + 'T00:00:00').lte('created_at', yStr + 'T23:59:59')
+    }
 
     // Search (server-side ilike on customer_name)
     if (search.trim()) {
@@ -237,7 +247,7 @@ export default function AdminBookings() {
 
     setBookings(detectConflicts(raw))
     setLoading(false)
-  }, [ready, userId, fields, fromDate, toDate, tab, filterField, filterStatus, search, sortKey, sortDir, page])
+  }, [ready, userId, fields, fromDate, toDate, createdFilter, tab, filterField, filterStatus, search, sortKey, sortDir, page])
 
   useEffect(() => { load() }, [load])
 
@@ -361,7 +371,7 @@ export default function AdminBookings() {
   const today = todayStr()
 
   // Reset page when filters change
-  useEffect(() => { setPage(0) }, [tab, filterField, filterStatus, search, fromDate, toDate, sortKey, sortDir])
+  useEffect(() => { setPage(0) }, [tab, filterField, filterStatus, search, fromDate, toDate, createdFilter, sortKey, sortDir])
 
   const counts = useMemo(() => ({
     all:       totalCount,
@@ -395,10 +405,10 @@ export default function AdminBookings() {
 
   const clearFilters = () => {
     setSearch(''); setFilterField('all'); setFilterStatus('all')
-    setFromDate(''); setToDate('')
+    setFromDate(''); setToDate(''); setCreatedFilter('')
   }
 
-  const hasFilters = !!(search || filterField !== 'all' || filterStatus !== 'all' || fromDate || toDate)
+  const hasFilters = !!(search || filterField !== 'all' || filterStatus !== 'all' || fromDate || toDate || createdFilter)
 
   if (!ready) return null
 
@@ -500,6 +510,21 @@ export default function AdminBookings() {
               value={toDate} onChange={e => setToDate(e.target.value)}
               aria-label="Hasta"
             />
+          </div>
+
+          <div className="bk-created-btns">
+            <button
+              className={`bk-created-btn ${createdFilter === 'today' ? 'bk-created-btn--active' : ''}`}
+              onClick={() => setCreatedFilter(createdFilter === 'today' ? '' : 'today')}
+            >
+              🕐 Creadas hoy
+            </button>
+            <button
+              className={`bk-created-btn ${createdFilter === 'yesterday' ? 'bk-created-btn--active' : ''}`}
+              onClick={() => setCreatedFilter(createdFilter === 'yesterday' ? '' : 'yesterday')}
+            >
+              🕐 Creadas ayer
+            </button>
           </div>
 
           {hasFilters && (
@@ -1084,6 +1109,12 @@ const CSS = `
 .bk-select:focus { border-color:#22c55e; }
 .bk-daterange { display:flex; align-items:center; gap:6px; }
 .bk-daterange__sep { font-size:11px; color:#cbd5e1; }
+
+.bk-created-btns { display:flex; gap:4px; }
+.bk-created-btn { padding:7px 12px; border-radius:9px; border:1.5px solid #e2e8f0; background:white; font-size:11px; font-weight:600; font-family:inherit; color:#64748b; cursor:pointer; transition:all .13s; white-space:nowrap; }
+.bk-created-btn:hover { border-color:#16a34a; color:#15803d; background:#f0fdf4; }
+.bk-created-btn--active { border-color:#16a34a; background:#16a34a; color:#fff; }
+.bk-created-btn--active:hover { background:#15803d; }
 .bk-dateinput { padding:7px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:12px; font-family:inherit; color:#374151; outline:none; }
 .bk-dateinput:focus { border-color:#22c55e; }
 
