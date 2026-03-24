@@ -251,7 +251,7 @@ const CSS = `
 .cx-fcard__img{position:relative;height:200px;overflow:hidden}.cx-fcard__img img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
 .cx-fcard:hover .cx-fcard__img img{transform:scale(1.08)}
 .cx-fcard__img-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(5,10,5,.5) 0%,transparent 50%)}
-.cx-fcard__sport{position:absolute;top:12px;left:12px;font-size:11px;font-weight:700;padding:5px 12px;border-radius:10px;backdrop-filter:blur(10px)}
+.cx-fcard__sport{position:absolute;top:12px;left:12px;font-size:11px;font-weight:700;padding:5px 12px;border-radius:10px;backdrop-filter:blur(10px);background:rgba(5,10,5,.7) !important;border:1px solid rgba(255,255,255,.1)}
 .cx-fcard__dur{position:absolute;top:12px;right:12px;font-size:10px;font-weight:800;color:#fff;background:rgba(0,0,0,.55);padding:4px 10px;border-radius:8px;backdrop-filter:blur(6px)}
 .cx-fcard__body{padding:18px 20px 20px}.cx-fcard__name{font-size:18px;font-weight:800;margin:0 0 6px;letter-spacing:-.02em}
 .cx-fcard__desc{font-size:12px;color:rgba(255,255,255,.4);margin:0 0 14px;line-height:1.5}

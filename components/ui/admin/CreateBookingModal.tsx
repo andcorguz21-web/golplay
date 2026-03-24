@@ -69,7 +69,7 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
   // Form
   const [fieldId, setFieldId] = useState<number | null>(null)
   const [date, setDate] = useState('')
-  const [hour, setHour] = useState('')
+  const [selectedHours, setSelectedHours] = useState<Set<string>>(new Set())
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -161,19 +161,19 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
   const selectedField = fields.find(f => f.id === fieldId) ?? null
 
   // ── Build time slots respecting slot_duration ──
-  const timeSlots = useMemo<TimeSlot[]>(() => {
+  const timeSlots = useMemo<(TimeSlot & { booked: boolean })[]>(() => {
     if (!selectedField) return []
     const dur = selectedField.slot_duration || 1
     const hours = (selectedField.hours?.length ? selectedField.hours : ALL_HOURS).sort()
 
     if (dur === 1) {
-      return hours
-        .filter(h => !bookedHours.has(h))
-        .map(h => ({ startHour: h, label: h, coveredHours: [h] }))
+      return hours.map(h => ({
+        startHour: h, label: h, coveredHours: [h], booked: bookedHours.has(h),
+      }))
     }
 
     // dur >= 2: group consecutive hours into blocks
-    const slots: TimeSlot[] = []
+    const slots: (TimeSlot & { booked: boolean })[] = []
     let i = 0
     while (i < hours.length) {
       const start = hours[i]
@@ -187,10 +187,8 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
       }
       if (valid && block.length === dur) {
         const anyBooked = block.some(h => bookedHours.has(h))
-        if (!anyBooked) {
-          const endLabel = `${String(startNum + dur).padStart(2, '0')}:00`
-          slots.push({ startHour: start, label: `${start} – ${endLabel}`, coveredHours: block })
-        }
+        const endLabel = `${String(startNum + dur).padStart(2, '0')}:00`
+        slots.push({ startHour: start, label: `${start} – ${endLabel}`, coveredHours: block, booked: anyBooked })
         i += dur
       } else {
         i++
@@ -199,60 +197,82 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
     return slots
   }, [selectedField, bookedHours])
 
-  // ── Price calculation: customer_pricing > field_rates > base ──
-  const { price, priceSource } = useMemo(() => {
-    if (!selectedField || !hour) return { price: 0, priceSource: '' }
-    const hourNum = Number(hour.split(':')[0])
+  // ── Toggle hour selection ──
+  const toggleHour = useCallback((startHour: string) => {
+    setSelectedHours(prev => {
+      const next = new Set(prev)
+      if (next.has(startHour)) next.delete(startHour)
+      else next.add(startHour)
+      return next
+    })
+  }, [])
+
+  // Select all available hours
+  const selectAllHours = useCallback(() => {
+    const available = timeSlots.filter(s => !s.booked).map(s => s.startHour)
+    setSelectedHours(new Set(available))
+  }, [timeSlots])
+
+  // Clear all selected
+  const clearHours = useCallback(() => setSelectedHours(new Set()), [])
+
+  // ── Price calculation: sums price for each selected hour ──
+  const { price, priceSource, priceBreakdown } = useMemo(() => {
+    if (!selectedField || selectedHours.size === 0) return { price: 0, priceSource: '', priceBreakdown: [] as { hour: string; price: number; source: string }[] }
+
     const nightFrom = selectedField.night_from_hour ?? 18
+    const breakdown: { hour: string; price: number; source: string }[] = []
 
-    // 1. Check customer_pricing (highest priority)
-    if (customerPricing.length > 0 && fieldId) {
-      // First: exact match (field + hour)
-      const exactMatch = customerPricing.find(
-        cp => cp.field_id === fieldId && cp.hour === hour
-      )
-      if (exactMatch) return { price: Number(exactMatch.price), priceSource: 'customer_pricing' }
+    for (const h of Array.from(selectedHours).sort()) {
+      const hourNum = Number(h.split(':')[0])
 
-      // Second: field match with any hour (hour = null)
-      const fieldMatch = customerPricing.find(
-        cp => cp.field_id === fieldId && !cp.hour
-      )
-      if (fieldMatch) return { price: Number(fieldMatch.price), priceSource: 'customer_pricing' }
+      // 1. customer_pricing
+      if (customerPricing.length > 0 && fieldId) {
+        const exactMatch = customerPricing.find(cp => cp.field_id === fieldId && cp.hour === h)
+        if (exactMatch) { breakdown.push({ hour: h, price: Number(exactMatch.price), source: 'customer_pricing' }); continue }
+        const fieldMatch = customerPricing.find(cp => cp.field_id === fieldId && !cp.hour)
+        if (fieldMatch) { breakdown.push({ hour: h, price: Number(fieldMatch.price), source: 'customer_pricing' }); continue }
+      }
+
+      // 2. field_rates
+      if (fieldRates.length > 0 && date) {
+        const [y, m, d] = date.split('-').map(Number)
+        const dayKey = DAY_KEYS[new Date(y, m - 1, d).getDay()]
+        const rate = fieldRates.find(r => {
+          if (r.day_of_week !== dayKey) return false
+          const startH = Number(r.start_time?.split(':')[0] ?? 0)
+          const endH = Number(r.end_time?.split(':')[0] ?? 23)
+          return hourNum >= startH && hourNum <= endH
+        })
+        if (rate) { breakdown.push({ hour: h, price: Number(rate.price), source: 'field_rate' }); continue }
+      }
+
+      // 3. Base price
+      const basePrice = hourNum >= nightFrom
+        ? Number(selectedField.price_night ?? selectedField.price_day ?? 0)
+        : Number(selectedField.price_day ?? 0)
+      breakdown.push({ hour: h, price: basePrice, source: 'base' })
     }
 
-    // 2. Check field_rates
-    if (fieldRates.length > 0 && date) {
-      const [y, m, d] = date.split('-').map(Number)
-      const dayKey = DAY_KEYS[new Date(y, m - 1, d).getDay()]
-      const rate = fieldRates.find(r => {
-        if (r.day_of_week !== dayKey) return false
-        const startH = Number(r.start_time?.split(':')[0] ?? 0)
-        const endH = Number(r.end_time?.split(':')[0] ?? 23)
-        return hourNum >= startH && hourNum <= endH
-      })
-      if (rate) return { price: Number(rate.price), priceSource: 'field_rate' }
-    }
-
-    // 3. Base price
-    const basePrice = hourNum >= nightFrom
-      ? Number(selectedField.price_night ?? selectedField.price_day ?? 0)
-      : Number(selectedField.price_day ?? 0)
-    return { price: basePrice, priceSource: 'base' }
-  }, [selectedField, hour, date, fieldRates, customerPricing, fieldId])
+    const total = breakdown.reduce((sum, b) => sum + b.price, 0)
+    const mainSource = breakdown[0]?.source ?? ''
+    return { price: total, priceSource: mainSource, priceBreakdown: breakdown }
+  }, [selectedField, selectedHours, date, fieldRates, customerPricing, fieldId])
 
   const isNight = useMemo(() => {
-    if (!selectedField || !hour) return false
-    return Number(hour.split(':')[0]) >= (selectedField.night_from_hour ?? 18)
-  }, [selectedField, hour])
+    if (!selectedField || selectedHours.size === 0) return false
+    const nightFrom = selectedField.night_from_hour ?? 18
+    return Array.from(selectedHours).some(h => Number(h.split(':')[0]) >= nightFrom)
+  }, [selectedField, selectedHours])
 
   const todayStr = new Date().toISOString().split('T')[0]
-  const formValid = fieldId && date && hour && name.trim() && idNumber.trim().length >= 5
+  const formValid = fieldId && date && selectedHours.size > 0 && name.trim() && idNumber.trim().length >= 5
 
-  // ── Submit ──
+  // ── Submit — creates one booking per selected hour ──
   const handleSubmit = useCallback(async () => {
     setError('')
-    if (!fieldId || !date || !hour || !name.trim()) {
-      setError('Completá cancha, fecha, hora y nombre'); return
+    if (!fieldId || !date || selectedHours.size === 0 || !name.trim()) {
+      setError('Completá cancha, fecha, al menos una hora y nombre'); return
     }
     if (!idNumber.trim() || idNumber.trim().length < 5) {
       setError('La cédula es obligatoria (mínimo 5 caracteres)'); return
@@ -264,33 +284,53 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-      const res = await fetch(`${supabaseUrl}/functions/v1/create-booking`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token ?? anonKey}`,
-          'apikey': anonKey ?? '',
-        },
-        body: JSON.stringify({
-          field_id: fieldId,
-          date,
-          hour,
-          name: name.trim(),
-          phone: phone.trim() || '—',
-          email: email.trim().toLowerCase() || 'admin@golplay.app',
-          customer_id_number: idNumber.trim(),
-          price,
-          price_source: priceSource,
-          customer_ref: customerRef,
-          tariff: isNight ? 'night' : 'day',
-        }),
-      })
+      const sortedHours = Array.from(selectedHours).sort()
+      const errors: string[] = []
 
-      const result = await res.json()
+      for (const h of sortedHours) {
+        const hourBreakdown = priceBreakdown.find(b => b.hour === h)
+        const hourPrice = hourBreakdown?.price ?? price / selectedHours.size
+        const hourSource = hourBreakdown?.source ?? priceSource
+        const hourNum = Number(h.split(':')[0])
+        const nightFrom = selectedField?.night_from_hour ?? 18
+
+        const res = await fetch(`${supabaseUrl}/functions/v1/create-booking`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token ?? anonKey}`,
+            'apikey': anonKey ?? '',
+          },
+          body: JSON.stringify({
+            field_id: fieldId,
+            date,
+            hour: h,
+            name: name.trim(),
+            phone: phone.trim() || '—',
+            email: email.trim().toLowerCase() || 'admin@golplay.app',
+            customer_id_number: idNumber.trim(),
+            price: hourPrice,
+            price_source: hourSource,
+            customer_ref: customerRef,
+            tariff: hourNum >= nightFrom ? 'night' : 'day',
+          }),
+        })
+
+        const result = await res.json()
+        if (!result.ok) {
+          errors.push(`${h}: ${result.error ?? 'Error'}`)
+        }
+      }
+
       setSaving(false)
 
-      if (!result.ok) {
-        setError(result.error ?? 'Error al crear la reserva'); return
+      if (errors.length > 0) {
+        setError(`Error en ${errors.length} de ${sortedHours.length} reservas: ${errors[0]}`)
+        if (errors.length < sortedHours.length) {
+          // Some succeeded — still refresh
+          setTimeout(() => { onCreated(); onClose() }, 1500)
+        }
+        return
       }
 
       setSuccess(true)
@@ -299,7 +339,7 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
       setSaving(false)
       setError(e.message ?? 'Error de conexión')
     }
-  }, [fieldId, date, hour, name, phone, email, idNumber, price, priceSource, customerRef, isNight, onCreated, onClose])
+  }, [fieldId, date, selectedHours, name, phone, email, idNumber, price, priceSource, priceBreakdown, customerRef, selectedField, onCreated, onClose])
 
   // ── Date display ──
   const dateDisplay = date ? (() => {
@@ -311,10 +351,14 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
 
   // ── Selected slot label for header ──
   const selectedSlotLabel = useMemo(() => {
-    if (!hour) return ''
-    const slot = timeSlots.find(s => s.startHour === hour)
-    return slot?.label || hour
-  }, [hour, timeSlots])
+    if (selectedHours.size === 0) return ''
+    const sorted = Array.from(selectedHours).sort()
+    if (sorted.length === 1) {
+      const slot = timeSlots.find(s => s.startHour === sorted[0])
+      return slot?.label || sorted[0]
+    }
+    return `${sorted.length} horas seleccionadas`
+  }, [selectedHours, timeSlots])
 
   return (
     <>
@@ -328,7 +372,7 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
               <div className="bm-header__dot" />
               <p className="bm-header__label">Nueva reserva manual</p>
               <h2 className="bm-header__title">Crear reserva</h2>
-              {selectedField && hour && price > 0 && (
+              {selectedField && selectedHours.size > 0 && price > 0 && (
                 <div className="bm-header__price">
                   <span className="bm-header__price-tag">
                     {isNight ? '🌙' : '☀️'} {fmt(price)}
@@ -376,7 +420,7 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
                             key={f.id}
                             type="button"
                             className={`bm-field-card ${fieldId === f.id ? 'bm-field-card--sel' : ''}`}
-                            onClick={() => { setFieldId(f.id); setHour('') }}
+                            onClick={() => { setFieldId(f.id); setSelectedHours(new Set()) }}
                           >
                             <span className="bm-field-card__icon">{SPORT_ICON[f.sport ?? ''] ?? '🏟️'}</span>
                             <span className="bm-field-card__name">{f.name}</span>
@@ -396,16 +440,33 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
                         type="date"
                         min={todayStr}
                         value={date}
-                        onChange={e => { setDate(e.target.value); setHour('') }}
+                        onChange={e => { setDate(e.target.value); setSelectedHours(new Set()) }}
                       />
                     </div>
 
                     {/* Hour grid */}
                     <div className="bm-field">
-                      <label className="bm-label">
-                        {(selectedField?.slot_duration ?? 1) > 1 ? 'Turno' : 'Hora'}
-                        {loadingHours && <span className="bm-label__hint"> · verificando…</span>}
-                      </label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label className="bm-label">
+                          {(selectedField?.slot_duration ?? 1) > 1 ? 'Turnos' : 'Horas'}
+                          {loadingHours && <span className="bm-label__hint"> · verificando…</span>}
+                          {selectedHours.size > 0 && <span className="bm-label__hint"> · {selectedHours.size} seleccionada{selectedHours.size > 1 ? 's' : ''}</span>}
+                        </label>
+                        {date && timeSlots.filter(s => !s.booked).length > 0 && (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button type="button" onClick={selectAllHours}
+                              style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                              Todas
+                            </button>
+                            {selectedHours.size > 0 && (
+                              <button type="button" onClick={clearHours}
+                                style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                Limpiar
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       {!date ? (
                         <p className="bm-hint">Seleccioná una fecha primero</p>
                       ) : timeSlots.length === 0 ? (
@@ -415,16 +476,19 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
                           {timeSlots.map(slot => {
                             const hNum = Number(slot.startHour.split(':')[0])
                             const night = hNum >= (selectedField?.night_from_hour ?? 18)
-                            const isSel = hour === slot.startHour
+                            const isSel = selectedHours.has(slot.startHour)
                             return (
                               <button
                                 key={slot.startHour}
                                 type="button"
-                                className={`bm-hour ${isSel ? (night ? 'bm-hour--night-sel' : 'bm-hour--sel') : ''} ${night ? 'bm-hour--night' : ''}`}
-                                onClick={() => setHour(slot.startHour)}
+                                disabled={slot.booked}
+                                className={`bm-hour ${isSel ? (night ? 'bm-hour--night-sel' : 'bm-hour--sel') : ''} ${night ? 'bm-hour--night' : ''} ${slot.booked ? 'bm-hour--booked' : ''}`}
+                                onClick={() => !slot.booked && toggleHour(slot.startHour)}
                               >
                                 <span className="bm-hour__time">{slot.label}</span>
-                                {night && <span className="bm-hour__tag">🌙</span>}
+                                {slot.booked
+                                  ? <span className="bm-hour__tag">🔒</span>
+                                  : night ? <span className="bm-hour__tag">🌙</span> : null}
                               </button>
                             )
                           })}
@@ -476,8 +540,8 @@ export default function CreateBookingModal({ userId, onClose, onCreated }: Props
                     <button className="bm-btn bm-btn--ghost" onClick={onClose} disabled={saving}>Cancelar</button>
                     <button className="bm-btn bm-btn--primary" onClick={handleSubmit} disabled={saving || !formValid}>
                       {saving
-                        ? <><div className="bm-btn-spinner" /> Creando…</>
-                        : <>Confirmar reserva{price > 0 ? ` · ${fmt(price)}` : ''}</>
+                        ? <><div className="bm-btn-spinner" /> Creando {selectedHours.size > 1 ? `${selectedHours.size} reservas` : 'reserva'}…</>
+                        : <>Confirmar {selectedHours.size > 1 ? `${selectedHours.size} reservas` : 'reserva'}{price > 0 ? ` · ${fmt(price)}` : ''}</>
                       }
                     </button>
                   </div>
@@ -572,6 +636,9 @@ const CSS = `
 .bm-hour--sel .bm-hour__time { color:#fff; }
 .bm-hour--night-sel { background:linear-gradient(135deg,#4c1d95,#7c3aed); border-color:#7c3aed; }
 .bm-hour--night-sel .bm-hour__time { color:#fff; }
+.bm-hour--booked { opacity:.35; cursor:not-allowed !important; background:#f1f5f9 !important; border-color:#e2e8f0 !important; transform:none !important; }
+.bm-hour--booked:hover { border-color:#e2e8f0 !important; background:#f1f5f9 !important; transform:none !important; }
+.bm-hour--booked .bm-hour__time { color:#94a3b8 !important; text-decoration:line-through; }
 
 .bm-error { padding:10px 14px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; font-size:12px; color:#b91c1c; font-weight:600; }
 
