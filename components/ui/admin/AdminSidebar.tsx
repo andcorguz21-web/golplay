@@ -13,7 +13,7 @@ import { type Role } from './AdminLayout'
 import {
   LayoutDashboard, CalendarDays, BookOpen, Dumbbell,
   CreditCard, BarChart2, Settings, LogOut, ChevronLeft,
-  ChevronRight, X, FileText, Tag, Users,} from 'lucide-react'
+  ChevronRight, X, FileText, Tag, Users, Swords,} from 'lucide-react'
 // ─── Nav config ───────────────────────────────────────────────────────────────
 interface NavItem {
   label: string
@@ -42,6 +42,7 @@ const NAV: NavSection[] = [
     items: [
       { label: 'Canchas',         path: '/admin/fields',         icon: Dumbbell,        roles: ['admin', 'owner'] },
       { label: 'Clientes',        path: '/admin/customers',      icon: Users,           roles: ['admin', 'owner'] },
+      { label: 'Retos',           path: '/admin/challenges',     icon: Swords,          roles: ['admin', 'owner'], badge: 'Nuevo' },
       { label: 'Pagos',           path: '/admin/payments',       icon: CreditCard,      roles: ['admin', 'owner'] },
       { label: 'Modelo negocio',  path: '/admin/business-model', icon: BarChart2,       roles: ['admin', 'owner'] },
     ],
