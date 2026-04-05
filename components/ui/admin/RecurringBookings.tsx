@@ -18,6 +18,7 @@ interface Recurring {
   end_date: string | null
   price: number | null
   notes: string | null
+  repeat_interval: number
   active: boolean
 }
 
@@ -54,6 +55,7 @@ export default function RecurringBookings({ fieldId, ownerId }: Props) {
   const [customerEmail, setCustomerEmail] = useState('')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState('')
+  const [repeatInterval, setRepeatInterval] = useState(1)
   const [price, setPrice] = useState('')
   const [notes, setNotes] = useState('')
 
@@ -74,7 +76,7 @@ export default function RecurringBookings({ fieldId, ownerId }: Props) {
   const resetForm = () => {
     setDayOfWeek(1); setHour(''); setCustomerName(''); setCustomerPhone('')
     setCustomerEmail(''); setStartDate(new Date().toISOString().split('T')[0])
-    setEndDate(''); setPrice(''); setNotes(''); setError('')
+    setEndDate(''); setRepeatInterval(1); setPrice(''); setNotes(''); setError('')
   }
 
   const handleCreate = async () => {
@@ -87,6 +89,7 @@ export default function RecurringBookings({ fieldId, ownerId }: Props) {
       customer_phone: customerPhone.trim() || null,
       customer_email: customerEmail.trim().toLowerCase() || null,
       start_date: startDate, end_date: endDate || null,
+      repeat_interval: repeatInterval,
       price: price ? Number(price) : null,
       notes: notes.trim() || null,
     })
@@ -119,7 +122,7 @@ export default function RecurringBookings({ fieldId, ownerId }: Props) {
       <div className="rc-head">
         <div>
           <p className="rc-title">🔁 Horarios fijos</p>
-          <p className="rc-sub">Reservas recurrentes semanales</p>
+          <p className="rc-sub">Reservas recurrentes (semanal, quincenal, mensual)</p>
         </div>
         {!showForm && (
           <button className="rc-btn rc-btn--green" onClick={() => { resetForm(); setShowForm(true) }}>
@@ -169,9 +172,19 @@ export default function RecurringBookings({ fieldId, ownerId }: Props) {
               <input className="rc-input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div className="rc-form-group">
-              <label className="rc-label">Hasta <span style={{fontWeight:400,color:'#94a3b8'}}>(vacío = indefinido)</span></label>
+              <label className="rc-label">Hasta <span style={{fontWeight:400,color:'#94a3b8'}}>(vacio = indefinido)</span></label>
               <input className="rc-input" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
+          </div>
+
+          <div className="rc-form-group">
+            <label className="rc-label">Frecuencia *</label>
+            <select className="rc-input" value={repeatInterval} onChange={e => setRepeatInterval(Number(e.target.value))}>
+              <option value={1}>Cada semana</option>
+              <option value={2}>Cada 2 semanas (quincenal)</option>
+              <option value={3}>Cada 3 semanas</option>
+              <option value={4}>Cada 4 semanas (mensual aprox.)</option>
+            </select>
           </div>
 
           <div className="rc-form-row">
@@ -218,7 +231,8 @@ export default function RecurringBookings({ fieldId, ownerId }: Props) {
                     {r.customer_name} · <strong>{r.hour}</strong>
                   </p>
                   <p className="rc-item-meta">
-                    Desde {fmtDate(r.start_date)}
+                    {r.repeat_interval === 1 ? 'Semanal' : r.repeat_interval === 2 ? 'Quincenal' : `Cada ${r.repeat_interval} sem.`}
+                    {' · '}Desde {fmtDate(r.start_date)}
                     {r.end_date ? ` hasta ${fmtDate(r.end_date)}` : ' · Indefinido'}
                     {r.price ? ` · ₡${Number(r.price).toLocaleString('es-CR')}` : ''}
                   </p>
