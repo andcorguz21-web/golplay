@@ -22,13 +22,15 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Field = {
+type Complex = {
   id: number
   name: string
-  price_day: number
-  location: string
-  sport: string | null
+  slug: string
+  city: string | null
+  country: string | null
   image: string | null
+  field_count: number
+  sports: string[]
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -807,39 +809,31 @@ function FadeIn({ children, delay = 0, style = {} }: {
   )
 }
 
-// ─── FieldCard ────────────────────────────────────────────────────────────────
-function FieldCard({ field }: { field: Field }) {
+// ─── ComplexCard ───────────────────────────────────────────────────────────────
+function ComplexCard({ complex }: { complex: Complex }) {
   const router = useRouter()
-  const sport  = field.sport ? SPORT_META[field.sport] : null
   return (
     <article className="gp-card" role="button" tabIndex={0}
-      onClick={() => router.push(`/reserve/${field.id}`)}
-      onKeyDown={e => e.key === 'Enter' && router.push(`/reserve/${field.id}`)}
-      aria-label={`Reservar ${field.name}`}
+      onClick={() => router.push(`/complexes/${complex.slug}`)}
+      onKeyDown={e => e.key === 'Enter' && router.push(`/complexes/${complex.slug}`)}
+      aria-label={`Ver ${complex.name}`}
     >
       <div style={{position:'relative', height:160, background:'linear-gradient(135deg,#0e3d1a,#0a2e15)', overflow:'hidden'}}>
-        {field.image
-          ? <Image src={field.image} alt={field.name} fill sizes="260px" style={{objectFit:'cover'}} loading="lazy"/>
-          : <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:44, opacity:.22}}>
-              {field.sport === 'basquet' ? '🏀' : field.sport === 'padel' || field.sport === 'tenis' ? '🎾' : '⚽'}
-            </div>
+        {complex.image
+          ? <Image src={complex.image} alt={complex.name} fill sizes="260px" style={{objectFit:'cover'}} loading="lazy"/>
+          : <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:44, opacity:.22}}>🏟️</div>
         }
         <div style={{position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 50%)'}}/>
         <div style={{position:'absolute', top:8, left:8, display:'flex', alignItems:'center', gap:4, background:'rgba(0,0,0,.38)', backdropFilter:'blur(8px)', borderRadius:999, padding:'3px 8px', border:'1px solid rgba(255,255,255,.1)'}}>
-          <span style={{width:5, height:5, borderRadius:'50%', background:'var(--g4)', flexShrink:0}}/>
-          <span style={{fontSize:8, fontWeight:700, color:'rgba(255,255,255,.9)', letterSpacing:'.04em'}}>DISPONIBLE</span>
+          <span style={{width:5, height:5, borderRadius:'50%', background: complex.field_count > 0 ? 'var(--g4)' : '#fbbf24', flexShrink:0}}/>
+          <span style={{fontSize:8, fontWeight:700, color:'rgba(255,255,255,.9)', letterSpacing:'.04em'}}>{complex.field_count > 0 ? 'ACTIVO' : 'ULTIMOS DETALLES'}</span>
         </div>
-        {sport && (
-          <span style={{position:'absolute', top:8, right:8, background:sport.bg, color:sport.color, fontSize:9, fontWeight:800, padding:'3px 8px', borderRadius:999, letterSpacing:'.05em', textTransform:'uppercase'}}>
-            {sport.label}
-          </span>
-        )}
-        <div style={{position:'absolute', bottom:8, left:10, right:10, display:'flex', justifyContent:'space-between', alignItems:'flex-end'}}>
-          <span style={{fontSize:13, fontWeight:700, color:'#fff', maxWidth:'64%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-            {field.name}
-          </span>
-          <span style={{fontSize:12, fontWeight:800, color:'var(--g4)', background:'rgba(0,0,0,.4)', backdropFilter:'blur(8px)', padding:'3px 9px', borderRadius:999, border:'1px solid rgba(74,222,128,.22)', flexShrink:0}}>
-            {fmt(field.price_day)}
+        <span style={{position:'absolute', top:8, right:8, background:'rgba(0,0,0,.45)', backdropFilter:'blur(8px)', color:'#fff', fontSize:9, fontWeight:800, padding:'3px 8px', borderRadius:999, letterSpacing:'.05em', border:'1px solid rgba(255,255,255,.1)'}}>
+          {complex.field_count} cancha{complex.field_count !== 1 ? 's' : ''}
+        </span>
+        <div style={{position:'absolute', bottom:8, left:10, right:10}}>
+          <span style={{fontSize:14, fontWeight:700, color:'#fff', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+            {complex.name}
           </span>
         </div>
       </div>
@@ -849,10 +843,10 @@ function FieldCard({ field }: { field: Field }) {
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
           </svg>
           <p style={{fontSize:11, color:'var(--muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-            {field.location}
+            {complex.city || 'Sin ubicacion'}
           </p>
         </div>
-        <span style={{fontSize:12, fontWeight:700, color:'var(--g6)', whiteSpace:'nowrap', flexShrink:0}}>Reservar →</span>
+        <span style={{fontSize:12, fontWeight:700, color:'var(--g6)', whiteSpace:'nowrap', flexShrink:0}}>Ver canchas →</span>
       </div>
     </article>
   )
@@ -935,7 +929,8 @@ function Navbar({ dark }: { dark: boolean }) {
 
       {user ? (
         <div className="nav__links" style={{gap: 6}}>
-          <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Canchas</Link>
+          <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Complejos</Link>
+          <Link href="/retos" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Retos</Link>
           <Link href="/favorites" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Favoritos</Link>
           {(user.role === 'owner' || user.role === 'admin') && (
             <Link href="/admin" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Mi negocio</Link>
@@ -987,7 +982,8 @@ function Navbar({ dark }: { dark: boolean }) {
         </div>
       ) : (
         <div className="nav__links">
-          <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Canchas</Link>
+          <Link href="/reserve" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Complejos</Link>
+          <Link href="/retos" className={`nav__link ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Retos</Link>
           <Link href="/login"   className={`nav__link nav__link--keep ${isDark ? 'nav__link--dk' : 'nav__link--lt'}`}>Iniciar sesión</Link>
           <Link href="/register" className="nav__cta">Registrarse</Link>
         </div>
@@ -1002,7 +998,7 @@ function Navbar({ dark }: { dark: boolean }) {
 export default function Home() {
   const router = useRouter()
 
-  const [fieldsByLoc, setFieldsByLoc] = useState<Record<string, Field[]>>({})
+  const [complexes, setComplexes] = useState<Complex[]>([])
   const [loading,     setLoading]     = useState(true)
   const [loadError,   setLoadError]   = useState(false)
   const [showToast,   setShowToast]   = useState(false)
@@ -1055,54 +1051,85 @@ export default function Home() {
     return () => clearTimeout(t)
   }, [router.query.reserva])
 
-  // Data fetch
+  // Data fetch — load complexes with field count and images
   useEffect(() => {
     ;(async () => {
       setLoading(true); setLoadError(false)
       try {
-        const [{ data: fields, error }, { data: images }] = await Promise.all([
-          supabase.from('fields').select('id,name,price_day,location,sport').eq('active', true).order('name'),
-          supabase.from('field_images').select('field_id,url,is_main'),
+        const { data: cxs, error } = await supabase
+          .from('complexes')
+          .select('id, name, slug, city, country')
+          .eq('active', true)
+          .order('name')
+
+        if (error || !cxs) throw error
+
+        const ids = cxs.map(c => c.id)
+        if (ids.length === 0) { setComplexes([]); setLoading(false); return }
+
+        const [{ data: activeFields }, { data: allFields }, { data: images }] = await Promise.all([
+          supabase.from('fields').select('id, complex_id, sport').in('complex_id', ids).eq('active', true),
+          supabase.from('fields').select('id, complex_id').in('complex_id', ids),
+          supabase.from('field_images').select('field_id, url, is_main'),
         ])
-        if (error || !fields) throw error
-        const map = new Map<number, Field>()
-        fields.forEach(f => map.set(f.id, {
-          id: f.id, name: f.name,
-          price_day: Number(f.price_day ?? 0),
-          location: f.location ?? 'Sin ubicación',
-          sport: f.sport ?? null, image: null,
-        }))
-        images?.forEach(img => {
-          const f = map.get(img.field_id)
-          if (!f || !img.url) return
-          if (img.is_main || f.image === null) f.image = img.url
+
+        const activeList = activeFields ?? []
+        const allList = allFields ?? []
+        const fieldCountMap: Record<number, number> = {}
+        const sportsMap: Record<number, Set<string>> = {}
+
+        activeList.forEach(f => {
+          fieldCountMap[f.complex_id] = (fieldCountMap[f.complex_id] || 0) + 1
+          if (f.sport) {
+            if (!sportsMap[f.complex_id]) sportsMap[f.complex_id] = new Set()
+            sportsMap[f.complex_id].add(f.sport)
+          }
         })
-        const grouped: Record<string, Field[]> = {}
-        map.forEach(f => { (grouped[f.location] ??= []).push(f) })
-        setFieldsByLoc(grouped)
+
+        // Para imagenes usamos TODOS los fields, no solo activos
+        const fieldToComplex: Record<number, number> = {}
+        allList.forEach(f => { fieldToComplex[f.id] = f.complex_id })
+
+        const imageMap: Record<number, string> = {}
+        const seenComplex = new Set<number>()
+        const sortedImgs = [...(images ?? [])].sort((a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0))
+        sortedImgs.forEach(img => {
+          const cxId = fieldToComplex[img.field_id]
+          if (cxId && !seenComplex.has(cxId) && img.url) {
+            imageMap[cxId] = img.url
+            seenComplex.add(cxId)
+          }
+        })
+
+        setComplexes(cxs.map(c => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          city: c.city,
+          country: c.country,
+          image: imageMap[c.id] || null,
+          field_count: fieldCountMap[c.id] || 0,
+          sports: [...(sportsMap[c.id] || [])],
+        })))
       } catch { setLoadError(true) }
       finally  { setLoading(false) }
     })()
   }, [])
 
-  const filteredLocs = useMemo(() => {
-    const r: Record<string, Field[]> = {}
-    Object.entries(fieldsByLoc).forEach(([loc, flds]) => {
-      const m = flds.filter(f => {
-        if (qText && !f.name.toLowerCase().includes(qText.toLowerCase()) &&
-            !f.location.toLowerCase().includes(qText.toLowerCase())) return false
-        if (qSport && f.sport?.toLowerCase() !== qSport.toLowerCase()) return false
-        return true
-      })
-      if (m.length) r[loc] = m
+  const filteredComplexes = useMemo(() => {
+    return complexes.filter(c => {
+      if (qText && !c.name.toLowerCase().includes(qText.toLowerCase()) &&
+          !(c.city || '').toLowerCase().includes(qText.toLowerCase())) return false
+      if (qSport && !c.sports.includes(qSport.toLowerCase())) return false
+      return true
     })
-    return r
-  }, [fieldsByLoc, qText, qSport])
+  }, [complexes, qText, qSport])
 
-  const totalFields   = Object.values(fieldsByLoc).flat().length
-  const totalLocs     = Object.keys(fieldsByLoc).length
-  const filteredCount = Object.values(filteredLocs).flat().length
-  const hasResults    = Object.keys(filteredLocs).length > 0
+  const hasResults = filteredComplexes.length > 0
+
+  const totalFields   = complexes.reduce((sum, c) => sum + c.field_count, 0)
+  const totalLocs     = complexes.length
+  const filteredCount = filteredComplexes.length
 
   const filterSummary = [
     qText  && `"${qText}"`,
@@ -1120,7 +1147,7 @@ export default function Home() {
     if (localSport)       q.sport = localSport
     setModal(null)
     router.push({ pathname: '/', query: q }, undefined, { shallow: true })
-    setTimeout(() => document.getElementById('canchas')?.scrollIntoView({ behavior: 'smooth' }), 80)
+    setTimeout(() => document.getElementById('complejos')?.scrollIntoView({ behavior: 'smooth' }), 80)
   }, [localText, localDate, localHour, localSport, router])
 
   const clearFilters = useCallback(() => {
@@ -1128,8 +1155,8 @@ export default function Home() {
     router.push('/', undefined, { shallow: true })
   }, [router])
 
-  const scrollToCanchas = () =>
-    document.getElementById('canchas')?.scrollIntoView({ behavior: 'smooth' })
+  const scrollToComplejos = () =>
+    document.getElementById('complejos')?.scrollIntoView({ behavior: 'smooth' })
 
   return (
     <>
@@ -1267,7 +1294,7 @@ export default function Home() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                     </svg>
-                    Buscar canchas disponibles
+                    Buscar complejos disponibles
                   </button>
                 </div>
               </form>
@@ -1307,7 +1334,7 @@ export default function Home() {
           <div style={{maxWidth:1200, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap', paddingTop:14}}>
             <p style={{fontSize:13, color:'var(--g7)', fontWeight:700}}>
               {loading ? 'Buscando…'
-                : <>{filteredCount} cancha{filteredCount!==1?'s':''} encontrada{filteredCount!==1?'s':''}
+                : <>{filteredCount} complejo{filteredCount!==1?'s':''} encontrado{filteredCount!==1?'s':''}
                     {filterSummary && <span style={{fontWeight:400, color:'var(--muted)'}}> para {filterSummary}</span>}</>
               }
             </p>
@@ -1336,9 +1363,9 @@ export default function Home() {
       )}
 
       {/* ══════════════════════════════════════════════════════════
-          CANCHAS (datos reales de Supabase)
+          COMPLEJOS (datos reales de Supabase)
       ══════════════════════════════════════════════════════════ */}
-      <main id="canchas" style={{
+      <main id="complejos" style={{
         background:'var(--bone)',
         padding:'clamp(48px,6vw,72px) clamp(16px,4vw,40px) clamp(52px,8vw,96px)',
       }}>
@@ -1348,10 +1375,10 @@ export default function Home() {
               <div style={{display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:32, flexWrap:'wrap', gap:14}}>
                 <div>
                   <p className="eyebrow">Disponibles ahora</p>
-                  <h2 className="h2">Canchas <em>cerca de vos.</em></h2>
+                  <h2 className="h2">Complejos <em>cerca de vos.</em></h2>
                 </div>
                 <Link href="/reserve" style={{fontSize:12, fontWeight:700, color:'var(--g6)', textDecoration:'none', display:'flex', alignItems:'center', gap:4}}>
-                  Ver todas →
+                  Ver todos →
                 </Link>
               </div>
             </FadeIn>
@@ -1371,8 +1398,8 @@ export default function Home() {
           {!loading && loadError && (
             <div style={{textAlign:'center', padding:'60px 20px'}}>
               <div style={{fontSize:36, marginBottom:12}}>⚠️</div>
-              <p style={{fontSize:17, fontWeight:700, color:'var(--ink)', marginBottom:5}}>No pudimos cargar las canchas</p>
-              <p style={{fontSize:13, color:'var(--muted)'}}>Intentá refrescar la página.</p>
+              <p style={{fontSize:17, fontWeight:700, color:'var(--ink)', marginBottom:5}}>No pudimos cargar los complejos</p>
+              <p style={{fontSize:13, color:'var(--muted)'}}>Intenta refrescar la pagina.</p>
             </div>
           )}
 
@@ -1380,34 +1407,26 @@ export default function Home() {
             <div style={{textAlign:'center', padding:'60px 20px'}}>
               <div style={{fontSize:44, marginBottom:12}}>🔍</div>
               <p style={{fontSize:18, fontWeight:800, color:'var(--ink)', marginBottom:7}}>
-                {hasFilters ? 'Sin canchas para esos filtros' : 'Aún no hay canchas disponibles'}
+                {hasFilters ? 'Sin complejos para esos filtros' : 'Aun no hay complejos disponibles'}
               </p>
               <p style={{fontSize:13, color:'var(--muted)', marginBottom:20}}>
-                {hasFilters ? 'Probá ajustando la búsqueda.' : 'Volvé pronto.'}
+                {hasFilters ? 'Proba ajustando la busqueda.' : 'Volve pronto.'}
               </p>
               {hasFilters && (
                 <button onClick={clearFilters} style={{padding:'10px 24px', background:'var(--g6)', color:'#fff', border:'none', borderRadius:11, cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:13}}>
-                  Ver todas las canchas
+                  Ver todos los complejos
                 </button>
               )}
             </div>
           )}
 
-          {!loading && !loadError && hasResults && Object.entries(filteredLocs).map(([loc, flds]) => (
-            <section key={loc} style={{marginBottom:48}} aria-labelledby={`loc-${loc}`}>
-              <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:16}}>
-                <h2 id={`loc-${loc}`} style={{fontSize:14, fontWeight:800, color:'var(--ink)'}}>📍 {loc}</h2>
-                <span style={{fontSize:10, fontWeight:800, color:'var(--g7)', background:'var(--g1)', padding:'3px 9px', borderRadius:999, letterSpacing:'.04em'}}>
-                  {flds.length} {flds.length === 1 ? 'cancha' : 'canchas'}
-                </span>
-              </div>
-              <Swiper className="gp-swiper" modules={[Navigation]} spaceBetween={14} slidesPerView="auto" navigation>
-                {flds.map(f => (
-                  <SwiperSlide key={f.id}><FieldCard field={f}/></SwiperSlide>
-                ))}
-              </Swiper>
-            </section>
-          ))}
+          {!loading && !loadError && hasResults && (
+            <Swiper className="gp-swiper" modules={[Navigation]} spaceBetween={14} slidesPerView="auto" navigation>
+              {filteredComplexes.map(c => (
+                <SwiperSlide key={c.id}><ComplexCard complex={c}/></SwiperSlide>
+              ))}
+            </Swiper>
+          )}
         </div>
       </main>
 
@@ -1423,13 +1442,13 @@ export default function Home() {
                   <p className="eyebrow">Simple y rápido</p>
                   <h2 className="h2">Del celular a la cancha<br/><em>en 3 pasos.</em></h2>
                 </div>
-                <button onClick={scrollToCanchas} style={{
+                <button onClick={scrollToComplejos} style={{
                   padding:'11px 22px', background:'var(--g6)', color:'#fff', border:'none',
                   borderRadius:12, cursor:'pointer', fontFamily:'inherit',
                   fontWeight:700, fontSize:13, flexShrink:0,
                   boxShadow:'0 2px 10px rgba(22,163,74,.28)',
                 }}>
-                  Ver canchas →
+                  Ver complejos →
                 </button>
               </div>
             </FadeIn>
@@ -1470,7 +1489,7 @@ export default function Home() {
                   <h2 className="h2">¿Qué deporte <em>jugás?</em></h2>
                 </div>
                 <p style={{fontSize:13, color:'var(--muted)', maxWidth:220, lineHeight:1.65}}>
-                  Encontrá canchas disponibles para tu deporte favorito.
+                  Encontra complejos disponibles para tu deporte favorito.
                 </p>
               </div>
             </FadeIn>
@@ -1625,14 +1644,14 @@ export default function Home() {
                 Encontrá tu cancha, elegí el horario<br/>y reservá en segundos desde el celular.
               </p>
               <div style={{display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap'}}>
-                <button onClick={scrollToCanchas} style={{
+                <button onClick={scrollToComplejos} style={{
                   display:'inline-flex', alignItems:'center', justifyContent:'center', gap:7,
                   padding:'13px 28px', borderRadius:13,
                   background:'var(--g4)', color:'var(--dark)', border:'none',
                   fontFamily:'var(--font-d)', fontSize:14, fontWeight:800, cursor:'pointer',
                   boxShadow:'0 4px 22px rgba(74,222,128,.38)', width:'100%', maxWidth:220,
                 }}>
-                  🔍 Buscar canchas
+                  🔍 Buscar complejos
                 </button>
                 <Link href="/register" style={{
                   display:'inline-flex', alignItems:'center', justifyContent:'center',
