@@ -7,6 +7,8 @@
  * - Dropdown con perfil + cerrar sesión
  * - Badge de rol (Admin / Propietario)
  * - Botón hamburguesa solo en móvil
+ *
+ * v1.1: Añadidos labels para Retos, Torneos, Comprobantes, Cupones, Clientes, Perfil
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -31,9 +33,15 @@ const ROUTE_LABELS: Record<string, string> = {
   'bookings':        'Reservas',
   'calendar':        'Calendario',
   'fields':          'Canchas',
+  'customers':       'Clientes',
+  'challenges':      'Retos',
+  'tournaments':     'Torneos',
   'payments':        'Pagos',
   'business-model':  'Modelo de negocio',
+  'receipts':        'Comprobantes',
+  'coupons':         'Cupones',
   'settings':        'Configuración',
+  'profile':         'Mi perfil',
   'new':             'Nuevo',
   'edit':            'Editar',
 }
@@ -370,4 +378,3 @@ const S: Record<string, React.CSSProperties> = {
     transition: 'background 0.1s',
   },
 }
-  

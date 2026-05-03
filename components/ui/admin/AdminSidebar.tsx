@@ -2,7 +2,7 @@
  * GolPlay — AdminSidebar
  * Navegación principal del panel administrativo.
  *
- * v3.0: Logo SVG real en lugar de ícono verde + texto
+ * v3.1: Añadida sección "Competencia" con Retos y Torneos
  */
 
 import Link from 'next/link'
@@ -13,7 +13,9 @@ import { type Role } from './AdminLayout'
 import {
   LayoutDashboard, CalendarDays, BookOpen, Dumbbell,
   CreditCard, BarChart2, Settings, LogOut, ChevronLeft,
-  ChevronRight, X, FileText, Tag, Users, Swords,} from 'lucide-react'
+  ChevronRight, X, FileText, Tag, Users, Swords, Trophy,
+} from 'lucide-react'
+
 // ─── Nav config ───────────────────────────────────────────────────────────────
 interface NavItem {
   label: string
@@ -32,9 +34,16 @@ const NAV: NavSection[] = [
   {
     title: 'Principal',
     items: [
-      { label: 'Dashboard',       path: '/admin',               icon: LayoutDashboard, roles: ['admin', 'owner'] },
+      { label: 'Dashboard',       path: '/admin',                icon: LayoutDashboard, roles: ['admin', 'owner'] },
       { label: 'Reservas',        path: '/admin/bookings',       icon: BookOpen,        roles: ['admin', 'owner'] },
       { label: 'Calendario',      path: '/admin/calendar',       icon: CalendarDays,    roles: ['admin', 'owner'] },
+    ],
+  },
+  {
+    title: 'Competencia',
+    items: [
+      { label: 'Retos',           path: '/admin/challenges',     icon: Swords,          roles: ['admin', 'owner'] },
+      { label: 'Torneos',         path: '/admin/tournaments',    icon: Trophy,          roles: ['admin', 'owner'] },
     ],
   },
   {
@@ -42,7 +51,6 @@ const NAV: NavSection[] = [
     items: [
       { label: 'Canchas',         path: '/admin/fields',         icon: Dumbbell,        roles: ['admin', 'owner'] },
       { label: 'Clientes',        path: '/admin/customers',      icon: Users,           roles: ['admin', 'owner'] },
-      { label: 'Retos',           path: '/admin/challenges',     icon: Swords,          roles: ['admin', 'owner'], badge: 'Nuevo' },
       { label: 'Pagos',           path: '/admin/payments',       icon: CreditCard,      roles: ['admin', 'owner'] },
       { label: 'Modelo negocio',  path: '/admin/business-model', icon: BarChart2,       roles: ['admin', 'owner'] },
     ],
