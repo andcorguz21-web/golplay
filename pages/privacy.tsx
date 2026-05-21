@@ -1,10 +1,19 @@
 /**
  * GolPlay — pages/privacy.tsx
  * Página de Privacidad profesional — LATAM compliance
+ *
+ * Migrado al DS oficial:
+ *   - :root local + @import fonts + reset eliminados (vienen de golplay-tokens.css).
+ *   - Nav propia (.priv-nav) → Navbar global (variante dark, transparent sobre el hero dark).
+ *   - var(--ink2) → var(--ink); --faint (sin uso) eliminado.
+ *   - var(--g0) del underline → rgba(74,222,128,.2) (predecible sobre bone).
+ *
+ * Sin cambios: contenido legal (sections), TOC, trust pills, footer.
  */
 
-import Head  from 'next/head'
-import Link  from 'next/link'
+import Head from 'next/head'
+import Link from 'next/link'
+import Navbar from '@/components/ui/Navbar'
 
 const LAST_UPDATED = '15 de enero de 2025'
 
@@ -166,122 +175,25 @@ export default function PrivacyPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
       </Head>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
-        :root {
-          --ink:#0a0f0d; --ink2:#1a2420; --muted:#6e7a72; --faint:#b8c2bc;
-          --bone:#f2f0eb; --white:#ffffff; --bd:#e2e6e0;
-          --g6:#16a34a; --g5:#22c55e; --g4:#4ade80; --g0:#f0fdf4;
-          --dark:#080e0a;
-          --font-d:'Syne',system-ui,sans-serif; --font-u:'DM Sans',system-ui,sans-serif;
-        }
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
-        body{font-family:var(--font-u);background:var(--bone);color:var(--ink);-webkit-font-smoothing:antialiased;}
-        a{color:var(--g6);text-decoration:none}
-        a:hover{text-decoration:underline}
+      <style>{CSS}</style>
 
-        .priv-nav{
-          background:var(--dark); height:62px; display:flex; align-items:center;
-          padding:0 clamp(16px,4vw,40px); position:sticky; top:0; z-index:10;
-          border-bottom:1px solid rgba(255,255,255,.06);
-        }
-        .priv-hero{
-          background:linear-gradient(155deg,var(--dark) 0%,#0a3018 60%,#0e4820 100%);
-          padding:clamp(52px,8vw,88px) clamp(16px,4vw,40px) clamp(44px,6vw,72px);
-          position:relative; overflow:hidden;
-        }
-        .priv-hero::before{
-          content:''; position:absolute; inset:0;
-          background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),
-            linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);
-          background-size:50px 50px;
-        }
-        .priv-hero__inner{max-width:680px;margin:0 auto;position:relative;z-index:1;}
-        .priv-badge{
-          display:inline-flex;align-items:center;gap:6px;
-          background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);
-          border-radius:999px;padding:5px 12px;margin-bottom:20px;
-        }
-        .priv-badge__dot{width:5px;height:5px;border-radius:50%;background:var(--g4);}
-        .priv-badge__text{font-size:10px;font-weight:700;color:rgba(74,222,128,.88);letter-spacing:.08em;text-transform:uppercase;}
-        .priv-hero h1{
-          font-family:var(--font-d);font-size:clamp(30px,7vw,48px);font-weight:800;
-          color:#fff;line-height:1.05;letter-spacing:-.02em;margin-bottom:14px;
-        }
-        .priv-hero h1 span{
-          background:linear-gradient(110deg,var(--g4) 0%,#34d399 60%,#22d3ee 100%);
-          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-        }
-        .priv-hero p{font-size:14px;color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:8px;}
-        .priv-updated{font-size:12px;color:rgba(255,255,255,.25);margin-top:16px;}
+      <div className="theme-dark">
+        <Navbar dark={true} />
 
-        .priv-body{max-width:760px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,40px);}
-
-        .priv-trust{
-          display:flex;gap:10px;flex-wrap:wrap;margin-bottom:44px;
-        }
-        .priv-trust-pill{
-          display:flex;align-items:center;gap:6px;
-          background:var(--white);border:1.5px solid var(--bd);
-          border-radius:999px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--ink2);
-          box-shadow:0 1px 4px rgba(0,0,0,.04);
-        }
-        .priv-trust-pill span:first-child{font-size:14px;}
-
-        .priv-toc{
-          background:var(--white);border:1.5px solid var(--bd);border-radius:18px;
-          padding:22px;margin-bottom:44px;
-          box-shadow:0 2px 12px rgba(0,0,0,.05);
-        }
-        .priv-toc h3{font-family:var(--font-d);font-size:13px;font-weight:800;color:var(--ink);letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px;}
-        .priv-toc ul{list-style:none;display:flex;flex-direction:column;gap:5px;}
-        .priv-toc a{font-size:13px;color:var(--muted);display:block;padding:3px 0;transition:color .12s;}
-        .priv-toc a:hover{color:var(--g6);text-decoration:none;}
-
-        .priv-section{margin-bottom:40px;}
-        .priv-section h2{
-          font-family:var(--font-d);font-size:clamp(16px,3vw,20px);font-weight:800;
-          color:var(--ink);letter-spacing:-.01em;margin-bottom:14px;
-          padding-bottom:10px;border-bottom:2px solid var(--g0);
-        }
-        .priv-section__body{
-          font-size:14px;color:var(--ink2);line-height:1.8;white-space:pre-line;
-        }
-        .priv-section__body strong{font-weight:700;}
-
-        .priv-footer{
-          background:var(--dark);color:rgba(255,255,255,.28);
-          text-align:center;padding:32px clamp(16px,4vw,40px);
-          font-size:12px;line-height:1.7;
-        }
-        .priv-footer a{color:rgba(255,255,255,.45);}
-
-        @media(max-width:640px){
-          .priv-trust{flex-direction:column;}
-        }
-      `}</style>
-
-      {/* Nav */}
-      <nav className="priv-nav">
-        <Link href="/" style={{display:'flex',alignItems:'center',height:38}}>
-          <img src="/logo-golplay.svg" alt="GolPlay" style={{height:50,width:'auto',filter:'brightness(0) invert(1)',opacity:.8}}/>
-        </Link>
-      </nav>
-
-      {/* Hero */}
-      <section className="priv-hero">
-        <div className="priv-hero__inner">
-          <div className="priv-badge">
-            <span className="priv-badge__dot"/>
-            <span className="priv-badge__text">Legal · Transparencia</span>
+        {/* Hero */}
+        <section className="priv-hero">
+          <div className="priv-hero__inner">
+            <div className="priv-badge">
+              <span className="priv-badge__dot"/>
+              <span className="priv-badge__text">Legal · Transparencia</span>
+            </div>
+            <h1>Política de<br/><span>Privacidad</span></h1>
+            <p>En GolPlay creemos que tu información te pertenece. Esta política explica qué datos recopilamos, cómo los usamos y cómo los protegemos.</p>
+            <p>Lenguaje claro, sin letra chica.</p>
+            <p className="priv-updated">Última actualización: {LAST_UPDATED}</p>
           </div>
-          <h1>Política de<br/><span>Privacidad</span></h1>
-          <p>En GolPlay creemos que tu información te pertenece. Esta política explica qué datos recopilamos, cómo los usamos y cómo los protegemos.</p>
-          <p>Lenguaje claro, sin letra chica.</p>
-          <p className="priv-updated">Última actualización: {LAST_UPDATED}</p>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <div className="priv-body">
 
@@ -326,13 +238,93 @@ export default function PrivacyPage() {
       <footer className="priv-footer">
         <p>© {new Date().getFullYear()} GolPlay · Todos los derechos reservados · Hecho en LATAM 🌎</p>
         <p style={{marginTop:8}}>
-          <Link href="/" style={{color:'rgba(255,255,255,.45)'}}>Inicio</Link>
+          <Link href="/" className="priv-footer__link">Inicio</Link>
           {' · '}
-          <Link href="/terms" style={{color:'rgba(255,255,255,.45)'}}>Términos de uso</Link>
+          <Link href="/terms" className="priv-footer__link">Términos de uso</Link>
           {' · '}
-          <a href="mailto:gestion@golplay.com" style={{color:'rgba(255,255,255,.45)'}}>gestion@golplay.com</a>
+          <a href="mailto:gestion@golplay.com" className="priv-footer__link">gestion@golplay.com</a>
         </p>
       </footer>
     </>
   )
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const CSS = `
+.priv-hero{
+  background:linear-gradient(155deg,var(--dark) 0%,#0a3018 60%,#0e4820 100%);
+  padding:clamp(74px,10vw,110px) clamp(16px,4vw,40px) clamp(44px,6vw,72px);
+  position:relative; overflow:hidden;
+}
+.priv-hero::before{
+  content:''; position:absolute; inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);
+  background-size:50px 50px;
+}
+.priv-hero__inner{max-width:680px;margin:0 auto;position:relative;z-index:1;}
+.priv-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);
+  border-radius:999px;padding:5px 12px;margin-bottom:20px;
+}
+.priv-badge__dot{width:5px;height:5px;border-radius:50%;background:var(--g4);}
+.priv-badge__text{font-size:10px;font-weight:700;color:rgba(74,222,128,.88);letter-spacing:.08em;text-transform:uppercase;}
+.priv-hero h1{
+  font-family:var(--font-d);font-size:clamp(30px,7vw,48px);font-weight:800;
+  color:#fff;line-height:1.05;letter-spacing:-.02em;margin-bottom:14px;
+}
+.priv-hero h1 span{
+  background:linear-gradient(110deg,var(--g4) 0%,#34d399 60%,#22d3ee 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.priv-hero p{font-size:14px;color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:8px;}
+.priv-updated{font-size:12px;color:rgba(255,255,255,.25);margin-top:16px;}
+
+.priv-body{max-width:760px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,40px);}
+
+.priv-trust{
+  display:flex;gap:10px;flex-wrap:wrap;margin-bottom:44px;
+}
+.priv-trust-pill{
+  display:flex;align-items:center;gap:6px;
+  background:var(--white);border:1.5px solid var(--bd);
+  border-radius:999px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--ink);
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.priv-trust-pill span:first-child{font-size:14px;}
+
+.priv-toc{
+  background:var(--white);border:1.5px solid var(--bd);border-radius:18px;
+  padding:22px;margin-bottom:44px;
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+}
+.priv-toc h3{font-family:var(--font-d);font-size:13px;font-weight:800;color:var(--ink);letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px;}
+.priv-toc ul{list-style:none;display:flex;flex-direction:column;gap:5px;margin:0;padding:0;}
+.priv-toc a{font-size:13px;color:var(--muted);display:block;padding:3px 0;text-decoration:none;transition:color .12s;}
+.priv-toc a:hover{color:var(--g6);}
+
+.priv-section{margin-bottom:40px;}
+.priv-section h2{
+  font-family:var(--font-d);font-size:clamp(16px,3vw,20px);font-weight:800;
+  color:var(--ink);letter-spacing:-.01em;margin-bottom:14px;
+  padding-bottom:10px;border-bottom:2px solid rgba(74,222,128,.2);
+}
+.priv-section__body{
+  font-size:14px;color:var(--ink);opacity:.85;line-height:1.8;white-space:pre-line;
+}
+.priv-section__body strong{font-weight:700;opacity:1;}
+
+.priv-footer{
+  background:var(--dark);color:rgba(255,255,255,.28);
+  text-align:center;padding:32px clamp(16px,4vw,40px);
+  font-size:12px;line-height:1.7;
+}
+.priv-footer__link{color:rgba(255,255,255,.45);text-decoration:none;}
+.priv-footer__link:hover{text-decoration:underline;}
+
+@media(max-width:640px){
+  .priv-trust{flex-direction:column;}
+}
+`

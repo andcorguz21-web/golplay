@@ -1,0 +1,1751 @@
+═══════════════════════════════
+GOLPLAY — PROJECT INVENTORY
+Generado: Tue May 19 18:22:12 CST 2026
+═══════════════════════════════
+
+## ÁRBOL DE ARCHIVOS RELEVANTES
+components/ui/admin/AdminLayout.tsx
+components/ui/admin/AdminSidebar.tsx
+components/ui/admin/AdminTopbar.tsx
+components/ui/admin/BookingModal.tsx
+components/ui/admin/ClosedDates.tsx
+components/ui/admin/CreateBookingModal.tsx
+components/ui/admin/daily.tsx
+components/ui/admin/RecurringBookings.tsx
+components/ui/admin/ValidationBanner.tsx
+components/ui/admin/week.tsx
+components/ui/Button.tsx
+components/ui/calendar/DatePicker.tsx
+components/ui/Card.tsx
+components/ui/Header.tsx
+components/ui/Loader.tsx
+components/ui/map/MapView.tsx
+components/ui/MapEmbedClient.tsx
+components/ui/Navbar.tsx
+components/ui/page.tsx
+components/ui/PlayerCard.tsx
+components/ui/SkeletonCard.tsx
+components/ui/TermsModal.tsx
+components/ui/Typography.tsx
+lib/dates.ts
+lib/format.ts
+lib/logout.ts
+lib/playerSupabase.ts
+lib/session.ts
+lib/styles/golplay.ts
+lib/supabase.ts
+lib/teamSupabase.ts
+lib/useAdminGuard.ts
+pages/_app.tsx
+pages/about.tsx
+pages/admin/bookings.tsx
+pages/admin/business-model.tsx
+pages/admin/calendar/index.tsx
+pages/admin/challenges.tsx
+pages/admin/coupons/index.tsx
+pages/admin/customers.tsx
+pages/admin/fields.tsx
+pages/admin/index.tsx
+pages/admin/payments.tsx
+pages/admin/payments/[id].tsx
+pages/admin/payments/index.tsx
+pages/admin/profile/index.tsx
+pages/admin/receipts/index.tsx
+pages/admin/settings/index.tsx
+pages/admin/tournaments/[id].tsx
+pages/admin/tournaments/index.tsx
+pages/admin/tournaments/new.tsx
+pages/api/home-fields.ts
+pages/api/logout.ts
+pages/api/paddle/create-checkout.ts
+pages/api/paddle/webhook.ts
+pages/api/players/create.ts
+pages/api/players/me.ts
+pages/api/players/recover.ts
+pages/api/players/update.ts
+pages/api/players/upload-photo.ts
+pages/api/send-booking-email.tsx
+pages/api/teams/[action].ts
+pages/api/teams/upload-logo.ts
+pages/complexes/[slug].tsx
+pages/equipos/[slug].tsx
+pages/equipos/crear.tsx
+pages/equipos/index.tsx
+pages/equipos/mis-equipos.tsx
+pages/equipos/unirse/[token].tsx
+pages/favorites.tsx
+pages/forgot-password.tsx
+pages/index.tsx
+pages/join.tsx
+pages/jugadores/[slug].tsx
+pages/jugadores/crear.tsx
+pages/jugadores/mi-perfil.tsx
+pages/jugadores/preview.tsx
+pages/landing.tsx
+pages/login.tsx
+pages/perfil.tsx
+pages/privacy.tsx
+pages/recuperar.tsx
+pages/register.tsx
+pages/reserve/[id].tsx
+pages/reserve/index.tsx
+pages/reserve/MapEmbed.tsx
+pages/reset-password.tsx
+pages/retos/[slug].tsx
+pages/retos/index.tsx
+pages/retos/mis-retos.tsx
+pages/retos/publicar.tsx
+pages/terms.tsx
+pages/torneos/[slug]/index.tsx
+pages/torneos/[slug]/registrar.tsx
+pages/ui-test.tsx
+
+## LÍNEAS POR ARCHIVO
+       5 lib/logout.ts
+       7 lib/supabase.ts
+       7 pages/api/logout.ts
+      12 components/ui/SkeletonCard.tsx
+      12 pages/api/players/recover.ts
+      15 pages/api/players/me.ts
+      15 pages/api/players/update.ts
+      17 pages/api/players/upload-photo.ts
+      18 components/ui/Card.tsx
+      18 pages/_app.tsx
+      23 lib/dates.ts
+      23 lib/format.ts
+      25 components/ui/Button.tsx
+      27 pages/ui-test.tsx
+      29 lib/playerSupabase.ts
+      36 lib/session.ts
+      38 components/ui/page.tsx
+      40 components/ui/Typography.tsx
+      40 lib/useAdminGuard.ts
+      40 pages/api/players/create.ts
+      42 pages/api/send-booking-email.tsx
+      44 lib/teamSupabase.ts
+      48 components/ui/Loader.tsx
+      53 pages/api/home-fields.ts
+      57 pages/api/teams/[action].ts
+      61 pages/reserve/MapEmbed.tsx
+      64 pages/api/teams/upload-logo.ts
+      67 components/ui/calendar/DatePicker.tsx
+      76 pages/api/paddle/create-checkout.ts
+      80 components/ui/PlayerCard.tsx
+      89 pages/recuperar.tsx
+      91 pages/api/paddle/webhook.ts
+     113 components/ui/map/MapView.tsx
+     113 lib/styles/golplay.ts
+     146 components/ui/MapEmbedClient.tsx
+     149 pages/jugadores/mi-perfil.tsx
+     165 pages/forgot-password.tsx
+     191 components/ui/Navbar.tsx
+     197 pages/equipos/mis-equipos.tsx
+     204 pages/perfil.tsx
+     208 pages/equipos/index.tsx
+     216 pages/equipos/unirse/[token].tsx
+     223 pages/favorites.tsx
+     229 pages/equipos/crear.tsx
+     240 pages/about.tsx
+     263 pages/admin/payments/[id].tsx
+     275 components/ui/admin/ClosedDates.tsx
+     289 pages/login.tsx
+     290 pages/join.tsx
+     295 components/ui/admin/RecurringBookings.tsx
+     302 pages/complexes/[slug].tsx
+     305 components/ui/TermsModal.tsx
+     315 pages/jugadores/crear.tsx
+     338 pages/privacy.tsx
+     344 pages/retos/mis-retos.tsx
+     347 components/ui/admin/AdminSidebar.tsx
+     368 pages/admin/tournaments/index.tsx
+     371 pages/jugadores/preview.tsx
+     371 pages/reset-password.tsx
+     379 components/ui/admin/AdminTopbar.tsx
+     417 pages/admin/calendar/index.tsx
+     433 components/ui/admin/daily.tsx
+     445 pages/admin/coupons/index.tsx
+     446 components/ui/admin/week.tsx
+     462 pages/retos/index.tsx
+     469 pages/admin/receipts/index.tsx
+     487 pages/register.tsx
+     490 components/ui/admin/ValidationBanner.tsx
+     500 pages/retos/publicar.tsx
+     591 components/ui/admin/AdminLayout.tsx
+     597 pages/torneos/[slug]/registrar.tsx
+     601 pages/jugadores/[slug].tsx
+     630 pages/admin/challenges.tsx
+     632 pages/terms.tsx
+     639 pages/torneos/[slug]/index.tsx
+     641 pages/admin/customers.tsx
+     670 components/ui/admin/CreateBookingModal.tsx
+     681 pages/admin/payments.tsx
+     681 pages/admin/payments/index.tsx
+     774 pages/admin/tournaments/new.tsx
+     799 pages/admin/settings/index.tsx
+     808 pages/landing.tsx
+     864 components/ui/admin/BookingModal.tsx
+     888 pages/equipos/[slug].tsx
+     944 pages/retos/[slug].tsx
+    1032 pages/admin/business-model.tsx
+    1067 pages/admin/profile/index.tsx
+    1120 pages/reserve/index.tsx
+    1173 components/ui/Header.tsx
+    1238 pages/admin/bookings.tsx
+    1464 pages/admin/index.tsx
+    1583 pages/admin/tournaments/[id].tsx
+    1675 pages/reserve/[id].tsx
+    1724 pages/admin/fields.tsx
+    1746 pages/index.tsx
+   37876 total
+
+## TOP 25 LÍNEAS DE CADA PÁGINA (imports + diseño)
+
+─── pages/_app.tsx ───
+import type { AppProps } from 'next/app'
+import Head from 'next/head'
+import '../styles/layout.css'
+import 'leaflet/dist/leaflet.css'
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <>
+      <Head>
+        <link rel="icon" href="/logo-golplay1.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/logo-golplay1.svg" />
+        <meta name="theme-color" content="#16a34a" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      <Component {...pageProps} />
+    </>
+  )
+}
+
+─── pages/about.tsx ───
+import Head from 'next/head'
+import Image from 'next/image'
+import Header from '@/components/ui/Header'
+
+export default function AboutGolPlay() {
+  return (
+    <>
+      <Head>
+        <title>Sobre GolPlay | Marketplace de Canchas Deportivas</title>
+        <meta
+          name="description"
+          content="GolPlay es el marketplace de canchas deportivas en Costa Rica. Reservá, gestioná y jugá de forma simple, rápida y transparente."
+        />
+      </Head>
+
+      <Header />
+
+      {/* ===== HERO ===== */}
+      <section style={styles.hero}>
+        <div style={styles.heroContent}>
+          <div style={styles.heroImage}>
+            <Image
+              src="/about-golplay.jpg"
+              alt="Fundador GolPlay y visión del proyecto"
+              fill
+
+─── pages/admin/bookings.tsx ───
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+import * as XLSX from 'xlsx'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show' | 'active'
+type TabId   = 'all' | 'upcoming' | 'today' | 'past' | 'cancelled'
+type SortKey = 'date' | 'field' | 'client' | 'price'
+type SortDir = 'asc' | 'desc'
+
+interface Field {
+  id: number
+  name: string
+  sport?: string
+}
+
+interface Booking {
+  id: number
+  date: string
+  hour: string
+  status: BookingStatus
+
+─── pages/admin/business-model.tsx ───
+/**
+ * GolPlay — Business Model Dashboard
+ * Sin Tailwind. Estilos inline puros. Compatible con cualquier Next.js stack.
+ * Schema real: bookings(id, field_id, date, hour, price, status='confirmed', created_at)
+ *              fields(id, name, sport, price)
+ *              profiles(id, currency, country) ← moneda del owner leída de acá
+ *
+ * Modelo de negocio v3.0: Plan fijo mensual.
+ *   - Costa Rica: ₡35,000 CRC/mes
+ *   - Resto LATAM: $75 USD/mes (convertido a moneda local)
+ *   - Trial: 30 días gratis
+ *
+ * Dependencias: npm install recharts date-fns lucide-react
+ */
+
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Cell,
+} from 'recharts'
+import {
+  TrendingUp, TrendingDown, DollarSign, CalendarCheck,
+
+─── pages/admin/calendar/index.tsx ───
+/**
+ * GolPlay — Calendario Administrativo
+ * pages/admin/calendar/index.tsx
+ *
+ * Dependencias: npm install react-day-picker
+ *
+ * CAMBIOS v3: slot_duration support.
+ * - Field type now includes slot_duration
+ * - Builds fieldSlotDurations map and passes as prop to DailyCalendar and WeeklyCalendar
+ * - Bookings with slot_duration > 1 visually span multiple hour rows
+ */
+
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+import DailyCalendar from '@/components/ui/admin/daily'
+import WeeklyCalendar from '@/components/ui/admin/week'
+import { DayPicker } from 'react-day-picker'
+import 'react-day-picker/dist/style.css'
+import {
+  ChevronLeft, ChevronRight, CalendarDays,
+
+─── pages/admin/challenges.tsx ───
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+
+interface Field {
+  id: number
+  name: string
+  sport: string | null
+  price_day: number
+  price_night: number | null
+  night_from_hour: number
+  slot_duration: number
+}
+
+interface Challenge {
+  id: string
+  complex_id: number
+  field_id: number
+  team_a_name: string
+  team_a_captain: string | null
+  team_a_phone: string | null
+  team_a_cedula: string | null
+  sport: string
+  date: string
+
+─── pages/admin/coupons/index.tsx ───
+/**
+ * GolPlay — pages/admin/coupons/index.tsx
+ * Gestión de cupones de descuento (solo admin).
+ */
+
+import { useEffect, useState, useCallback } from 'react'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import {
+  Plus, Tag, Trash2, ToggleLeft, ToggleRight, Copy,
+  RefreshCw, X, CheckCircle, Loader2, Percent, DollarSign,
+  Calendar, Users, Hash,
+} from 'lucide-react'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Coupon {
+  id: number
+  code: string
+  description: string | null
+  discount_type: 'percentage' | 'fixed_usd'
+  discount_value: number
+  max_uses: number | null
+  current_uses: number
+  valid_from: string | null
+
+─── pages/admin/customers.tsx ───
+/**
+ * GolPlay — Admin Customers CRM v2.0
+ * pages/admin/customers.tsx
+ *
+ * Premium SaaS CRM — "Refined Sport Intelligence"
+ * - DM Sans typography
+ * - Table view with sortable columns
+ * - Slide-over detail panel with dark header
+ * - Animated KPI strip
+ * - Excel export
+ * - Inline edit, booking history, special pricing
+ */
+
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+import * as XLSX from 'xlsx'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Customer {
+  id: number; first_name: string; last_name: string | null
+  id_number: string | null; phone: string | null; email: string | null
+
+─── pages/admin/fields.tsx ───
+import { useEffect, useState, useCallback, useRef, type CSSProperties } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/router'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import TermsModal from '@/components/ui/TermsModal'
+import RecurringBookings from '@/components/ui/admin/RecurringBookings'
+import ClosedDates from '@/components/ui/admin/ClosedDates'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type SportType = 'futbol5' | 'futbol7' | 'futbol11' | 'padel' | 'tenis' | 'basquet' | 'voleibol' | 'otro'
+
+interface Field {
+  id: number
+  name: string
+  sport?: SportType
+  price: number
+  price_day?: number
+  price_night?: number
+  night_from_hour?: number
+  description?: string | null
+  features?: string[] | null
+  hours?: string[] | null
+  location?: string | null
+
+─── pages/admin/index.tsx ───
+/**
+ * GolPlay — Dashboard Admin
+ * pages/admin/index.tsx
+ *
+ * Dirección de diseño: SaaS Premium Light
+ * - Fondo blanco con canvas #f5f7fa
+ * - Tarjetas KPI con colores dinámicos vibrantes por categoría
+ * - Tipografía: Geist Mono (números) + Inter (texto)
+ * - Logo SVG desde /public/logo-golplay1.svg
+ * - Sidebar drawer en mobile
+ */
+
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+import {
+  Chart as ChartJS, CategoryScale, LinearScale,
+  BarElement, Tooltip, Filler, LineElement, PointElement,
+} from 'chart.js'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
+import { Line } from 'react-chartjs-2'
+import type { ChartOptions } from 'chart.js'
+import * as XLSX from 'xlsx'
+
+─── pages/admin/payments.tsx ───
+/**
+ * GolPlay — Pagos & Facturación v3.0
+ * pages/admin/payments.tsx
+ *
+ * Mismo lenguaje visual que el resto del admin:
+ * - DM Sans + Syne headers
+ * - Colores: verde GolPlay, slate, white cards
+ * - Plan fijo mensual: ₡35,000 CRC / $75 USD
+ * - SINPE Móvil como método principal
+ * - Upload de comprobante
+ * - Timeline de historial
+ *
+ * Sin Tailwind. CSS classes.
+ */
+
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+import {
+  formatMoney, formatMoneyShort,
+  PLAN_PRICE_CRC, PLAN_PRICE_USD, PLAN_TRIAL_DAYS,
+  getPlanPriceLocal, LATAM_COUNTRIES, USD_RATES,
+} from '@/sports'
+
+─── pages/admin/payments/[id].tsx ───
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/router';
+import AdminLayout from '@/components/ui/admin/AdminLayout';
+
+/* ===================== */
+/* TYPES */
+/* ===================== */
+
+type Statement = {
+  id: string;
+  field_id: number;
+  month: number;
+  year: number;
+  reservations_count: number;
+  amount_due: number;
+  status: 'paid' | 'pending' | 'overdue';
+  due_date: string;
+  paid_at?: string;
+};
+
+/* ===================== */
+/* HELPERS */
+/* ===================== */
+
+
+─── pages/admin/payments/index.tsx ───
+/**
+ * GolPlay — Pagos & Facturación v3.0
+ * pages/admin/payments.tsx
+ *
+ * Mismo lenguaje visual que el resto del admin:
+ * - DM Sans + Syne headers
+ * - Colores: verde GolPlay, slate, white cards
+ * - Plan fijo mensual: ₡35,000 CRC / $75 USD
+ * - SINPE Móvil como método principal
+ * - Upload de comprobante
+ * - Timeline de historial
+ *
+ * Sin Tailwind. CSS classes.
+ */
+
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import ValidationBanner from '@/components/ui/admin/ValidationBanner'
+import {
+  formatMoney, formatMoneyShort,
+  PLAN_PRICE_CRC, PLAN_PRICE_USD, PLAN_TRIAL_DAYS,
+  getPlanPriceLocal, LATAM_COUNTRIES, USD_RATES,
+} from '@/sports'
+
+─── pages/admin/profile/index.tsx ───
+/**
+ * GolPlay — Mi Perfil
+ * pages/admin/profile/index.tsx
+ *
+ * LATAM-ready: país, región, prefijo telefónico y moneda dinámicos.
+ * Secciones:
+ *   1. Identidad  — nombre, email, teléfono con prefijo dinámico
+ *   2. Complejo   — nombre, país, región/estado, moneda, descripción (solo owners)
+ *   3. Seguridad  — cambiar contraseña
+ *   4. Cuenta     — plan activo con moneda local, accesos rápidos, cerrar sesión
+ */
+
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import type { Role } from '@/components/ui/admin/AdminLayout'
+import {
+  LATAM_COUNTRIES,
+  formatMoney, formatMoneyShort,
+  getPlanPriceLocal, PLAN_PRICE_CRC, PLAN_PRICE_USD, PLAN_TRIAL_DAYS,
+  type CountryCode,
+} from '@/sports'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+─── pages/admin/receipts/index.tsx ───
+/**
+ * GolPlay — pages/admin/receipts/index.tsx
+ * Panel de validación de comprobantes de pago (solo admin).
+ */
+
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import {
+  CheckCircle, XCircle, Clock, Eye, Download, RefreshCw,
+  AlertTriangle, FileText, X, Loader2, ChevronDown,
+} from 'lucide-react'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Receipt {
+  id: number
+  statement_id: string
+  owner_id: string
+  file_url: string
+  file_name: string | null
+  payment_method: string
+  notes: string | null
+  status: 'pending' | 'approved' | 'rejected'
+
+─── pages/admin/settings/index.tsx ───
+/**
+ * GolPlay — Configuración
+ * pages/admin/settings/index.tsx
+ *
+ * Solo visible para rol 'admin' (el sidebar ya filtra, pero hacemos guard aquí también).
+ * Secciones:
+ *   1. General — nombre plataforma, moneda, zona horaria
+ *   2. Comisiones — modelo de monetización, límite, monto por reserva
+ *   3. Notificaciones — toggles email/webhook
+ *   4. Base de datos — resumen de tablas, accesos RLS
+ *   5. Peligro — reset de datos de prueba
+ */
+
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface GeneralSettings {
+  platform_name: string
+  currency: string
+  timezone: string
+  support_email: string
+
+─── pages/admin/tournaments/[id].tsx ───
+/**
+ * GolPlay — pages/admin/tournaments/[id].tsx
+ * Detalle y gestión de un torneo
+ *
+ * v3.0 (Fase 9): Gestión de partidos
+ * - Crear partido (team A vs team B, fecha, ronda, cancha)
+ * - Cargar resultado (scores + auto-detección de ganador)
+ * - Editar / Eliminar partido
+ * - Lista agrupada por ronda
+ */
+
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin'
+import {
+  Tournament,
+  TournamentTeam,
+  TournamentMatch,
+  TournamentStatus,
+} from '@/types/tournaments'
+
+type TabId = 'overview' | 'teams' | 'matches' | 'config'
+
+─── pages/admin/tournaments/index.tsx ───
+/**
+ * GolPlay — pages/admin/tournaments/index.tsx
+ * Panel de gestión de Torneos
+ *
+ * Features:
+ * - Listado de torneos con tabs por estado
+ * - Super-admin ve TODOS los torneos
+ * - Owner solo ve los suyos (managed_by = userId)
+ * - Empty state por tab
+ * - Link a crear nuevo y a detalle de cada torneo
+ */
+
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin'
+import { TournamentStatus, TournamentWithMeta } from '@/types/tournaments'
+
+// ─── Types adicionales ──────────────────────────────────────
+
+type TabId = 'active' | 'draft' | 'history'
+
+// ─── Helpers ────────────────────────────────────────────────
+
+─── pages/admin/tournaments/new.tsx ───
+/**
+ * GolPlay — pages/admin/tournaments/new.tsx
+ * Crear un torneo nuevo
+ *
+ * Features:
+ * - Modo "Complejo registrado" (default para owners)
+ * - Modo "Venue externo" (solo super-admin)
+ * - Upload de cover image a Supabase Storage
+ * - Generación automática de slug
+ * - Validación condicional según modo
+ */
+
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import AdminLayout from '@/components/ui/admin/AdminLayout'
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin'
+import {
+  TournamentCreatePayload,
+  SportType,
+  TournamentFormat,
+} from '@/types/tournaments'
+
+// ─── Types ──────────────────────────────────────────────────
+
+─── pages/complexes/[slug].tsx ───
+/**
+ * GolPlay — pages/complexes/[slug].tsx  v2 "Premium Complex Landing"
+ */
+
+import { useRouter } from 'next/router'
+import Head from 'next/head'
+import Link from 'next/link'
+import { useEffect, useState, useMemo, useRef } from 'react'
+import { supabase } from '@/lib/supabase'
+
+interface Complex { id:number; name:string; slug:string; country:string|null; city:string|null; address:string|null; phone:string|null; whatsapp:string|null; logo_url:string|null; latitude:number|null; longitude:number|null }
+interface Field { id:number; name:string; sport:string|null; price_day:number; price_night:number|null; active:boolean; image:string|null; slot_duration:number; description:string|null }
+
+const SPORT: Record<string,{label:string;emoji:string;color:string;bg:string}> = {
+  futbol5:{label:'Fútbol 5',emoji:'⚽',color:'#4ade80',bg:'rgba(22,163,74,.15)'},futbol7:{label:'Fútbol 7',emoji:'⚽',color:'#86efac',bg:'rgba(21,128,61,.15)'},futbol8:{label:'Fútbol 8',emoji:'⚽',color:'#4ade80',bg:'rgba(22,163,74,.15)'},futbol11:{label:'Fútbol 11',emoji:'⚽',color:'#22c55e',bg:'rgba(22,163,74,.18)'},padel:{label:'Pádel',emoji:'🎾',color:'#67e8f9',bg:'rgba(21,94,117,.15)'},tenis:{label:'Tenis',emoji:'🎾',color:'#fde68a',bg:'rgba(133,77,14,.15)'},basquet:{label:'Básquet',emoji:'🏀',color:'#fdba74',bg:'rgba(154,52,18,.15)'},voleibol:{label:'Voleibol',emoji:'🏐',color:'#c4b5fd',bg:'rgba(76,29,149,.15)'},multiuso:{label:'Multiuso',emoji:'🏟️',color:'#a78bfa',bg:'rgba(76,29,149,.12)'},otro:{label:'Otro',emoji:'🏟️',color:'#94a3b8',bg:'rgba(100,116,139,.12)'},
+}
+const FLAGS:Record<string,string>={CR:'🇨🇷',MX:'🇲🇽',CO:'🇨🇴',AR:'🇦🇷',CL:'🇨🇱',PE:'🇵🇪',UY:'🇺🇾',PA:'🇵🇦',GT:'🇬🇹',HN:'🇭🇳'}
+const fmt=(n:number)=>n>0?`₡${n.toLocaleString('es-CR')}`:'Consultar'
+const FALLBACK='https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=800&q=80'
+
+function useInView(threshold=0.12){const ref=useRef<HTMLDivElement>(null);const[vis,setVis]=useState(false);useEffect(()=>{const el=ref.current;if(!el)return;const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting){setVis(true);obs.disconnect()}},{threshold});obs.observe(el);return()=>obs.disconnect()},[threshold]);return{ref,vis}}
+function FadeIn({children,delay=0,className=''}:{children:React.ReactNode;delay?:number;className?:string}){const{ref,vis}=useInView();return(<div ref={ref} className={className} style={{opacity:vis?1:0,transform:vis?'none':'translateY(20px)',transition:`opacity .5s ease ${delay}ms, transform .5s ease ${delay}ms`}}>{children}</div>)}
+
+export default function ComplexPage(){
+  const router=useRouter()
+
+─── pages/equipos/[slug].tsx ───
+// pages/equipos/[slug].tsx
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
+import Navbar from "@/components/ui/Navbar";
+import { GOLPLAY_BASE_CSS } from "@/lib/styles/golplay";
+
+type Player = { id: string; name: string; slug: string; photo_url: string | null };
+type Member = { id: string; role: "captain" | "member"; joined_at: string; player: Player };
+type Team = {
+  id: string; name: string; slug: string; logo_url: string | null;
+  description: string | null; captain_player_id: string; created_at: string;
+};
+type TeamData = {
+  team: Team; members: Member[]; is_captain: boolean;
+  is_member: boolean; invite_url: string | null;
+};
+
+type PendingRequest = {
+  id: string;
+  message: string | null;
+  proposed_date: string | null;
+  proposed_hour: string | null;
+  status: string;
+
+─── pages/equipos/crear.tsx ───
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
+import Navbar from "@/components/ui/Navbar";
+import { GOLPLAY_BASE_CSS } from "@/lib/styles/golplay";
+
+type Player = { id: string; name: string; slug: string; photo_url: string | null };
+type Status = "loading" | "no_player" | "no_photo" | "ready" | "submitting";
+
+const CSS = `${GOLPLAY_BASE_CSS}
+.page { min-height: 100vh; background: var(--bone); padding-top: 62px; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 48px clamp(16px,4vw,32px) 64px; animation: fadeUp .5s ease both; }
+.back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--muted); text-decoration: none;
+  margin-bottom: 20px; font-weight: 500; padding: 5px 10px; border-radius: 8px;
+  transition: all .15s;
+}
+.back:hover { color: var(--ink); background: rgba(0,0,0,.04); }
+.heading {
+  font-family: var(--font-d); font-size: clamp(32px,7vw,48px);
+  font-weight: 800; line-height: .95; letter-spacing: -.02em;
+  color: var(--ink); margin: 0 0 10px;
+}
+
+─── pages/equipos/index.tsx ───
+import { useEffect, useState } from "react";
+import Head from "next/head";
+import Link from "next/link";
+import Navbar from "@/components/ui/Navbar";
+import { GOLPLAY_BASE_CSS } from "@/lib/styles/golplay";
+
+type TeamRow = {
+  id: string; name: string; slug: string;
+  logo_url: string | null; description: string | null;
+  captain_player_id: string; created_at: string;
+  role: "captain" | "member"; joined_at: string;
+  pending_requests_count: number;
+};
+type State = "loading" | "no_player" | "ready" | "error";
+
+const CSS = `${GOLPLAY_BASE_CSS}
+.page { min-height: 100vh; background: var(--bone); padding-top: 62px; }
+.header-section { padding: 48px clamp(16px,4vw,40px) 28px; max-width: 1100px; margin: 0 auto; }
+.header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.title-block { animation: fadeUp .5s ease both; }
+.create-cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 11px 22px; background: var(--g6); color: #fff;
+  border-radius: 12px; font-family: inherit; font-weight: 700; font-size: 13px;
+  text-decoration: none; box-shadow: 0 2px 10px rgba(22,163,74,.28);
+
+─── pages/equipos/mis-equipos.tsx ───
+import { useEffect, useState } from "react";
+import Head from "next/head";
+import Link from "next/link";
+import Navbar from "@/components/ui/Navbar";
+import { GOLPLAY_BASE_CSS } from "@/lib/styles/golplay";
+
+type TeamRow = {
+  id: string; name: string; slug: string; logo_url: string | null;
+  description: string | null; captain_player_id: string;
+  created_at: string; role: "captain" | "member"; joined_at: string;
+};
+type State = "loading" | "no_player" | "ready" | "error";
+
+const CSS = `${GOLPLAY_BASE_CSS}
+.page { min-height: 100vh; background: var(--bone); padding-top: 62px; }
+.header-section { padding: 48px clamp(16px,4vw,40px) 28px; max-width: 1100px; margin: 0 auto; }
+.header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.title-block { animation: fadeUp .5s ease both; }
+.create-cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 11px 22px; background: var(--g6); color: #fff;
+  border-radius: 12px; font-family: inherit; font-weight: 700; font-size: 13px;
+  text-decoration: none; box-shadow: 0 2px 10px rgba(22,163,74,.28);
+  transition: all .15s ease; border: none; cursor: pointer;
+}
+
+─── pages/equipos/unirse/[token].tsx ───
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
+import Navbar from "@/components/ui/Navbar";
+import { GOLPLAY_BASE_CSS } from "@/lib/styles/golplay";
+
+type State = "loading" | "no_player" | "joined" | "already_member" | "error";
+type TeamInfo = { id: string; name: string; slug: string; logo_url: string | null };
+
+const CSS = `${GOLPLAY_BASE_CSS}
+.page {
+  min-height: 100vh;
+  background: linear-gradient(155deg, #030c06 0%, #0a3018 55%, #0e4820 100%);
+  padding-top: 62px; position: relative; overflow: hidden;
+}
+.page::before {
+  content: ''; position: absolute; top: 30%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 600px; height: 400px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(22,163,74,.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+.page::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+
+─── pages/favorites.tsx ───
+/**
+ * GolPlay — pages/favorites.tsx
+ * Dark theme, header simple (logo + back), consistente con /perfil.
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+
+type FavoriteField = {
+  favoriteId: number
+  id: number
+  name: string
+  location: string
+  price_day: number
+  price_night: number
+  sport: string | null
+  image: string | null
+}
+
+const SPORT_META: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
+  futbol5:  { label: 'Fútbol 5',  emoji: '⚽', color: '#4ade80', bg: 'rgba(74,222,128,.12)' },
+
+─── pages/forgot-password.tsx ───
+/**
+ * GolPlay — pages/forgot-password.tsx
+ *
+ * Mejoras vs versión original:
+ *  - Manejo de error (no solo success)
+ *  - Validación de email antes de enviar
+ *  - Link "volver" al login
+ *  - Diseño consistente con el sistema visual del proyecto (Outfit + DM Sans)
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+
+export default function ForgotPassword() {
+  const [email,   setEmail]   = useState('')
+  const [sent,    setSent]    = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
+
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
+  const sendReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+─── pages/index.tsx ───
+/**
+ * GolPlay — pages/index.tsx  v6.0 "Rediseño LATAM"
+ *
+ * Rediseño completo mobile-first.
+ * - Datos reales de Supabase (fields + field_images)
+ * - Sin QR ni WhatsApp en el flujo, solo confirmación por correo
+ * - Modelo de negocio: plan fijo mensual, gratis para jugadores
+ * - Logo desde /logo-golplay.svg
+ */
+
+import {
+  useEffect, useState, useMemo, useRef, useCallback
+} from 'react'
+import { useRouter }  from 'next/router'
+import Head           from 'next/head'
+import Link           from 'next/link'
+import Image          from 'next/image'
+import { supabase }   from '@/lib/supabase'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Navigation } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/navigation'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Complex = {
+
+─── pages/join.tsx ───
+import Head from 'next/head'
+import Image from 'next/image'
+import Header from '@/components/ui/Header'
+
+export default function JoinGolPlay() {
+  return (
+    <>
+      <Head>
+        <title>Guía para unirse a GolPlay | Publicá tu cancha</title>
+        <meta
+          name="description"
+          content="Conocé cómo unirte a GolPlay y empezar a recibir reservas para tu cancha deportiva de forma simple y ordenada."
+        />
+      </Head>
+
+      <Header />
+
+      {/* ===== HERO ===== */}
+      <section style={styles.hero}>
+        <div style={styles.heroContent}>
+          <div style={styles.heroImage}>
+            <Image
+              src="/join-golplay.jpg"
+              alt="Complejo deportivo aliado de GolPlay"
+              fill
+
+─── pages/jugadores/[slug].tsx ───
+// pages/jugadores/[slug].tsx
+import { GetServerSideProps } from "next";
+import Head from "next/head";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/router";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+type Player = {
+  id: string;
+  display_name: string;
+  alias: string | null;
+  position: string | null;
+  photo_url: string | null;
+  slug: string;
+  rating: number;
+  rit: number; tir: number; pas: number; reg: number; def: number; fis: number;
+};
+
+const POSITION_LABELS: Record<string, string> = {
+  portero: "POR", defensa: "DC", medio: "MC", delantero: "DEL",
+};
+const POSITION_ALT: Record<string, string> = {
+  portero: "GK", defensa: "LD", medio: "CAM", delantero: "EXT",
+
+─── pages/jugadores/crear.tsx ───
+// pages/jugadores/crear.tsx
+import { useState, ChangeEvent } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
+import Image from "next/image";
+
+const POSITIONS = [
+  { v: "", l: "Sin especificar" },
+  { v: "portero", l: "Portero" },
+  { v: "defensa", l: "Defensa" },
+  { v: "medio", l: "Medio" },
+  { v: "delantero", l: "Delantero" },
+];
+
+type BgState = "idle" | "downloading" | "processing" | "preview";
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+─── pages/jugadores/mi-perfil.tsx ───
+// pages/jugadores/mi-perfil.tsx
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
+import Image from "next/image";
+
+type Player = {
+  id: string; display_name: string; alias: string | null; position: string | null;
+  photo_url: string | null; slug: string; rating: number; current_streak: number;
+  matches_played: number; wins: number; losses: number; draws: number;
+};
+
+export default function MiPerfilJugador() {
+  const router = useRouter();
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/players/me")
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(j => { setPlayer(j.player); setLoading(false); })
+      .catch(() => { router.replace("/jugadores/crear"); });
+  }, [router]);
+
+
+─── pages/jugadores/preview.tsx ───
+// pages/jugadores/preview.tsx
+// Preview standalone. Layout FC EA compacto.
+
+import Head from "next/head";
+
+type PlayerCardData = {
+  display_name: string;
+  alias: string | null;
+  position: string | null;
+  photo_url: string | null;
+  rit: number; tir: number; pas: number;
+  reg: number; def: number; fis: number;
+};
+
+const POSITION_LABELS: Record<string, string> = {
+  portero: "POR", defensa: "DC", medio: "MC", delantero: "DEL",
+};
+
+function calculateRating(p: PlayerCardData): number {
+  return Math.round((p.rit + p.tir + p.pas + p.reg + p.def + p.fis) / 6);
+}
+
+function getTier(rating: number): "bronze" | "silver" | "gold" {
+  if (rating >= 75) return "gold";
+  if (rating >= 65) return "silver";
+
+─── pages/landing.tsx ───
+/**
+ * GolPlay — Landing Page LATAM
+ * pages/index.tsx
+ *
+ * Modelo de negocio:
+ *   Plan fijo mensual: ₡35,000 CRC / $75 USD LATAM
+ *   30 días gratis · Sin límite de reservas
+ *
+ * Sin Tailwind. Estilos inline + Google Fonts via next/head.
+ * Dependencias: npm install lucide-react
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useEffect, useRef } from 'react'
+import { supabase } from '@/lib/supabase'
+import {
+  BarChart2, Shield, Zap, Clock,
+  CheckCircle, ArrowRight, Star, Menu, X,
+  TrendingUp, Bell, CreditCard,
+} from 'lucide-react'
+
+// ─── Animation hook ───────────────────────────────────────────────────────────
+function useInView(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null)
+
+─── pages/login.tsx ───
+/**
+ * GolPlay — pages/login.tsx
+ *
+ * Mejoras vs versión original:
+ *  - Redirect correcto: admin/owner → /admin, player → /, user → /
+ *  - setLoading(false) en el finally aunque haya success (evita spinner stuck)
+ *  - Panel izquierdo visible en desktop con media query en <style>
+ *  - Google Fonts via next/head con preconnect correcto
+ *  - Sin cambios visuales — se mantiene el diseño exacto del original
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import { Eye, EyeOff, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function validateEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+}
+
+function friendlyError(msg: string): string {
+
+─── pages/perfil.tsx ───
+/**
+ * GolPlay — pages/perfil.tsx
+ * Perfil del usuario: datos, historial de reservas, favoritos.
+ * Dark theme + green accents — consistente con landing de GolPlay.
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+
+interface Profile { first_name: string; last_name: string; phone: string | null; role: string; complex_name: string | null; country: string; currency: string; created_at: string }
+interface BookingHistory { id: number; date: string; hour: string; status: string; price: number | null; field_name: string; field_sport: string | null; field_location: string | null }
+interface FavoriteField { favoriteId: number; fieldId: number; name: string; sport: string | null; location: string | null; image: string | null }
+
+const SPORT_META: Record<string, { label: string; emoji: string }> = { futbol5:{label:'Fútbol 5',emoji:'⚽'}, futbol7:{label:'Fútbol 7',emoji:'⚽'}, futbol11:{label:'Fútbol 11',emoji:'⚽'}, padel:{label:'Pádel',emoji:'🎾'}, tenis:{label:'Tenis',emoji:'🎾'}, basquet:{label:'Básquet',emoji:'🏀'}, voleibol:{label:'Voleibol',emoji:'🏐'}, multiuso:{label:'Multiuso',emoji:'🏟️'}, otro:{label:'Otro',emoji:'🏅'} }
+const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = { confirmed:{label:'Confirmada',color:'#4ade80',bg:'rgba(74,222,128,.12)'}, pending:{label:'Pendiente',color:'#fbbf24',bg:'rgba(251,191,36,.12)'}, cancelled:{label:'Cancelada',color:'#6b7280',bg:'rgba(107,114,128,.12)'}, completed:{label:'Completada',color:'#60a5fa',bg:'rgba(96,165,250,.12)'}, no_show:{label:'No asistió',color:'#f87171',bg:'rgba(248,113,113,.12)'} }
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?auto=format&fit=crop&w=400&q=60'
+const fmt = (n: number) => `₡${Number(n).toLocaleString('es-CR')}`
+const fmtDate = (d: string) => { try { return new Date(d+'T00:00:00').toLocaleDateString('es-CR',{weekday:'short',day:'numeric',month:'short'}) } catch { return d } }
+
+export default function ProfilePage() {
+  const router = useRouter()
+
+─── pages/privacy.tsx ───
+/**
+ * GolPlay — pages/privacy.tsx
+ * Página de Privacidad profesional — LATAM compliance
+ */
+
+import Head  from 'next/head'
+import Link  from 'next/link'
+
+const LAST_UPDATED = '15 de enero de 2025'
+
+const sections = [
+  {
+    id: 'quienes-somos',
+    title: '1. ¿Quiénes somos?',
+    content: `GolPlay es un marketplace digital de reservas de canchas deportivas presente en Latinoamérica. Operamos como intermediario tecnológico que conecta a jugadores con complejos deportivos registrados en nuestra plataforma.
+
+Responsable del tratamiento de datos:
+GolPlay S.A. · gestion@golplay.com · LATAM`
+  },
+  {
+    id: 'datos-recopilados',
+    title: '2. Datos que recopilamos',
+    content: `Recopilamos únicamente la información necesaria para brindarte el servicio:
+
+Datos que vos nos proporcionás:
+
+─── pages/recuperar.tsx ───
+// pages/recuperar.tsx
+import { useState } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
+import Image from "next/image";
+
+export default function Recuperar() {
+  const router = useRouter();
+  const [cedula, setCedula] = useState("");
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit() {
+    setError(null);
+    if (!/^\d{9}$/.test(cedula)) { setError("Cédula debe ser 9 dígitos"); return; }
+    if (!/^\d{4}$/.test(pin)) { setError("PIN debe ser 4 dígitos"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch("/api/players/recover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cedula, pin }),
+      });
+
+─── pages/register.tsx ───
+/**
+ * GolPlay — pages/register.tsx
+ *
+ * Mejoras vs versión original:
+ *  - Se selecciona país al registrarse → se guarda en profiles.country y profiles.currency
+ *  - Rol 'player' renombrado internamente a 'user' para consistencia con la DB
+ *    (la DB usa 'user', el original usaba 'player' que no existe en profiles.role)
+ *  - complex_name del owner se guarda correctamente en profiles
+ *  - Manejo de error si el perfil ya existe (ON CONFLICT en trigger handle_new_user)
+ *  - Loading state correcto: se deshabilita el botón durante el submit
+ *  - Sin cambios visuales — se mantiene el diseño exacto del original
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
+import { Eye, EyeOff, AlertCircle, Loader2, CheckCircle, Check } from 'lucide-react'
+import TermsModal from '@/components/ui/TermsModal'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+// 'user' matches profiles.role default. 'owner' matches the owner role.
+type UserType = 'user' | 'owner'
+
+─── pages/reserve/[id].tsx ───
+/**
+ * GolPlay — pages/reserve/[id].tsx  v2 "Luxury Sport Editorial"
+ *
+ * Diseño alineado al home (index.tsx):
+ * - Kanit + DM Serif Display — mismo pairing tipográfico
+ * - Forest greens + bone white + deep charcoal — misma paleta
+ * - Glassmorphism, grain textures, floating cards — misma estética
+ * - Hero de cancha full-bleed con galería integrada
+ * - Booking card sticky con calendario custom y slots de hora
+ * - Mapa embebido via Leaflet (OpenStreetMap, sin API key)
+ * - Modal de confirmación con diseño premium
+ *
+ * MAPA — Instrucciones de instalación:
+ *   npm install leaflet react-leaflet
+ *   npm install --save-dev @types/leaflet
+ *
+ *   En _app.tsx o en este mismo archivo, importar CSS de leaflet:
+ *   import 'leaflet/dist/leaflet.css'
+ *
+ *   La tabla `fields` necesita columnas: latitude (float8), longitude (float8)
+ *   Si no existen: ALTER TABLE fields ADD COLUMN latitude float8, ADD COLUMN longitude float8;
+ *   Geocodificación sugerida: https://nominatim.openstreetmap.org/search?q={address}&format=json
+ */
+
+import { useRouter }        from 'next/router'
+
+─── pages/reserve/index.tsx ───
+/**
+ * GolPlay — pages/reserve/index.tsx  (Dark edition v2 — fix fetch)
+ *
+ * Fix principal: query idéntica al home
+ *  - fields: id, name, price_day, location, sport  (sin complex_name, sin image)
+ *  - field_images: field_id, url, is_main           (tabla separada, igual que home)
+ *  - router.isReady guard para leer URL params
+ */
+
+import {
+  useEffect, useState, useMemo, useCallback
+} from 'react'
+import { useRouter } from 'next/router'
+import Head          from 'next/head'
+import Link          from 'next/link'
+import Image         from 'next/image'
+import { supabase }  from '@/lib/supabase'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Field = {
+  id: number
+  name: string
+  price_day: number
+  location: string
+  sport: string | null
+
+─── pages/reserve/MapEmbed.tsx ───
+/**
+ * GolPlay — components/MapEmbed.tsx
+ *
+ * Mapa interactivo con Leaflet + OpenStreetMap.
+ * No requiere API key. Completamente gratuito.
+ *
+ * Este componente se importa SOLO con dynamic() + { ssr: false }
+ * porque Leaflet requiere `window`.
+ *
+ * INSTALACIÓN:
+ *   npm install leaflet react-leaflet
+ *   npm install --save-dev @types/leaflet
+ *
+ * USO (en cualquier página o componente):
+ *   import dynamic from 'next/dynamic'
+ *   const MapEmbed = dynamic(() => import('@/components/MapEmbed'), { ssr: false })
+ *
+ * En pages/_app.tsx NO hace falta importar leaflet.css porque
+ * lo importamos directamente aquí dentro.
+ */
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+export interface MapEmbedProps {
+  lat:      number
+
+─── pages/reset-password.tsx ───
+/**
+ * GolPlay — pages/reset-password.tsx
+ *
+ * Fixes aplicados:
+ *  - Verifica sesión PASSWORD_RECOVERY con onAuthStateChange antes de mostrar el form
+ *  - Sin token válido → redirect a /forgot-password
+ *  - Validación de contraseña: mínimo 8 caracteres, 1 mayúscula, 1 número
+ *  - Confirmación de contraseña (dos campos)
+ *  - Manejo de error si updateUser falla
+ *  - Diseño consistente con login.tsx (mismo fondo, fuentes, card)
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/router'
+import { Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Lock } from 'lucide-react'
+
+// ─── Password validation ──────────────────────────────────────────────────────
+function validatePassword(p: string): string | null {
+  if (p.length < 8)           return 'Mínimo 8 caracteres'
+  if (!/[A-Z]/.test(p))       return 'Debe incluir al menos una mayúscula'
+  if (!/[0-9]/.test(p))       return 'Debe incluir al menos un número'
+  return null
+
+─── pages/retos/[slug].tsx ───
+/**
+ * GolPlay — pages/retos/[slug].tsx
+ * Detalle del reto (público + panel privado vía ?ref=token)
+ *
+ * Vistas:
+ * - anónimo: card pública + botón aceptar
+ * - publisher (con ?ref=publisher_token): panel de gestión
+ * - acceptor (con ?ref=acceptance_token): contacto del publisher + WhatsApp
+ */
+
+import { GetServerSideProps } from 'next'
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+
+interface Captain {
+  cedula: string
+  preferred_name: string
+  preferred_phone: string
+  reliability_score: number | null
+  challenges_finished: number
+}
+
+─── pages/retos/index.tsx ───
+/**
+ * GolPlay — pages/retos/index.tsx
+ * Feed público de retos
+ *
+ * - Lista retos abiertos + matched (sin contactos)
+ * - Filtros: deporte, ciudad, fecha
+ * - Card con reliability_score
+ * - Botón "+ Publicar mi reto"
+ * - Sección "Tus retos activos" (si hay tokens en localStorage)
+ */
+
+import { GetServerSideProps } from 'next'
+import Head from 'next/head'
+import Link from 'next/link'
+import { useEffect, useState, useMemo } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+interface Challenge {
+  id: string
+  slug: string
+  status: string
+  venue_type: string
+  complex_name: string | null
+  complex_city: string | null
+  venue_name: string | null
+
+─── pages/retos/mis-retos.tsx ───
+/**
+ * GolPlay — pages/retos/mis-retos.tsx
+ * Recuperar retos sin login: meté tu cédula y ves tus retos
+ */
+
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+
+interface MyChallenge {
+  id: string
+  slug: string
+  status: string
+  team_name: string
+  sport: string
+  match_date: string | null
+  match_hour: string | null
+  role: 'publisher' | 'acceptor'
+  created_at: string
+}
+
+interface CaptainStats {
+  preferred_name: string
+  challenges_published: number
+
+─── pages/retos/publicar.tsx ───
+/**
+ * GolPlay — pages/retos/publicar.tsx
+ * Form público para publicar un reto
+ *
+ * 3 escenarios de venue:
+ *  - golplay: autocomplete complejo + cancha
+ *  - external: nombre + ciudad + maps url
+ *  - tbd: solo zona
+ */
+
+import { GetServerSideProps } from 'next'
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+
+interface Complex {
+  id: number
+  name: string
+  city: string | null
+  slug: string
+  whatsapp: string | null
+}
+
+─── pages/terms.tsx ───
+/**
+ * GolPlay — pages/terms.tsx
+ * Términos y Condiciones
+ *
+ * Design: Legal-editorial — bone background, tight typography,
+ * anchor nav, consistent with GolPlay Luxury Sport aesthetic.
+ */
+
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
+
+// ─── Sections data ────────────────────────────────────────────────────────────
+const SECTIONS = [
+  { id: 'intro',           title: '1. Introducción' },
+  { id: 'usuarios',        title: '2. Tipos de Usuarios' },
+  { id: 'uso',             title: '3. Uso de la Plataforma' },
+  { id: 'registro',        title: '4. Registro y Cuenta' },
+  { id: 'reservas',        title: '5. Reservas' },
+  { id: 'pagos',           title: '6. Pagos y Comisiones' },
+  { id: 'cancelaciones',   title: '7. Cancelaciones y Reembolsos' },
+  { id: 'responsabilidad', title: '8. Limitación de Responsabilidad' },
+  { id: 'complejos',       title: '9. Responsabilidad del Complejo' },
+  { id: 'suspension',      title: '10. Suspensión de Cuentas' },
+
+─── pages/torneos/[slug]/index.tsx ───
+/**
+ * GolPlay — pages/torneos/[slug]/index.tsx
+ * Página pública del torneo
+ *
+ * v2.0 (Fase 9): Sección de partidos
+ * - Lista pública de partidos agrupados por ronda
+ * - Resultados con destaque del equipo ganador
+ * - Empates marcados como tal
+ */
+
+import { GetServerSideProps } from 'next'
+import Head from 'next/head'
+import Link from 'next/link'
+import { useMemo } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+interface Tournament {
+  id: number
+  complex_id: number | null
+  slug: string
+  name: string
+  description: string | null
+  rules: string | null
+  sport_type: string
+  format: string
+
+─── pages/torneos/[slug]/registrar.tsx ───
+/**
+ * GolPlay — pages/torneos/[slug]/registrar.tsx
+ * Inscripción pública vía edge function (bypassa RLS)
+ *
+ * v2.0: usa supabase.functions.invoke('register-tournament-team')
+ *       en lugar de inserts directos a la tabla
+ */
+
+import { GetServerSideProps } from 'next'
+import Head from 'next/head'
+import Link from 'next/link'
+import { useState, useMemo } from 'react'
+import { useRouter } from 'next/router'
+import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+
+interface Tournament {
+  id: number
+  complex_id: number | null
+  slug: string
+  name: string
+  sport_type: string
+  start_date: string
+  end_date: string | null
+  max_teams: number
+
+─── pages/ui-test.tsx ───
+import dynamic from 'next/dynamic';
+
+const MapView = dynamic(
+  () => import('@/components/ui/map/MapView'),
+  { ssr: false }
+);
+
+export default function UITest() {
+  const fields = [
+    {
+      id: 1,
+      name: 'Cancha Test',
+      price: 12000,
+      lat: 9.933,
+      lng: -84.083,
+    },
+  ];
+
+  return (
+    <div style={{ height: '100vh' }}>
+      <MapView
+        fields={fields}
+        onSelect={(id) => alert(`Cancha ${id}`)}
+      />
+    </div>
+
+## API ROUTES (top 15 líneas)
+
+─── pages/api/home-fields.ts ───
+// pages/api/home-fields.ts
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  try {
+    const { data: fields, error: fieldsError } = await supabase
+
+─── pages/api/logout.ts ───
+// pages/api/logout.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { clearSessionCookie } from "../../lib/session";
+
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
+  clearSessionCookie(res);
+  return res.status(200).json({ ok: true });
+}
+─── pages/api/paddle/create-checkout.ts ───
+/**
+ * POST /api/paddle/create-checkout
+ *
+ * Crea una transacción en Paddle y devuelve la URL de checkout.
+ * El frontend abre esa URL en un overlay de Paddle (Paddle.js).
+ *
+ * Body: { statementId: string }
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { createClient } from '@supabase/supabase-js'
+import { createPaddleTransaction } from '@/paddle'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+
+─── pages/api/paddle/webhook.ts ───
+/**
+ * POST /api/paddle/webhook
+ *
+ * Recibe eventos de Paddle y actualiza monthly_statements en Supabase.
+ *
+ * Eventos manejados:
+ *   - transaction.completed  → marcar statement como paid
+ *   - transaction.payment_failed → marcar statement como failed
+ *
+ * Config en Paddle Dashboard → Notifications:
+ *   URL: https://golplay.app/api/paddle/webhook
+ *   Events: transaction.completed, transaction.payment_failed
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+─── pages/api/players/create.ts ───
+// pages/api/players/create.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+
+export const config = { api: { bodyParser: { sizeLimit: "5mb" } } };
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+
+    const envCheck = {
+      SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      SERVICE_ROLE_KEY_LENGTH: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0,
+    };
+    if (!envCheck.SUPABASE_URL || !envCheck.SERVICE_ROLE_KEY) {
+
+─── pages/api/players/me.ts ───
+// pages/api/players/me.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { invokeManagePlayer } from "@/lib/playerSupabase";
+import { readSessionToken, clearSessionCookie } from "@/lib/session";
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "GET") return res.status(405).json({ error: "Método no permitido" });
+  const token = readSessionToken(req);
+  if (!token) return res.status(401).json({ error: "Sin sesión" });
+  const { data, error } = await invokeManagePlayer({ action: "me", sessionToken: token });
+  if (error) {
+    clearSessionCookie(res);
+    return res.status(401).json({ error });
+  }
+  return res.status(200).json({ player: data.player });
+
+─── pages/api/players/recover.ts ───
+// pages/api/players/recover.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { invokeManagePlayer } from "@/lib/playerSupabase";
+import { setSessionCookie } from "@/lib/session";
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+  const { cedula, pin } = req.body || {};
+  const { data, error } = await invokeManagePlayer({ action: "recover", cedula, pin });
+  if (error) return res.status(401).json({ error });
+  setSessionCookie(res, data.sessionToken);
+  return res.status(200).json({ player: data.player });
+}
+─── pages/api/players/update.ts ───
+// pages/api/players/update.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { invokeManagePlayer } from "@/lib/playerSupabase";
+import { readSessionToken } from "@/lib/session";
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+  const token = readSessionToken(req);
+  if (!token) return res.status(401).json({ error: "Sin sesión" });
+  const { displayName, alias, position } = req.body || {};
+  const { data, error } = await invokeManagePlayer({
+    action: "update", sessionToken: token, displayName, alias, position,
+  });
+  if (error) return res.status(400).json({ error });
+  return res.status(200).json({ player: data.player });
+
+─── pages/api/players/upload-photo.ts ───
+// pages/api/players/upload-photo.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { invokeManagePlayer } from "@/lib/playerSupabase";
+import { readSessionToken } from "@/lib/session";
+
+export const config = { api: { bodyParser: { sizeLimit: "5mb" } } };
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+  const token = readSessionToken(req);
+  if (!token) return res.status(401).json({ error: "Sin sesión" });
+  const { photoBase64, photoMimeType } = req.body || {};
+  const { data, error } = await invokeManagePlayer({
+    action: "upload_photo", sessionToken: token, photoBase64, photoMimeType,
+  });
+
+─── pages/api/teams/[action].ts ───
+// pages/api/teams/[action].ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { invokeManageTeam } from "@/lib/teamSupabase";
+
+const VALID_ACTIONS = new Set([
+  "create",
+  "get",
+  "list_all",
+  "my_teams",
+  "update",
+  "join_via_link",
+  "add_member",
+  "remove_member",
+  "leave",
+  "delete",
+
+─── pages/api/teams/upload-logo.ts ───
+// pages/api/teams/upload-logo.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { invokeManageTeam } from "@/lib/teamSupabase";
+import formidable from "formidable";
+import { promises as fsp } from "fs";
+
+export const config = {
+  api: { bodyParser: false },
+};
+
+function extractSessionToken(rawCookie: string | undefined): string | null {
+  if (!rawCookie) return null;
+  return rawCookie;
+}
+
+
+## LIB/STYLES (contenido completo)

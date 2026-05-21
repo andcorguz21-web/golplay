@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import '../styles/layout.css'
+import '../styles/golplay-tokens.css'
 import 'leaflet/dist/leaflet.css'
 
 export default function MyApp({ Component, pageProps }: AppProps) {

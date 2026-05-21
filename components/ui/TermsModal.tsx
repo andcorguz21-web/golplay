@@ -3,8 +3,16 @@
  *
  * Modal de Términos y Condiciones para dueños de canchas.
  * Se muestra:
- *   1. Al registrarse como owner (register.tsx)
- *   2. Al crear una nueva cancha (admin/fields.tsx)
+ *   1. Al registrarse como owner (register.tsx) — contexto dark
+ *   2. Al crear una nueva cancha (admin/fields.tsx) — contexto admin (light), modal dark sobre claro
+ *
+ * Migrado al DS oficial:
+ *   - Theme: dark (var(--dark2) surface), consistente con el resto de modales.
+ *   - Tipografía: Syne (var(--font-d)) en título + DM Sans (body).
+ *   - Tokens CSS: var(--g4/g6/g7), var(--dark/dark2).
+ *   - Fix bugs: `gap: 10` (sin unidad) → `gap: 10px` en .tm-check y .tm-footer__actions.
+ *
+ * Sin cambios: props, lógica de checkbox/scroll-lock, contenido legal.
  *
  * Props:
  *   open       — controla visibilidad
@@ -187,8 +195,8 @@ export default function TermsModal({
 const CSS = `
 .tm-overlay {
   position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
   animation: tmFade .18s ease;
@@ -196,12 +204,13 @@ const CSS = `
 @keyframes tmFade { from{opacity:0} to{opacity:1} }
 
 .tm-modal {
-  background: #fff;
+  background: var(--dark2);
+  border: 1px solid rgba(255,255,255,.1);
   border-radius: 20px;
   width: 100%; max-width: 640px;
   max-height: 90vh;
   display: flex; flex-direction: column;
-  box-shadow: 0 24px 64px rgba(0,0,0,.18);
+  box-shadow: 0 24px 64px rgba(0,0,0,.5);
   animation: tmSlide .2s ease;
   overflow: hidden;
 }
@@ -210,44 +219,46 @@ const CSS = `
 .tm-header {
   display: flex; align-items: flex-start; gap: 14px;
   padding: 24px 28px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(255,255,255,.08);
   flex-shrink: 0;
 }
 .tm-header__icon {
   font-size: 28px; line-height: 1; flex-shrink: 0; margin-top: 2px;
 }
 .tm-header__title {
-  font-size: 17px; font-weight: 700; color: #111827; margin: 0 0 3px;
+  font-family: var(--font-d);
+  font-size: 18px; font-weight: 800; color: #fff; margin: 0 0 3px;
 }
 .tm-header__sub {
-  font-size: 12px; color: #9ca3af; margin: 0;
+  font-size: 12px; color: rgba(255,255,255,.45); margin: 0;
 }
 .tm-close {
   margin-left: auto; flex-shrink: 0;
-  background: #f3f4f6; border: none; cursor: pointer;
+  background: rgba(255,255,255,.08); border: none; cursor: pointer;
   width: 30px; height: 30px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  color: #6b7280; transition: background .15s;
+  color: rgba(255,255,255,.6); transition: all .15s;
 }
-.tm-close:hover { background: #e5e7eb; }
+.tm-close:hover { background: rgba(255,255,255,.16); color: #fff; }
 
 .tm-body {
   flex: 1; overflow-y: auto; padding: 24px 28px;
-  font-size: 14px; color: #374151; line-height: 1.7;
+  font-size: 14px; color: rgba(255,255,255,.72); line-height: 1.7;
 }
 .tm-body::-webkit-scrollbar { width: 4px; }
 .tm-body::-webkit-scrollbar-track { background: transparent; }
-.tm-body::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+.tm-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
 
 .tm-section { margin-bottom: 24px; }
 .tm-section:last-child { margin-bottom: 0; }
 .tm-section__title {
-  font-size: 13px; font-weight: 700; color: #111827;
+  font-size: 13px; font-weight: 700; color: #fff;
   text-transform: uppercase; letter-spacing: .04em;
   margin: 0 0 10px; padding-bottom: 6px;
-  border-bottom: 1.5px solid #f3f4f6;
+  border-bottom: 1.5px solid rgba(255,255,255,.08);
 }
 .tm-section p { margin: 0 0 8px; }
+.tm-section strong { color: #fff; }
 .tm-section ul {
   margin: 0; padding-left: 18px;
 }
@@ -255,44 +266,45 @@ const CSS = `
 
 .tm-footer {
   padding: 20px 28px 24px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid rgba(255,255,255,.08);
   flex-shrink: 0;
-  background: #fafafa;
+  background: rgba(255,255,255,.02);
 }
 .tm-check {
-  display: flex; align-items: flex-start; gap: 10;
+  display: flex; align-items: flex-start; gap: 10px;
   cursor: pointer; margin-bottom: 16px;
-  font-size: 13px; color: #374151; font-weight: 500;
+  font-size: 13px; color: rgba(255,255,255,.8); font-weight: 500;
 }
 .tm-check__input { display: none; }
 .tm-check__box {
   flex-shrink: 0;
   width: 18px; height: 18px; border-radius: 5px;
-  border: 2px solid #d1d5db;
-  background: #fff;
+  border: 2px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.04);
   display: flex; align-items: center; justify-content: center;
   transition: all .15s; margin-top: 1px;
 }
 .tm-check__input:checked + .tm-check__box {
-  background: #16a34a; border-color: #16a34a;
+  background: var(--g6); border-color: var(--g6);
 }
 .tm-check__label { line-height: 1.5; }
 
 .tm-footer__actions {
-  display: flex; gap: 10; justify-content: flex-end;
+  display: flex; gap: 10px; justify-content: flex-end;
 }
 .tm-btn {
   padding: 10px 20px; border-radius: 10px;
-  font-size: 14px; font-weight: 600; cursor: pointer;
+  font-size: 14px; font-weight: 700; cursor: pointer;
   border: none; transition: all .15s;
+  font-family: var(--font-d);
 }
 .tm-btn--ghost {
-  background: transparent; color: #6b7280;
-  border: 1.5px solid #e5e7eb;
+  background: transparent; color: rgba(255,255,255,.7);
+  border: 1.5px solid rgba(255,255,255,.15);
 }
-.tm-btn--ghost:hover { background: #f3f4f6; }
+.tm-btn--ghost:hover { background: rgba(255,255,255,.08); color: #fff; }
 .tm-btn--primary {
-  background: linear-gradient(135deg,#16a34a,#15803d);
+  background: linear-gradient(135deg, var(--g6), var(--g7));
   color: #fff;
 }
 .tm-btn--primary:hover:not(:disabled) {

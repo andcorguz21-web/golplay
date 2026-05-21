@@ -1,0 +1,176 @@
+/* ─────────────────────────────────────────────────────────────────
+ * GolPlay — Design System: Tokens, Base, Animations
+ *
+ * Single source of truth. Imported once in pages/_app.tsx.
+ * Do NOT duplicate these tokens in individual pages.
+ *
+ * Theme strategy:
+ *   - Marketing pages (index, landing, about, join, complexes, reserve):
+ *     mixed bone/dark sections — apply backgrounds per section.
+ *   - App pages (perfil, favorites, jugadores, equipos, retos, torneos):
+ *     wrap top-level container in <div className="theme-dark">.
+ *   - Auth pages: wrap in .theme-dark.
+ *   - Admin: AdminLayout owns its own theme — do not touch.
+ * ───────────────────────────────────────────────────────────────── */
+
+ @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+ :root {
+   /* — Neutrals ──────────────────────────────────────────────────── */
+   --ink:   #0a0f0d;
+   --ink2:  #1a2420;
+   --muted: #6e7a72;
+   --faint: #b8c2bc;
+   --bone:  #f2f0eb;
+   --white: #ffffff;
+   --bd:    #e2e6e0;
+   --bd2:   #d1d9cd;
+ 
+   /* — Greens (scale 9 → 0) ─────────────────────────────────────── */
+   --g9: #021008;
+   --g8: #062918;
+   --g7: #0d4f28;
+   --g6: #16a34a;
+   --g5: #22c55e;
+   --g4: #4ade80;
+   --g3: #86efac;
+   --g1: #dcfce7;
+   --g0: #f0fdf4;
+ 
+   /* — Darks ─────────────────────────────────────────────────────── */
+   --dark:  #080e0a;
+   --dark2: #101810;
+   --dark3: #172214;
+ 
+   /* — Radius ────────────────────────────────────────────────────── */
+   --r-sm: 10px;
+   --r-md: 14px;
+   --r-lg: 20px;
+   --r-xl: 26px;
+ 
+   /* — Shadows ───────────────────────────────────────────────────── */
+   --sh-xs: 0 1px 3px rgba(0,0,0,.05),0 3px 10px rgba(0,0,0,.06);
+   --sh-sm: 0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.07);
+   --sh-md: 0 4px 16px rgba(0,0,0,.10),0 16px 40px rgba(0,0,0,.09);
+   --sh-lg: 0 8px 32px rgba(0,0,0,.14),0 24px 64px rgba(0,0,0,.11);
+ 
+   /* — Typography ────────────────────────────────────────────────── */
+   --font-d: 'Syne', system-ui, sans-serif;
+   --font-u: 'DM Sans', system-ui, sans-serif;
+ }
+ 
+ /* — Reset & body ──────────────────────────────────────────────── */
+ *, *::before, *::after {
+   box-sizing: border-box;
+   margin: 0;
+   padding: 0;
+ }
+ 
+ html {
+   scroll-behavior: smooth;
+   -webkit-text-size-adjust: 100%;
+ }
+ 
+ body {
+   font-family: var(--font-u);
+   background: var(--bone);
+   color: var(--ink);
+   -webkit-font-smoothing: antialiased;
+   overflow-x: hidden;
+ }
+ 
+ ::selection {
+   background: var(--g4);
+   color: var(--g9);
+ }
+ 
+ /* — Scrollbar (light default) ─────────────────────────────────── */
+ ::-webkit-scrollbar       { width: 5px; height: 5px; }
+ ::-webkit-scrollbar-track { background: transparent; }
+ ::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 99px; }
+ 
+ /* — Theme wrappers ────────────────────────────────────────────── */
+ .theme-dark {
+   background: var(--dark);
+   color: #fff;
+   min-height: 100vh;
+ }
+ 
+ .theme-dark ::-webkit-scrollbar-thumb {
+   background: rgba(255,255,255,.15);
+ }
+ 
+ .theme-dark ::selection {
+   background: var(--g5);
+   color: var(--dark);
+ }
+ 
+ .theme-light {
+   background: var(--bone);
+   color: var(--ink);
+   min-height: 100vh;
+ }
+ 
+ /* — Skeleton utility (.sk class used in index.tsx) ────────────── */
+ .sk {
+   background: linear-gradient(90deg, #eaede8 25%, #f4f6f2 50%, #eaede8 75%);
+   background-size: 400% 100%;
+   animation: shimmer 1.6s infinite;
+   border-radius: 8px;
+ }
+ 
+ .theme-dark .sk {
+   background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%);
+   background-size: 400% 100%;
+ }
+ 
+ /* — Animations ────────────────────────────────────────────────── */
+ @keyframes fadeUp {
+   from { opacity: 0; transform: translateY(18px); }
+   to   { opacity: 1; transform: none; }
+ }
+ 
+ @keyframes fadeIn {
+   from { opacity: 0; }
+   to   { opacity: 1; }
+ }
+ 
+ @keyframes shimmer {
+   0%   { background-position: 200% 0; }
+   100% { background-position: -200% 0; }
+ }
+ 
+ @keyframes pulseDot {
+   0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,.5); }
+   50%      { box-shadow: 0 0 0 7px rgba(74,222,128,0); }
+ }
+ 
+ @keyframes waPulse {
+   0%, 100% { box-shadow: 0 4px 22px rgba(37,211,102,.45), 0 0 0 0 rgba(37,211,102,.3); }
+   50%      { box-shadow: 0 4px 22px rgba(37,211,102,.55), 0 0 0 10px rgba(37,211,102,0); }
+ }
+ 
+ @keyframes marqueeGo {
+   0%   { transform: translateX(0); }
+   100% { transform: translateX(-50%); }
+ }
+ 
+ @keyframes sheetUp {
+   from { transform: translateY(100%); }
+   to   { transform: translateY(0); }
+ }
+ 
+ @keyframes toastIn {
+   from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+ }
+ 
+ @keyframes floatY {
+   0%, 100% { transform: translateY(0); }
+   50%      { transform: translateY(-8px); }
+ }
+ 
+ @keyframes popIn {
+   from { opacity: 0; transform: scale(.97) translateY(-4px); }
+   to   { opacity: 1; transform: none; }
+ }

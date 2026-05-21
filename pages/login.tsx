@@ -1,12 +1,19 @@
 /**
  * GolPlay — pages/login.tsx
  *
- * Mejoras vs versión original:
- *  - Redirect correcto: admin/owner → /admin, player → /, user → /
- *  - setLoading(false) en el finally aunque haya success (evita spinner stuck)
- *  - Panel izquierdo visible en desktop con media query en <style>
- *  - Google Fonts via next/head con preconnect correcto
- *  - Sin cambios visuales — se mantiene el diseño exacto del original
+ * Migrado al DS oficial (dark uniforme):
+ *   - Theme: dark en ambos paneles (left mantiene su gradient verde profundo).
+ *   - Tipografía: Syne (var(--font-d)) en headings + DM Sans (body default).
+ *   - Tokens CSS: var(--g4), var(--g6), var(--g7), var(--dark), etc.
+ *   - Logo via <Logo dark height={...} link={false} />.
+ *   - Sin Navbar global (correcto: login es entry point, antes de auth).
+ *   - Reset y fadeUp keyframe vienen de golplay-tokens.css.
+ *
+ * Lógica sin cambios:
+ *   - Redirect por role: admin/owner → /admin, else → /
+ *   - Validación email + password >= 6
+ *   - Friendly error messages
+ *   - Success state con redirect timer
  */
 
 import Head from 'next/head'
@@ -15,6 +22,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import { Eye, EyeOff, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
+import Logo from '@/components/ui/Logo'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -62,7 +70,6 @@ export default function LoginPage() {
         return
       }
 
-      // Fetch role for redirect
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -83,7 +90,6 @@ export default function LoginPage() {
     } catch {
       setError('Error inesperado. Intentá nuevamente.')
     } finally {
-      // Only clear loading if not redirecting (success handles its own state)
       if (!success) setLoading(false)
     }
   }, [canSubmit, email, password, router, success])
@@ -92,133 +98,94 @@ export default function LoginPage() {
     <>
       <Head>
         <title>Ingresar — GolPlay</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
+      <style>{CSS}</style>
 
-      <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; }
-        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #fff inset !important; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
-        @keyframes spin { to { transform: rotate(360deg) } }
-        .auth-input:focus { outline: none; border-color: #22c55e !important; box-shadow: 0 0 0 3px rgba(34,197,94,.12) !important; }
-        .auth-input { transition: border-color 0.15s, box-shadow 0.15s; }
-        .pass-toggle:hover { color: #374151 !important; }
-        .submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(34,197,94,.35) !important; }
-        .submit-btn { transition: all 0.15s; }
-        .link-green:hover { text-decoration: underline; }
-        .auth-left { display: none; }
-        @media (min-width: 900px) {
-          .auth-left { display: flex !important; }
-          .mobile-logo { display: none !important; }
-        }
-      `}</style>
+      <main className="auth-main">
 
-      <main style={{
-        minHeight: '100vh', display: 'flex',
-        background: 'linear-gradient(135deg, #f0fdf4 0%, #f8fafc 50%, #eff6ff 100%)',
-        fontFamily: "'DM Sans', sans-serif",
-      }}>
+        {/* ── Left panel — desktop only ── */}
+        <div className="auth-left">
+          <div className="auth-left-grid" aria-hidden />
 
-        {/* ── Left panel — desktop ── */}
-        <div
-          className="auth-left"
-          style={{
-            flex: 1,
-            background: 'linear-gradient(160deg, #052e16 0%, #14532d 60%, #166534 100%)',
-            padding: '60px 56px',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-
-          <div style={{ position: 'relative', zIndex: 1 }}>
+          <div className="auth-left-top">
             <div style={{ marginBottom: 64 }}>
-              <img src="/logo-golplay.svg" alt="GolPlay" style={{ height: 150, width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' }} />
+              <Logo dark height={150} link={false} />
             </div>
-            <h2 style={{ fontSize: 38, fontWeight: 900, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.04em', fontFamily: 'Outfit, sans-serif', marginBottom: 20 }}>
+            <h2 className="auth-left-title">
               Bienvenido<br />de vuelta
             </h2>
-            <p style={{ fontSize: 16, color: 'rgba(255,255,255,.6)', lineHeight: 1.7 }}>
+            <p className="auth-left-sub">
               Gestioná tus canchas, revisá tus reservas y hacé crecer tu negocio desde el panel.
             </p>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 1 }}>
+          <div className="auth-left-bottom">
             {[
               { num: '+2.400', label: 'Reservas gestionadas' },
               { num: '24/7',   label: 'Sistema disponible'   },
               { num: '0',      label: 'Dobles reservas'      },
             ].map(s => (
-              <div key={s.label} style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#22c55e', fontFamily: 'Outfit, sans-serif' }}>{s.num}</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)' }}>{s.label}</div>
+              <div key={s.label} className="auth-stat">
+                <div className="auth-stat-num">{s.num}</div>
+                <div className="auth-stat-lbl">{s.label}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── Right panel — form ── */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-          <div style={{ width: '100%', maxWidth: 420, animation: 'fadeUp 0.5s ease both' }}>
+        <div className="auth-right">
+          <div className="auth-form-wrap">
 
-            {/* Mobile logo */}
-            <div className="mobile-logo" style={{ display: 'flex', justifyContent: 'center', marginBottom: 36 }}>
-              <img src="/logo-golplay.svg" alt="GolPlay" style={{ height: 36, width: 'auto', display: 'block' }} />
+            <div className="mobile-logo">
+              <Logo dark height={36} link={false} />
             </div>
 
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', fontFamily: 'Outfit, sans-serif', marginBottom: 6 }}>
-              Iniciá sesión
-            </h1>
-            <p style={{ fontSize: 14, color: '#64748b', marginBottom: 32 }}>
+            <h1 className="auth-h1">Iniciá sesión</h1>
+            <p className="auth-tagline">
               ¿No tenés cuenta?{' '}
-              <Link href="/register" className="link-green" style={{ color: '#16a34a', fontWeight: 600, textDecoration: 'none' }}>
+              <Link href="/register" className="auth-link-green">
                 Registrate gratis
               </Link>
             </p>
 
-            {/* Success */}
             {success && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
-                <CheckCircle size={17} color="#16a34a" />
-                <span style={{ fontSize: 14, color: '#15803d', fontWeight: 500 }}>¡Ingresando! Redirigiendo…</span>
+              <div className="auth-success">
+                <CheckCircle size={17} color="var(--g4)" />
+                <span className="auth-success-text">¡Ingresando! Redirigiendo…</span>
               </div>
             )}
 
-            {/* Error */}
             {error && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
-                <AlertCircle size={16} color="#dc2626" style={{ marginTop: 1, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: '#b91c1c' }}>{error}</span>
+              <div className="auth-error">
+                <AlertCircle size={16} color="#fca5a5" style={{ marginTop: 1, flexShrink: 0 }} />
+                <span className="auth-error-text">{error}</span>
               </div>
             )}
 
             <form onSubmit={handleLogin} noValidate>
               {/* Email */}
               <div style={{ marginBottom: 16 }}>
-                <label style={S.label} htmlFor="email">Email</label>
+                <label className="auth-label" htmlFor="email">Email</label>
                 <input
-                  id="email" type="email" value={email}
-                  autoComplete="email" placeholder="tu@email.com"
+                  id="email"
+                  type="email"
+                  value={email}
+                  autoComplete="email"
+                  placeholder="tu@email.com"
                   onChange={e => setEmail(e.target.value)}
                   onBlur={() => setTouched(t => ({ ...t, email: true }))}
-                  className="auth-input"
-                  style={{ ...S.input, borderColor: emailError ? '#ef4444' : '#e2e8f0' }}
+                  className={`auth-input${emailError ? ' auth-input--error' : ''}`}
                   aria-invalid={emailError}
                 />
-                {emailError && <p style={S.fieldError}>Ingresá un email válido</p>}
+                {emailError && <p className="auth-field-error">Ingresá un email válido</p>}
               </div>
 
               {/* Password */}
               <div style={{ marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <label style={S.label} htmlFor="password">Contraseña</label>
-                  <Link href="/forgot-password" style={{ fontSize: 12, color: '#16a34a', textDecoration: 'none', fontWeight: 500 }}>
+                <div className="auth-label-row">
+                  <label className="auth-label" htmlFor="password">Contraseña</label>
+                  <Link href="/forgot-password" className="auth-link-green" style={{ fontSize: 12, fontWeight: 500 }}>
                     ¿Olvidaste tu contraseña?
                   </Link>
                 </div>
@@ -231,30 +198,27 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     onChange={e => setPassword(e.target.value)}
                     onBlur={() => setTouched(t => ({ ...t, password: true }))}
-                    className="auth-input"
-                    style={{ ...S.input, paddingRight: 44, borderColor: passwordError ? '#ef4444' : '#e2e8f0' }}
+                    className={`auth-input${passwordError ? ' auth-input--error' : ''}`}
+                    style={{ paddingRight: 44 }}
                     aria-invalid={passwordError}
                   />
-                  <button type="button" onClick={() => setShowPass(v => !v)}
-                    className="pass-toggle" style={S.eyeBtn}
-                    aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(v => !v)}
+                    className="pass-toggle"
+                    aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {passwordError && <p style={S.fieldError}>Mínimo 6 caracteres</p>}
+                {passwordError && <p className="auth-field-error">Mínimo 6 caracteres</p>}
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="submit-btn"
-                style={{
-                  ...S.submitBtn, marginTop: 24,
-                  background: canSubmit ? 'linear-gradient(135deg, #16a34a, #15803d)' : '#cbd5e1',
-                  cursor: canSubmit ? 'pointer' : 'not-allowed',
-                  boxShadow: canSubmit ? '0 4px 16px rgba(34,197,94,.25)' : 'none',
-                }}
+                className={`submit-btn ${canSubmit ? 'submit-btn--active' : 'submit-btn--disabled'}`}
               >
                 {loading ? (
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -265,11 +229,10 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', marginTop: 28 }}>
+            <p className="auth-footer-text">
               Al ingresar aceptás nuestros{' '}
-              <Link href="/terms" style={{ color: '#64748b', textDecoration: 'underline' }}>Términos</Link>
-              {' '}y{' '}
-              <Link href="/privacy" style={{ color: '#64748b', textDecoration: 'underline' }}>Privacidad</Link>.
+              <Link href="/terms">Términos</Link>{' '}y{' '}
+              <Link href="/privacy">Privacidad</Link>.
             </p>
           </div>
         </div>
@@ -280,10 +243,243 @@ export default function LoginPage() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const S: Record<string, React.CSSProperties> = {
-  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 },
-  input: { width: '100%', padding: '11px 14px', fontSize: 14, borderRadius: 11, border: '1.5px solid #e2e8f0', background: '#fff', color: '#0f172a', outline: 'none' },
-  eyeBtn: { position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 2 },
-  fieldError: { fontSize: 12, color: '#ef4444', marginTop: 4 },
-  submitBtn: { width: '100%', padding: '13px', borderRadius: 12, border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, fontFamily: 'Outfit, sans-serif' },
+const CSS = `
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.auth-main {
+  min-height: 100vh;
+  display: flex;
+  background: var(--dark);
+  font-family: var(--font-u);
 }
+
+/* ── Left panel ────────────────────────────────────────────── */
+.auth-left {
+  display: none;
+  flex: 1;
+  background: linear-gradient(160deg, #052e16 0%, #14532d 60%, #166534 100%);
+  padding: 60px 56px;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.auth-left-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.auth-left-top, .auth-left-bottom {
+  position: relative;
+  z-index: 1;
+}
+.auth-left-title {
+  font-family: var(--font-d);
+  font-size: 38px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+}
+.auth-left-sub {
+  font-size: 16px;
+  color: rgba(255,255,255,.6);
+  line-height: 1.7;
+}
+.auth-stat { margin-bottom: 20px; }
+.auth-stat-num {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--g5);
+  font-family: var(--font-d);
+}
+.auth-stat-lbl {
+  font-size: 13px;
+  color: rgba(255,255,255,.5);
+}
+
+/* ── Right panel ───────────────────────────────────────────── */
+.auth-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: var(--dark);
+}
+.auth-form-wrap {
+  width: 100%;
+  max-width: 420px;
+  animation: fadeUp 0.5s ease both;
+}
+.mobile-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 36px;
+}
+
+.auth-h1 {
+  font-family: var(--font-d);
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+.auth-tagline {
+  font-size: 14px;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 32px;
+}
+.auth-link-green {
+  color: var(--g4);
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-link-green:hover {
+  text-decoration: underline;
+}
+
+.auth-success {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(74,222,128,.08);
+  border: 1px solid rgba(74,222,128,.25);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.auth-success-text {
+  font-size: 14px;
+  color: var(--g4);
+  font-weight: 500;
+}
+.auth-error {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+.auth-error-text {
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+.auth-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  margin-bottom: 6px;
+}
+.auth-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.auth-label-row .auth-label { margin-bottom: 0; }
+
+.auth-input {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 14px;
+  border-radius: 11px;
+  border: 1.5px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.auth-input::placeholder {
+  color: rgba(255,255,255,.3);
+}
+.auth-input:focus {
+  border-color: var(--g4);
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 0 0 3px rgba(74,222,128,.12);
+}
+.auth-input--error {
+  border-color: #ef4444 !important;
+}
+.auth-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px rgba(8,14,10,.95) inset !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff !important;
+}
+
+.pass-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,.4);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  font-family: inherit;
+  transition: color .15s;
+}
+.pass-toggle:hover {
+  color: rgba(255,255,255,.85);
+}
+
+.auth-field-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  cursor: pointer;
+  margin-top: 24px;
+  transition: all .15s;
+}
+.submit-btn--active {
+  background: linear-gradient(135deg, var(--g6), var(--g7));
+  box-shadow: 0 4px 16px rgba(34,197,94,.25);
+}
+.submit-btn--active:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(34,197,94,.35);
+}
+.submit-btn--disabled {
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.4);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.auth-footer-text {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,.4);
+  margin-top: 28px;
+}
+.auth-footer-text a {
+  color: rgba(255,255,255,.7);
+  text-decoration: underline;
+}
+
+@media (min-width: 900px) {
+  .auth-left { display: flex; }
+  .mobile-logo { display: none; }
+}
+`
