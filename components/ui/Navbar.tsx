@@ -1,14 +1,12 @@
 /**
  * GolPlay — Navbar (oficial)
  *
- * Reemplaza el Navbar de equipos. Variantes:
- *   - dark=true  → transparent over hero, dark when scrolled (uso: index, marketing dark)
- *   - dark=false → light bone background (uso: app interna sobre bone, marketing light)
+ * Variantes:
+ *   - dark=true  → transparent over hero, dark when scrolled
+ *   - dark=false → light bone background
  *
- * Si hay sesión activa: muestra links + avatar dropdown.
- * Si no hay sesión: muestra links + "Iniciar sesión" + CTA "Registrarse".
- *
- * Lee `profiles.role` para mostrar el link "Mi negocio" a owners/admin.
+ * Links siempre visibles de discovery: Complejos, Retos, Mi tarjeta.
+ * "Mi tarjeta" → /jugadores/mi-perfil (que redirige a /jugadores/crear si no hay sesión de jugador).
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -98,6 +96,8 @@ export default function Navbar({ dark = false }: NavbarProps) {
   const keepCls = isDark
     ? `${styles.link} ${styles.linkDark} ${styles.linkKeep}`
     : `${styles.link} ${styles.linkLight} ${styles.linkKeep}`
+  // Links de discovery que NO se ocultan en mobile
+  const showCls = `${linkCls} ${styles.linkShow}`
 
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? 'U'
 
@@ -119,9 +119,10 @@ export default function Navbar({ dark = false }: NavbarProps) {
 
       {user ? (
         <div className={styles.links} style={{ gap: 6 }}>
-          <Link href="/reserve"   className={linkCls}>Complejos</Link>
-          <Link href="/retos"     className={linkCls}>Retos</Link>
-          <Link href="/favorites" className={linkCls}>Favoritos</Link>
+          <Link href="/reserve"             className={linkCls}>Complejos</Link>
+          <Link href="/retos"               className={showCls}>Retos</Link>
+          <Link href="/jugadores/mi-perfil" className={showCls}>Mi tarjeta</Link>
+          <Link href="/favorites"           className={linkCls}>Favoritos</Link>
           {(user.role === 'owner' || user.role === 'admin') && (
             <Link href="/admin" className={linkCls}>Mi negocio</Link>
           )}
@@ -143,8 +144,9 @@ export default function Navbar({ dark = false }: NavbarProps) {
                   <p className={styles.dropRole}>{roleLabel}</p>
                 </div>
                 {[
-                  { href: '/perfil',    icon: '👤', label: 'Mi perfil' },
-                  { href: '/favorites', icon: '❤️', label: 'Favoritos' },
+                  { href: '/perfil',             icon: '👤', label: 'Mi perfil' },
+                  { href: '/jugadores/mi-perfil', icon: '🃏', label: 'Mi tarjeta' },
+                  { href: '/favorites',          icon: '❤️', label: 'Favoritos' },
                   ...(user.role === 'owner' || user.role === 'admin'
                     ? [{ href: '/admin', icon: '🏟️', label: 'Mi negocio' }]
                     : []),
@@ -174,10 +176,11 @@ export default function Navbar({ dark = false }: NavbarProps) {
         </div>
       ) : (
         <div className={styles.links}>
-          <Link href="/reserve"  className={linkCls}>Complejos</Link>
-          <Link href="/retos"    className={linkCls}>Retos</Link>
-          <Link href="/login"    className={keepCls}>Iniciar sesión</Link>
-          <Link href="/register" className={styles.cta}>Registrarse</Link>
+          <Link href="/reserve"             className={linkCls}>Complejos</Link>
+          <Link href="/retos"               className={showCls}>Retos</Link>
+          <Link href="/jugadores/mi-perfil" className={showCls}>Mi tarjeta</Link>
+          <Link href="/login"               className={keepCls}>Iniciar sesión</Link>
+          <Link href="/register"            className={styles.cta}>Registrarse</Link>
         </div>
       )}
 

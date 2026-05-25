@@ -1,25 +1,15 @@
 /**
- * GolPlay — pages/reserve/[id].tsx  v2 "Luxury Sport Editorial"
+ * GolPlay — pages/reserve/[id].tsx  v3 "DS Dark — Reservation Detail"
  *
- * Diseño alineado al home (index.tsx):
- * - Kanit + DM Serif Display — mismo pairing tipográfico
- * - Forest greens + bone white + deep charcoal — misma paleta
- * - Glassmorphism, grain textures, floating cards — misma estética
- * - Hero de cancha full-bleed con galería integrada
- * - Booking card sticky con calendario custom y slots de hora
- * - Mapa embebido via Leaflet (OpenStreetMap, sin API key)
- * - Modal de confirmación con diseño premium
+ * Migrado al DS oficial (funnel público = dark, igual que reserve/index y complexes/[slug]):
+ *   - @import (Kanit/DM Serif/DM Sans) + reset universal + body eliminados (vienen de globals).
+ *   - Tema invertido a DARK: el :root local ahora define una paleta oscura.
+ *   - Tipografía unificada a Syne sin tocar inline styles (--font-h/--font-b → vars globales).
+ *   - Nav propio → Navbar global (dark). Pasteles claros → superficies dark translúcidas.
+ *   - Inputs del modal: estilo dark + fix de autofill webkit. Errores → #fca5a5.
  *
- * MAPA — Instrucciones de instalación:
- *   npm install leaflet react-leaflet
- *   npm install --save-dev @types/leaflet
- *
- *   En _app.tsx o en este mismo archivo, importar CSS de leaflet:
- *   import 'leaflet/dist/leaflet.css'
- *
- *   La tabla `fields` necesita columnas: latitude (float8), longitude (float8)
- *   Si no existen: ALTER TABLE fields ADD COLUMN latitude float8, ADD COLUMN longitude float8;
- *   Geocodificación sugerida: https://nominatim.openstreetmap.org/search?q={address}&format=json
+ * Sin cambios de lógica: fetch, booking holds, pricing dinámico, slots, validación cédula,
+ *   edge fn create-booking, MapEmbed dinámico, WhatsApp bubble.
  */
 
 import { useRouter }        from 'next/router'
@@ -29,6 +19,7 @@ import Link                 from 'next/link'
 import Image                from 'next/image'
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { supabase }         from '@/lib/supabase'
+import Navbar               from '@/components/ui/Navbar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,17 +33,16 @@ type Field = {
   hours:           string[] | null
   price_day:       number
   price_night:     number
-  night_from_hour: number   // hora desde la que aplica tarifa nocturna (ej: 18)
+  night_from_hour: number
   latitude:        number | null
   longitude:       number | null
-  slot_duration:   number  // 1 o 2 (horas por bloque)
+  slot_duration:   number
 }
 
 type BookingStatus = 'idle' | 'sending' | 'success' | 'error'
 
 // ─── Dynamic imports (SSR-safe) ────────────────────────────────────────────────
 
-// Leaflet requiere que sea dinámico (usa `window`)
 const MapEmbed = dynamic(() => import('./MapEmbed'), { ssr: false })
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -106,7 +96,6 @@ function validateForm(n: string, p: string, e: string, idNumber: string, idType:
   if (!p.trim() || !/^\+?[\d\s\-()]{7,}$/.test(p))  errs.phone = 'Teléfono inválido'
   if (!e.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) errs.email = 'Correo inválido'
 
-  // Cédula validation by type
   const digits = idNumber.replace(/\D/g, '')
   if (!digits) {
     errs.idNumber = 'Cédula o identificación requerida'
@@ -124,13 +113,11 @@ function validateForm(n: string, p: string, e: string, idNumber: string, idType:
 function formatCedula(raw: string, type: 'fisica' | 'juridica'): string {
   const digits = raw.replace(/\D/g, '')
   if (type === 'fisica') {
-    // Formato: X-XXXX-XXXX (9 dígitos)
     const limited = digits.slice(0, 9)
     if (limited.length <= 1) return limited
     if (limited.length <= 5) return `${limited[0]}-${limited.slice(1)}`
     return `${limited[0]}-${limited.slice(1, 5)}-${limited.slice(5)}`
   } else {
-    // Formato: X-XXX-XXXXXX (10 dígitos)
     const limited = digits.slice(0, 10)
     if (limited.length <= 1) return limited
     if (limited.length <= 4) return `${limited[0]}-${limited.slice(1)}`
@@ -141,44 +128,31 @@ function formatCedula(raw: string, type: 'fisica' | 'juridica'): string {
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300&family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
-
   :root {
     --g900: #052e16;
     --g800: #0B4D2C;
     --g700: #15803d;
     --g500: #16a34a;
     --g400: #4ade80;
-    --g100: #dcfce7;
-    --bone: #F5F2EC;
+    --g100: rgba(34,197,94,.14);
+    --bone: #080e0a;
     --charcoal: #0C0D0B;
-    --ink: #1a1d19;
-    --muted: #6b7569;
-    --border: #e8ece6;
-    --white: #ffffff;
+    --ink: #f0f4f0;
+    --muted: #8a9488;
+    --border: rgba(255,255,255,.10);
+    --white: #101810;
     --r-xl: 24px;
     --r-lg: 16px;
     --r-md: 12px;
-    --sh-sm: 0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.06);
-    --sh-md: 0 4px 16px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.08);
-    --sh-lg: 0 8px 32px rgba(0,0,0,.16),0 24px 64px rgba(0,0,0,.12);
-    --font-d: 'DM Serif Display', Georgia, serif;
-    --font-h: 'Kanit', sans-serif;
-    --font-b: 'DM Sans', sans-serif;
+    --sh-sm: 0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.35);
+    --sh-md: 0 4px 16px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.4);
+    --sh-lg: 0 8px 32px rgba(0,0,0,.5),0 24px 64px rgba(0,0,0,.45);
+    --font-h: var(--font-d);
+    --font-b: var(--font-u);
   }
 
-  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    font-family: var(--font-b);
-    background: var(--bone);
-    color: var(--ink);
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
   ::selection { background: var(--g400); color: var(--g900); }
 
-  /* ── Animations ──────────────────────────────────────────── */
   @keyframes fadeUp {
     from { opacity:0; transform:translateY(24px); }
     to   { opacity:1; transform:translateY(0); }
@@ -204,40 +178,12 @@ const CSS = `
     to { transform:rotate(360deg); }
   }
 
-  /* ── Navbar ──────────────────────────────────────────────── */
-  .nav {
-    position:fixed; top:0; left:0; right:0; z-index:90;
-    padding:0 32px; height:68px;
-    display:flex; align-items:center; justify-content:space-between;
-    background:rgba(12,13,11,.92);
-    backdrop-filter:blur(20px) saturate(1.4);
-    border-bottom:1px solid rgba(255,255,255,.06);
-    box-shadow:0 1px 0 rgba(255,255,255,.04);
-  }
-  .nav__logo { display:flex; align-items:center; height:32px; cursor:pointer; }
-  .nav__links { display:flex; align-items:center; gap:6px; }
-  .nav__link {
-    padding:8px 14px; border-radius:var(--r-md);
-    font-size:13.5px; font-weight:500; font-family:var(--font-b);
-    text-decoration:none; transition:all .15s;
-    color:rgba(255,255,255,.6);
-  }
-  .nav__link:hover { color:#fff; background:rgba(255,255,255,.08); }
-  .nav__back {
-    display:inline-flex; align-items:center; gap:8px;
-    padding:8px 14px; border-radius:var(--r-md);
-    font-size:13px; font-weight:600; font-family:var(--font-b);
-    color:rgba(255,255,255,.6); background:none; border:none; cursor:pointer;
-    transition:all .15s; text-decoration:none;
-  }
-  .nav__back:hover { color:#fff; background:rgba(255,255,255,.08); }
-
   /* ── Hero ────────────────────────────────────────────────── */
   .hero {
     position:relative; overflow:hidden;
     background:#0C0D0B;
     height:clamp(380px, 52vh, 560px);
-    margin-top:68px;
+    margin-top:62px;
   }
   .hero__img {
     position:absolute; inset:0;
@@ -247,10 +193,10 @@ const CSS = `
     position:absolute; inset:0;
     background:linear-gradient(
       to bottom,
-      rgba(12,13,11,.18) 0%,
-      rgba(12,13,11,.04) 40%,
-      rgba(12,13,11,.72) 78%,
-      rgba(12,13,11,.96) 100%
+      rgba(8,14,10,.18) 0%,
+      rgba(8,14,10,.04) 40%,
+      rgba(8,14,10,.72) 78%,
+      rgba(8,14,10,.96) 100%
     );
     z-index:2;
   }
@@ -270,7 +216,7 @@ const CSS = `
     display:flex; gap:10px; overflow-x:auto;
     scrollbar-width:none; -webkit-overflow-scrolling:touch;
     padding:20px 48px;
-    background:linear-gradient(to bottom, var(--charcoal), #111);
+    background:linear-gradient(to bottom, var(--charcoal), #060906);
   }
   .gallery-bar::-webkit-scrollbar { display:none; }
   .gallery-thumb {
@@ -295,26 +241,26 @@ const CSS = `
     align-items:start;
   }
 
-  /* ── Section label (match home) ──────────────────────────── */
+  /* ── Section label ───────────────────────────────────────── */
   .sec-label {
     font-size:10px; font-weight:700; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--g500);
+    text-transform:uppercase; color:var(--g400);
     font-family:var(--font-h); margin-bottom:8px;
   }
   .sec-title {
     font-family:var(--font-d);
     font-size:clamp(22px,2.8vw,34px);
-    font-weight:400; color:var(--ink);
+    font-weight:700; color:var(--ink);
     letter-spacing:-.02em; line-height:1.08;
     font-style:italic; margin-bottom:28px;
   }
   .sec-title em {
     font-style:normal;
-    background:linear-gradient(135deg, var(--g800), var(--g500));
+    background:linear-gradient(135deg, var(--g400), #22c55e);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
   }
 
-  /* ── Info card (left content sections) ───────────────────── */
+  /* ── Info card ───────────────────────────────────────────── */
   .info-card {
     background:var(--white); border:1.5px solid var(--border);
     border-radius:var(--r-xl); overflow:hidden;
@@ -331,9 +277,9 @@ const CSS = `
   .feature-pill {
     display:inline-flex; align-items:center; gap:6px;
     padding:7px 14px; border-radius:999px;
-    background:#f0fdf4; color:var(--g700);
+    background:rgba(34,197,94,.1); color:var(--g400);
     font-size:12.5px; font-weight:600; font-family:var(--font-b);
-    border:1px solid #bbf7d0;
+    border:1px solid rgba(74,222,128,.2);
   }
 
   /* ── Calendar ────────────────────────────────────────────── */
@@ -348,7 +294,7 @@ const CSS = `
     display:flex; align-items:center; justify-content:center;
     font-size:13px; color:var(--muted); transition:all .12s;
   }
-  .cal-nav:hover { border-color:var(--g500); color:var(--g500); background:var(--g100); }
+  .cal-nav:hover { border-color:var(--g500); color:var(--g400); background:var(--g100); }
   .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; padding:0 16px 16px; }
   .cal-dow { text-align:center; font-size:10px; font-weight:700; color:var(--muted); padding:4px 0 8px; font-family:var(--font-h); letter-spacing:.06em; }
   .cal-day {
@@ -357,11 +303,11 @@ const CSS = `
     cursor:pointer; border:none; background:none;
     transition:all .12s; font-family:var(--font-b); color:var(--ink);
   }
-  .cal-day:hover:not(:disabled) { background:var(--g100); color:var(--g700); font-weight:700; }
-  .cal-day.today  { font-weight:800; color:var(--g500); }
+  .cal-day:hover:not(:disabled) { background:var(--g100); color:var(--g400); font-weight:700; }
+  .cal-day.today  { font-weight:800; color:var(--g400); }
   .cal-day.sel    { background:var(--g500)!important; color:#fff!important; font-weight:700; border-radius:10px; }
-  .cal-day.out    { color:#d0d8cf; }
-  .cal-day:disabled { color:#dce4da; cursor:default; }
+  .cal-day.out    { color:rgba(255,255,255,.25); }
+  .cal-day:disabled { color:rgba(255,255,255,.2); cursor:default; }
   .cal-day.closed { color:#ef4444!important; text-decoration:line-through; cursor:not-allowed; opacity:.5; }
 
   /* ── Hour buttons ────────────────────────────────────────── */
@@ -374,7 +320,7 @@ const CSS = `
     align-items:center; gap:2px; letter-spacing:.01em;
   }
   .hour-btn:hover:not(:disabled) {
-    border-color:var(--g500); background:var(--g100); color:var(--g700);
+    border-color:var(--g500); background:var(--g100); color:var(--g400);
     transform:translateY(-2px); box-shadow:0 4px 14px rgba(22,163,74,.18);
   }
   .hour-btn.sel {
@@ -387,8 +333,8 @@ const CSS = `
     box-shadow:0 4px 20px rgba(124,58,237,.35); transform:translateY(-2px);
   }
   .hour-btn:disabled {
-    background:#f8faf8; color:#c9d3c8;
-    cursor:not-allowed; border-color:#f0f3f0;
+    background:rgba(255,255,255,.02); color:rgba(255,255,255,.25);
+    cursor:not-allowed; border-color:rgba(255,255,255,.05);
     transform:none; box-shadow:none;
   }
   .hour-tag {
@@ -400,8 +346,8 @@ const CSS = `
   .booking-card {
     background:var(--white); border-radius:var(--r-xl);
     border:1.5px solid var(--border);
-    box-shadow:0 4px 6px rgba(0,0,0,.04),0 20px 48px rgba(0,0,0,.10);
-    position:sticky; top:88px;
+    box-shadow:0 4px 6px rgba(0,0,0,.3),0 20px 48px rgba(0,0,0,.5);
+    position:sticky; top:82px;
     overflow:hidden;
   }
   .booking-card__header {
@@ -433,13 +379,13 @@ const CSS = `
     box-shadow:0 8px 32px rgba(22,163,74,.45);
   }
   .reserve-btn:disabled {
-    background:var(--border); color:#a8b5a6;
+    background:rgba(255,255,255,.07); color:rgba(255,255,255,.3);
     box-shadow:none; cursor:not-allowed; transform:none;
   }
 
   /* ── Skeleton ────────────────────────────────────────────── */
   .skel {
-    background:linear-gradient(90deg,#ebebeb 25%,#f5f5f5 50%,#ebebeb 75%);
+    background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);
     background-size:400% 100%;
     animation:shimmer 1.6s infinite;
     border-radius:10px;
@@ -457,7 +403,6 @@ const CSS = `
     font-family:var(--font-b) !important;
     border-radius:var(--r-xl);
   }
-  /* Custom leaflet marker popup */
   .leaflet-popup-content-wrapper {
     border-radius:16px !important;
     box-shadow:0 8px 32px rgba(0,0,0,.18) !important;
@@ -472,7 +417,7 @@ const CSS = `
   /* ── Modal ───────────────────────────────────────────────── */
   .modal-overlay {
     position:fixed; inset:0; z-index:200;
-    background:rgba(12,13,11,.65);
+    background:rgba(4,7,5,.7);
     backdrop-filter:blur(8px) saturate(1.4);
     display:flex; align-items:flex-end; justify-content:center;
     padding:20px;
@@ -483,9 +428,10 @@ const CSS = `
   .modal {
     background:var(--white); border-radius:28px 28px 0 0;
     width:100%; max-width:460px;
-    box-shadow:0 -8px 60px rgba(0,0,0,.28), 0 24px 80px rgba(0,0,0,.25);
+    box-shadow:0 -8px 60px rgba(0,0,0,.55), 0 24px 80px rgba(0,0,0,.5);
     animation:slideUp .3s cubic-bezier(.16,1,.3,1);
     overflow:hidden; max-height:90vh; overflow-y:auto;
+    border:1px solid var(--border);
   }
   @media (min-width:640px) {
     .modal { border-radius:28px; }
@@ -493,15 +439,23 @@ const CSS = `
   .modal-input {
     width:100%; padding:13px 16px; border-radius:12px;
     border:1.5px solid var(--border); font-size:14px;
-    font-family:var(--font-b); outline:none; background:#fafaf8;
+    font-family:var(--font-b); outline:none; background:rgba(255,255,255,.04);
     color:var(--ink); transition:border-color .15s,box-shadow .15s;
   }
+  .modal-input::placeholder { color:rgba(255,255,255,.3); }
   .modal-input:focus {
-    border-color:var(--g500); background:#fff;
-    box-shadow:0 0 0 3px rgba(22,163,74,.12);
+    border-color:var(--g500); background:rgba(255,255,255,.06);
+    box-shadow:0 0 0 3px rgba(74,222,128,.15);
   }
-  .modal-input.err { border-color:#ef4444; background:#fff8f8; }
-  .modal-input.err:focus { box-shadow:0 0 0 3px rgba(239,68,68,.1); }
+  .modal-input.err { border-color:#ef4444; background:rgba(239,68,68,.08); }
+  .modal-input.err:focus { box-shadow:0 0 0 3px rgba(239,68,68,.15); }
+  .modal-input:-webkit-autofill,
+  .modal-input:-webkit-autofill:hover,
+  .modal-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px #141914 inset;
+    caret-color: var(--ink);
+  }
 
   /* ── Price tag ───────────────────────────────────────────── */
   .price-tag {
@@ -527,8 +481,6 @@ const CSS = `
     .booking-card__header { padding:18px 18px 14px; }
   }
   @media (max-width:480px) {
-    .nav { padding:0 16px; }
-    .nav__links { display:none; }
     .wa-bubble { bottom:16px!important; right:16px!important; width:50px!important; height:50px!important; }
     .wa-bubble svg { width:24px!important; height:24px!important; }
   }
@@ -606,12 +558,10 @@ function DatePicker({ value, onChange, closedDates }: { value: string; onChange:
 
 function SkeletonPage() {
   return (
-    <>
-      <nav className="nav">
-        <div style={{ height: 32, width: 120, borderRadius: 8, background: 'rgba(255,255,255,.08)' }}/>
-      </nav>
-      <div style={{ height: 'clamp(380px,52vh,560px)', marginTop: 68, background: '#111' }}/>
-      <div style={{ background: '#111', height: 88 }}/>
+    <div className="theme-dark">
+      <Navbar dark={true} />
+      <div style={{ height: 'clamp(380px,52vh,560px)', marginTop: 62, background: '#0c0d0b' }}/>
+      <div style={{ background: '#0c0d0b', height: 88 }}/>
       <div className="page-body">
         <div className="page-grid">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -622,7 +572,7 @@ function SkeletonPage() {
           <div className="skel" style={{ height: 520, borderRadius: 24 }}/>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -632,7 +582,6 @@ export default function ReserveField() {
   const router  = useRouter()
   const fieldId = router.isReady ? Number(router.query.id) : null
 
-  // ── State ──────────────────────────────────────────────────────────────────
   const [field,        setField]        = useState<Field | null>(null)
   const [images,       setImages]       = useState<string[]>([])
   const [activeImg,    setActiveImg]    = useState(0)
@@ -653,7 +602,6 @@ export default function ReserveField() {
   const [formErrors,   setFormErrors]   = useState<Record<string, string>>({})
   const [status,       setStatus]       = useState<BookingStatus>('idle')
 
-  // ── Booking hold ───────────────────────────────────────────────────────────
   const sessionToken = useRef<string>(
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
@@ -705,15 +653,13 @@ export default function ReserveField() {
         })
         const urlList = imgs?.map((i: any) => i.url).filter(Boolean) ?? []
         setImages(urlList.length ? urlList : FALLBACK_IMAGES)
- 
-        // Load field_rates for dynamic pricing
+
         const { data: rates } = await supabase
           .from('field_rates')
           .select('day_of_week, start_time, end_time, price')
           .eq('field_id', fieldId)
         setFieldRates(rates || [])
 
-        // Load complex info (whatsapp, phone) via fields → owner → complexes
         const { data: fieldOwner } = await supabase
           .from('fields')
           .select('owner_id')
@@ -730,7 +676,6 @@ export default function ReserveField() {
             setComplexWhatsapp(cx.whatsapp || null)
             setComplexPhone(cx.phone || null)
 
-            // Load closed dates for this field + complex-wide
             const today = new Date().toISOString().split('T')[0]
             const { data: closed } = await supabase
               .from('closed_dates')
@@ -766,8 +711,7 @@ export default function ReserveField() {
   const { isNight, price } = useMemo(() => {
     if (!field || !selHour) return { isNight: false, price: 0 }
     const night = isNightHour(selHour, field.night_from_hour)
- 
-    // Check field_rates first (highest priority)
+
     if (fieldRates.length > 0 && selDate) {
       const dayNames = ['sun','mon','tue','wed','thu','fri','sat']
       const [y, m, d] = selDate.split('-').map(Number)
@@ -781,8 +725,7 @@ export default function ReserveField() {
       })
       if (rate) return { isNight: night, price: Number(rate.price) }
     }
- 
-    // Fallback to day/night pricing
+
     return { isNight: night, price: night ? field.price_night : field.price_day }
   }, [selHour, selDate, field, fieldRates])
 
@@ -790,8 +733,6 @@ export default function ReserveField() {
   const sortedHours = useMemo(() => [...(field?.hours || [])].sort(), [field])
 
   // ── Slot-duration-aware time slots ─────────────────────────────────────────
-  // Si slot_duration=2, agrupa horas consecutivas en bloques de 2h
-  // Cada timeSlot tiene: startHour (para enviar a la Edge Function), label (para mostrar), endHour
   const timeSlots = useMemo(() => {
     if (!field) return []
     const dur = field.slot_duration || 1
@@ -806,13 +747,11 @@ export default function ReserveField() {
       }))
     }
 
-    // dur >= 2: agrupar bloques consecutivos
     const slots: { startHour: string; endHour: string; label: string; coveredHours: string[] }[] = []
     let i = 0
     while (i < hours.length) {
       const start = hours[i]
       const startNum = Number(start.split(':')[0])
-      // Buscar las siguientes (dur-1) horas consecutivas
       const block = [start]
       let valid = true
       for (let j = 1; j < dur; j++) {
@@ -833,9 +772,9 @@ export default function ReserveField() {
           label: `${start} - ${endLabel}`,
           coveredHours: block,
         })
-        i += dur  // saltar las horas ya agrupadas
+        i += dur
       } else {
-        i++  // hora huérfana, saltar
+        i++
       }
     }
     return slots
@@ -849,7 +788,6 @@ export default function ReserveField() {
   }, [selHour, timeSlots])
 
   // ── Booking hold helpers ──────────────────────────────────────────────────
-
   const clearHoldTimer = useCallback(() => {
     if (holdTimerRef.current) {
       clearInterval(holdTimerRef.current)
@@ -864,7 +802,6 @@ export default function ReserveField() {
       const diff = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
       if (diff <= 0) {
         clearHoldTimer()
-        // Hold expiró — liberar selección para que el usuario sepa que debe re-seleccionar
         setSelHour('')
         setHoldSecondsLeft(null)
       } else {
@@ -908,14 +845,12 @@ export default function ReserveField() {
     } catch { /* silencioso */ }
   }, [clearHoldTimer])
 
-  // Limpiar hold/timer al desmontar
   useEffect(() => {
     return () => { clearHoldTimer() }
   }, [clearHoldTimer])
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleDateChange = useCallback((d: string) => {
-    // Liberar hold del slot anterior si había uno
     if (selDate && selHour && fieldId) releaseHold(fieldId, selDate, selHour)
     setSelDate(d); setSelHour('')
     clearHoldTimer()
@@ -923,7 +858,6 @@ export default function ReserveField() {
 
   const handleHourSelect = useCallback((h: string) => {
     if (!fieldId || !selDate) return
-    // Liberar hold anterior si cambia de hora
     if (selHour && selHour !== h) releaseHold(fieldId, selDate, selHour)
     setSelHour(h)
     createHold(fieldId, selDate, h)
@@ -935,7 +869,6 @@ export default function ReserveField() {
 
   const handleConfirm = async () => {
     if (!selDate || !selHour || !field || !fieldId) return
-    // Validar que la fecha no sea pasada
     const today = new Date(); today.setHours(0,0,0,0)
     const [sy,sm,sd] = selDate.split("-").map(Number)
     if (new Date(sy, sm-1, sd) < today) { setStatus("error"); return }
@@ -970,7 +903,7 @@ export default function ReserveField() {
         throw new Error(body?.error || body?.message || 'Error al crear la reserva')
       }
       setStatus('success')
-      clearHoldTimer()  // el slot ya está confirmado, liberar timer
+      clearHoldTimer()
       setTimeout(() => router.push('/?reserva=ok'), 1800)
     } catch { setStatus('error') }
   }
@@ -982,19 +915,17 @@ export default function ReserveField() {
     return (
       <>
         <style>{CSS}</style>
-        <nav className="nav">
-          <div className="nav__logo" onClick={() => router.push('/')}>
-            <img src="/logo-golplay.svg" alt="GolPlay" style={{ height: 80 }}/>
-          </div>
-        </nav>
-        <main style={{ minHeight: '100vh', background: 'var(--bone)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, marginTop: 68 }}>
-          <div style={{ fontSize: 52, marginBottom: 8 }}>⚠️</div>
-          <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>Cancha no encontrada</h2>
-          <p style={{ color: 'var(--muted)', fontSize: 14 }}>Esta cancha no existe o fue removida.</p>
-          <button onClick={() => router.push('/')} style={{ marginTop: 8, padding: '11px 28px', background: 'var(--g500)', color: '#fff', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 700, fontSize: 14, letterSpacing: '.03em' }}>
-            ← Volver al inicio
-          </button>
-        </main>
+        <div className="theme-dark">
+          <Navbar dark={true} />
+          <main style={{ minHeight: '100vh', background: 'var(--bone)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, marginTop: 62 }}>
+            <div style={{ fontSize: 52, marginBottom: 8 }}>⚠️</div>
+            <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>Cancha no encontrada</h2>
+            <p style={{ color: 'var(--muted)', fontSize: 14 }}>Esta cancha no existe o fue removida.</p>
+            <button onClick={() => router.push('/')} style={{ marginTop: 8, padding: '11px 28px', background: 'var(--g500)', color: '#fff', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 700, fontSize: 14, letterSpacing: '.03em' }}>
+              ← Volver al inicio
+            </button>
+          </main>
+        </div>
       </>
     )
   }
@@ -1006,670 +937,615 @@ export default function ReserveField() {
         <title>{field.name} — Reservar cancha · GolPlay</title>
         <meta name="description" content={field.description ?? `Reservá ${field.name} en GolPlay. Disponibilidad real, precio claro.`}/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="preconnect" href="https://fonts.googleapis.com"/>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
       </Head>
 
       <style>{CSS}</style>
 
-      {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
-      <nav className="nav">
-        <div className="nav__logo" onClick={() => router.push('/')}>
-          <img src="/logo-golplay.svg" alt="GolPlay" style={{ height: 80 }}/>
-        </div>
-        <div className="nav__links">
-          <button className="nav__back" onClick={() => router.push('/')}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-            Volver a canchas
-          </button>
-          <Link href="/login" className="nav__link">Iniciar sesión</Link>
-          <Link href="/register" style={{
-            padding: '9px 20px', borderRadius: 'var(--r-md)',
-            fontSize: '13.5px', fontWeight: 600, fontFamily: 'var(--font-b)',
-            background: 'var(--g500)', color: '#fff',
-            textDecoration: 'none', transition: 'all .15s',
-            boxShadow: '0 2px 10px rgba(22,163,74,.35)',
-          }}>Registrarse</Link>
-        </div>
-      </nav>
+      <div className="theme-dark">
+        <Navbar dark={true} />
 
-      {/* ── HERO — full-bleed image with sport overlay ──────────────────────── */}
-      <div className="hero" ref={heroRef}>
-        {images.map((src, i) => (
-          <div key={src} className="hero__img" style={{
-            opacity: i === activeImg ? 1 : 0,
-            transform: i === activeImg ? 'scale(1)' : 'scale(1.04)',
-          }}>
-            <Image src={src} alt={`${field.name} imagen ${i+1}`} fill sizes="100vw" style={{ objectFit: 'cover' }} priority={i === 0} loading={i === 0 ? 'eager' : 'lazy'}/>
-          </div>
-        ))}
-        <div className="hero__overlay"/>
-        <div className="hero__grain" aria-hidden/>
-
-        {/* Grid lines overlay matching home */}
-        <div aria-hidden style={{ position:'absolute', inset:0, zIndex:3, backgroundImage:'linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)', backgroundSize:'60px 60px', pointerEvents:'none' }}/>
-
-        <div className="hero__content">
-          {/* Sport badge */}
-          {sportMeta && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              background: 'rgba(255,255,255,.12)', backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,.18)', borderRadius: 999,
-              padding: '5px 14px 5px 10px', marginBottom: 16,
-            }}>
-              <span style={{ fontSize: 14 }}>{sportMeta.emoji}</span>
-              <span style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '.08em', textTransform: 'uppercase' }}>
-                {sportMeta.label}
-              </span>
-            </div>
-          )}
-
-          {/* Field name — DM Serif Display matching home hero */}
-          <h1 style={{
-            fontFamily: 'var(--font-d)',
-            fontSize: 'clamp(32px, 5vw, 58px)',
-            fontWeight: 400, color: '#fff',
-            lineHeight: 1.0, letterSpacing: '-.03em',
-            marginBottom: 12, maxWidth: 760,
-          }}>{field.name}</h1>
-
-          {/* Location + price row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,.72)', fontWeight: 500 }}>{field.location}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 999, background: 'rgba(255,255,255,.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.18)', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.9)', fontFamily: 'var(--font-h)' }}>
-                🌞 {fmt(field.price_day)}
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 999, background: 'rgba(124,58,237,.2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(167,139,250,.25)', fontSize: 13, fontWeight: 700, color: '#c4b5fd', fontFamily: 'var(--font-h)' }}>
-                🌙 {fmt(field.price_night)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── GALLERY BAR ─────────────────────────────────────────────────────── */}
-      {images.length > 1 && (
-        <div className="gallery-bar">
+        {/* ── HERO ─────────────────────────────────────────────────────────── */}
+        <div className="hero" ref={heroRef}>
           {images.map((src, i) => (
-            <button key={src} className={`gallery-thumb${i === activeImg ? ' active' : ''}`}
-              onClick={() => setActiveImg(i)} aria-label={`Ver imagen ${i+1}`}>
-              <Image src={src} alt="" fill sizes="80px" style={{ objectFit: 'cover' }} loading="lazy"/>
-            </button>
+            <div key={src} className="hero__img" style={{
+              opacity: i === activeImg ? 1 : 0,
+              transform: i === activeImg ? 'scale(1)' : 'scale(1.04)',
+            }}>
+              <Image src={src} alt={`${field.name} imagen ${i+1}`} fill sizes="100vw" style={{ objectFit: 'cover' }} priority={i === 0} loading={i === 0 ? 'eager' : 'lazy'}/>
+            </div>
           ))}
-          <div style={{ flexShrink: 0, marginLeft: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-              {activeImg + 1} / {images.length}
-            </span>
-          </div>
-        </div>
-      )}
+          <div className="hero__overlay"/>
+          <div className="hero__grain" aria-hidden/>
 
-      {/* ── MAIN BODY ───────────────────────────────────────────────────────── */}
-      <div className="page-body">
-        <div className="page-grid">
+          <div aria-hidden style={{ position:'absolute', inset:0, zIndex:3, backgroundImage:'linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)', backgroundSize:'60px 60px', pointerEvents:'none' }}/>
 
-          {/* ════════════════════════════════════════════
-              LEFT COLUMN — Info
-          ════════════════════════════════════════════ */}
-          <div>
-
-            {/* ── Description ─────────────────────────────────────────────── */}
-            {(field.description || (field.features && field.features.length > 0)) && (
-              <div className="info-card" style={{ animationDelay: '0ms' }}>
-                <div className="info-card__head">
-                  <p className="sec-label">Sobre la cancha</p>
-                  <h2 className="sec-title">
-                    Todo lo que <em>necesitás saber</em>
-                  </h2>
-                </div>
-                <div className="info-card__body">
-                  {field.description && (
-                    <p style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 1.8, marginBottom: field.features?.length ? 20 : 0 }}>
-                      {field.description}
-                    </p>
-                  )}
-                  {field.features && field.features.length > 0 && (
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {field.features.map(f => (
-                        <span key={f} className="feature-pill">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                          {f}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+          <div className="hero__content">
+            {sportMeta && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                background: 'rgba(255,255,255,.12)', backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,.18)', borderRadius: 999,
+                padding: '5px 14px 5px 10px', marginBottom: 16,
+              }}>
+                <span style={{ fontSize: 14 }}>{sportMeta.emoji}</span>
+                <span style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                  {sportMeta.label}
+                </span>
               </div>
             )}
 
-            {/* ── Pricing cards ────────────────────────────────────────────── */}
-            <div className="info-card" style={{ animationDelay: '60ms' }}>
-              <div className="info-card__head">
-                <p className="sec-label">Tarifas</p>
-                <h2 className="sec-title">Precios <em>transparentes</em></h2>
+            <h1 style={{
+              fontFamily: 'var(--font-d)',
+              fontSize: 'clamp(32px, 5vw, 58px)',
+              fontWeight: 800, color: '#fff',
+              lineHeight: 1.0, letterSpacing: '-.03em',
+              marginBottom: 12, maxWidth: 760,
+            }}>{field.name}</h1>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span style={{ fontSize: 14, color: 'rgba(255,255,255,.72)', fontWeight: 500 }}>{field.location}</span>
               </div>
-              <div className="info-card__body">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  {/* Day rate */}
-                  <div style={{
-                    padding: '20px 22px', borderRadius: 16,
-                    background: 'linear-gradient(135deg,#ecfdf5,#d1fae5)',
-                    border: '1.5px solid #a7f3d0',
-                    position: 'relative', overflow: 'hidden',
-                  }}>
-                    <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(16,185,129,.12)' }}/>
-                    <p style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: '#065f46', textTransform: 'uppercase', marginBottom: 10 }}>
-                      🌞 Tarifa diurna
-                    </p>
-                    <p style={{ fontFamily: 'var(--font-h)', fontSize: 28, fontWeight: 800, color: '#065f46', lineHeight: 1, marginBottom: 6 }}>
-                      {fmt(field.price_day)}
-                    </p>
-                    <p style={{ fontSize: 12, color: '#047857', fontWeight: 500 }}>06:00 – {String(field.night_from_hour - 1).padStart(2,'0')}:59 h</p>
-                  </div>
-                  {/* Night rate */}
-                  <div style={{
-                    padding: '20px 22px', borderRadius: 16,
-                    background: 'linear-gradient(135deg,#faf5ff,#ede9fe)',
-                    border: '1.5px solid #c4b5fd',
-                    position: 'relative', overflow: 'hidden',
-                  }}>
-                    <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(139,92,246,.12)' }}/>
-                    <p style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: '#4c1d95', textTransform: 'uppercase', marginBottom: 10 }}>
-                      🌙 Tarifa nocturna
-                    </p>
-                    <p style={{ fontFamily: 'var(--font-h)', fontSize: 28, fontWeight: 800, color: '#4c1d95', lineHeight: 1, marginBottom: 6 }}>
-                      {fmt(field.price_night)}
-                    </p>
-                    <p style={{ fontSize: 12, color: '#5b21b6', fontWeight: 500 }}>{String(field.night_from_hour).padStart(2,'0')}:00 – 22:00 h</p>
-                  </div>
-                </div>
-                {/* No-advance note */}
-                <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>✅</span>
-                  <p style={{ fontSize: 13, color: '#15803d', fontWeight: 600 }}>
-                    GolPlay no cobra adelantos. Pagás directamente en el complejo.
-                  </p>
-                </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 999, background: 'rgba(255,255,255,.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.18)', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.9)', fontFamily: 'var(--font-h)' }}>
+                  🌞 {fmt(field.price_day)}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 999, background: 'rgba(124,58,237,.2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(167,139,250,.25)', fontSize: 13, fontWeight: 700, color: '#c4b5fd', fontFamily: 'var(--font-h)' }}>
+                  🌙 {fmt(field.price_night)}
+                </span>
               </div>
             </div>
-
-            {/* ── MAP ──────────────────────────────────────────────────────── */}
-            <div className="info-card" style={{ animationDelay: '120ms' }}>
-              <div className="info-card__head">
-                <p className="sec-label">Ubicación</p>
-                <h2 className="sec-title">¿Dónde <em>encontrarnos</em>?</h2>
-              </div>
-              <div className="info-card__body" style={{ paddingTop: 0 }}>
-
-                {/* Address row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '12px 16px', borderRadius: 12, background: 'var(--bone)', border: '1.5px solid var(--border)' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--g100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g700)" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{field.location}</p>
-                  {field.latitude && field.longitude && (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${field.latitude},${field.longitude}`}
-                      target="_blank" rel="noopener noreferrer"
-                      style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: 'var(--g700)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, padding: '6px 12px', borderRadius: 8, background: 'var(--g100)', border: '1px solid #bbf7d0', fontFamily: 'var(--font-h)', letterSpacing: '.03em' }}
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-                      Abrir en Maps
-                    </a>
-                  )}
-                </div>
-
-                {/* Map or placeholder */}
-                <div className="map-wrap">
-                  {field.latitude && field.longitude ? (
-                    <MapEmbed
-                      lat={field.latitude}
-                      lng={field.longitude}
-                      name={field.name}
-                      location={field.location}
-                      sport={sportMeta?.label}
-                      price={fmt(field.price_day)}
-                    />
-                  ) : (
-                    /* No coordinates — geocoding not set yet */
-                    <div style={{ height: '100%', background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                      <div style={{ fontSize: 40 }}>📍</div>
-                      <p style={{ fontFamily: 'var(--font-h)', fontSize: 14, fontWeight: 700, color: 'var(--g700)' }}>Mapa no disponible</p>
-                      <p style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', maxWidth: 240 }}>
-                        El propietario aún no ha configurado las coordenadas.<br/>
-                        Contactalo por teléfono para más info.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            </div>
-
           </div>
+        </div>
 
-          {/* ════════════════════════════════════════════
-              RIGHT COLUMN — Booking card
-          ════════════════════════════════════════════ */}
-          <aside>
-            <div className="booking-card">
+        {/* ── GALLERY BAR ─────────────────────────────────────────────────────── */}
+        {images.length > 1 && (
+          <div className="gallery-bar">
+            {images.map((src, i) => (
+              <button key={src} className={`gallery-thumb${i === activeImg ? ' active' : ''}`}
+                onClick={() => setActiveImg(i)} aria-label={`Ver imagen ${i+1}`}>
+                <Image src={src} alt="" fill sizes="80px" style={{ objectFit: 'cover' }} loading="lazy"/>
+              </button>
+            ))}
+            <div style={{ flexShrink: 0, marginLeft: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                {activeImg + 1} / {images.length}
+              </span>
+            </div>
+          </div>
+        )}
 
-              {/* Header — dark green matching home hero */}
-              <div className="booking-card__header">
-                <div aria-hidden style={{ position:'absolute',top:'-30%',right:'-20%',width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(74,222,128,.10) 0%,transparent 65%)' }}/>
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--g400)', animation: 'pulseDot 2s infinite', flexShrink: 0 }}/>
-                    <span style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: '#86efac', textTransform: 'uppercase' }}>
-                      Disponible para reservar
-                    </span>
+        {/* ── MAIN BODY ───────────────────────────────────────────────────────── */}
+        <div className="page-body">
+          <div className="page-grid">
+
+            {/* LEFT COLUMN — Info */}
+            <div>
+
+              {/* Description */}
+              {(field.description || (field.features && field.features.length > 0)) && (
+                <div className="info-card" style={{ animationDelay: '0ms' }}>
+                  <div className="info-card__head">
+                    <p className="sec-label">Sobre la cancha</p>
+                    <h2 className="sec-title">
+                      Todo lo que <em>necesitás saber</em>
+                    </h2>
                   </div>
-                  <h2 style={{ fontFamily: 'var(--font-d)', fontSize: 22, fontWeight: 400, color: '#fff', fontStyle: 'italic', lineHeight: 1.1, marginBottom: 16 }}>
-                    ¿Cuándo<br/>querés jugar?
-                  </h2>
-                  {/* Price summary */}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.6)', fontFamily: 'var(--font-h)', background: 'rgba(255,255,255,.08)', padding: '4px 10px', borderRadius: 999 }}>
-                      🌞 {fmt(field.price_day)}
-                    </span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.6)', fontFamily: 'var(--font-h)', background: 'rgba(255,255,255,.08)', padding: '4px 10px', borderRadius: 999 }}>
-                      🌙 {fmt(field.price_night)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="booking-card__body">
-
-                {/* ── Calendar ─────────────────────────────────────────────── */}
-                <div style={{ border: '1.5px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 18 }}>
-                  <DatePicker value={selDate} onChange={handleDateChange} closedDates={closedDates}/>
-                  {selDate && (
-                    <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--g700)', fontFamily: 'var(--font-h)' }}>
-                        📅 {dateDisplay}
-                      </span>
-                      <button type="button" onClick={() => { if (selHour && fieldId) releaseHold(fieldId, selDate, selHour); setSelDate(''); setSelHour('') }}
-                        style={{ fontSize: 11, color: '#ef4444', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                        ✕ Cambiar
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Hour slots ───────────────────────────────────────────── */}
-                {selDate && (
-                  <div style={{ animation: 'fadeUp .3s ease' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <p style={{ fontFamily: 'var(--font-h)', fontSize: 12, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                        Horarios
+                  <div className="info-card__body">
+                    {field.description && (
+                      <p style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 1.8, marginBottom: field.features?.length ? 20 : 0 }}>
+                        {field.description}
                       </p>
-                      <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--g500)', display: 'inline-block' }}/>
-                          Libre
-                        </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e2e8e0', display: 'inline-block' }}/>
-                          Ocupado
-                        </span>
-                      </div>
-                    </div>
-
-                    {loadingHours ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: field?.slot_duration === 2 ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 7 }}>
-                        {Array.from({ length: 8 }).map((_, i) => (
-                          <div key={i} className="skel" style={{ height: 52 }}/>
+                    )}
+                    {field.features && field.features.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {field.features.map(f => (
+                          <span key={f} className="feature-pill">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                            {f}
+                          </span>
                         ))}
-                      </div>
-                    ) : timeSlots.length === 0 ? (
-                      <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: '16px 0' }}>
-                        No hay horarios configurados
-                      </p>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: field?.slot_duration === 2 ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 7 }}>
-                        {timeSlots.map(slot => {
-                          // Un bloque está ocupado si CUALQUIERA de sus horas está reservada
-                          const blocked  = slot.coveredHours.some(h => bookedHours.includes(h))
-                          const selected = selHour === slot.startHour
-                          const night    = isNightHour(slot.startHour, field?.night_from_hour)
-                          return (
-                            <button key={slot.startHour} type="button"
-                              disabled={blocked}
-                              onClick={() => handleHourSelect(slot.startHour)}
-                              className={`hour-btn${selected ? (night ? ' night-sel' : ' sel') : ''}`}
-                              aria-label={`${slot.label}${blocked ? ', ocupado' : ''}`}
-                              aria-pressed={selected}
-                            >
-                              <span style={{ fontSize: 13 }}>{slot.label}</span>
-                              <span className="hour-tag" style={{
-                                color: selected ? 'rgba(255,255,255,.75)' : blocked ? '#c9d3c8' : night ? '#7c3aed' : 'var(--g700)'
-                              }}>
-                                {blocked ? 'Ocupado' : night ? 'Noche' : 'Día'}
-                              </span>
-                            </button>
-                          )
-                        })}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* ── Hold countdown ─────────────────────────────────────── */}
-                {holdSecondsLeft !== null && selHour && (
-                  <div style={{
-                    marginTop: 12,
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '10px 14px', borderRadius: 12,
-                    background: holdSecondsLeft <= 60
-                      ? 'linear-gradient(135deg,#fef2f2,#fee2e2)'
-                      : 'linear-gradient(135deg,#fffbeb,#fef3c7)',
-                    border: `1px solid ${holdSecondsLeft <= 60 ? '#fecaca' : '#fde68a'}`,
-                    animation: 'fadeUp .25s ease',
-                  }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>
-                      {holdSecondsLeft <= 60 ? '⚠️' : '⏳'}
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <p style={{
-                        fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700,
-                        letterSpacing: '.06em', textTransform: 'uppercase',
-                        color: holdSecondsLeft <= 60 ? '#b91c1c' : '#92400e',
-                        marginBottom: 1,
-                      }}>
-                        {holdSecondsLeft <= 60 ? 'Slot reservado por' : 'Reservado por'}
+              {/* Pricing cards */}
+              <div className="info-card" style={{ animationDelay: '60ms' }}>
+                <div className="info-card__head">
+                  <p className="sec-label">Tarifas</p>
+                  <h2 className="sec-title">Precios <em>transparentes</em></h2>
+                </div>
+                <div className="info-card__body">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div style={{
+                      padding: '20px 22px', borderRadius: 16,
+                      background: 'linear-gradient(135deg,rgba(34,197,94,.12),rgba(22,163,74,.06))',
+                      border: '1.5px solid rgba(74,222,128,.25)',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(34,197,94,.15)' }}/>
+                      <p style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: 'var(--g400)', textTransform: 'uppercase', marginBottom: 10 }}>
+                        🌞 Tarifa diurna
                       </p>
-                      <p style={{
-                        fontSize: 13, fontWeight: 700,
-                        color: holdSecondsLeft <= 60 ? '#dc2626' : '#d97706',
-                      }}>
-                        {Math.floor(holdSecondsLeft / 60)}:{String(holdSecondsLeft % 60).padStart(2,'0')} min
+                      <p style={{ fontFamily: 'var(--font-h)', fontSize: 28, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 6 }}>
+                        {fmt(field.price_day)}
                       </p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', fontWeight: 500 }}>06:00 – {String(field.night_from_hour - 1).padStart(2,'0')}:59 h</p>
                     </div>
                     <div style={{
-                      width: 36, height: 36, borderRadius: '50%',
-                      background: holdSecondsLeft <= 60 ? '#fecaca' : '#fde68a',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
+                      padding: '20px 22px', borderRadius: 16,
+                      background: 'linear-gradient(135deg,rgba(124,58,237,.18),rgba(91,33,182,.08))',
+                      border: '1.5px solid rgba(167,139,250,.3)',
+                      position: 'relative', overflow: 'hidden',
                     }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke={holdSecondsLeft <= 60 ? '#b91c1c' : '#92400e'} strokeWidth="2.5">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v6l4 2"/>
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Summary pill ─────────────────────────────────────────── */}
-                {selDate && selHour && (
-                  <div style={{
-                    marginTop: 16, padding: '14px 16px', borderRadius: 14,
-                    background: isNight
-                      ? 'linear-gradient(135deg,#faf5ff,#ede9fe)'
-                      : 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
-                    border: `1.5px solid ${isNight ? '#c4b5fd' : '#a7f3d0'}`,
-                    animation: 'expandIn .2s ease',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                      <div>
-                        <p style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: isNight ? '#5b21b6' : 'var(--g700)', marginBottom: 4 }}>
-                          Tu reserva
-                        </p>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: isNight ? '#4c1d95' : 'var(--g800)' }}>
-                          {dateDisplay} · {selectedSlotLabel}
-                        </p>
-                        <p style={{ fontSize: 12, fontWeight: 500, color: isNight ? '#7c3aed' : 'var(--g700)', marginTop: 2 }}>
-                          {isNight ? '🌙 Tarifa nocturna' : '🌞 Tarifa diurna'}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontFamily: 'var(--font-h)', fontSize: 22, fontWeight: 800, color: isNight ? '#4c1d95' : 'var(--g800)', lineHeight: 1 }}>
-                          {fmt(price)}
-                        </p>
-                        <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>por {field.slot_duration === 2 ? 'bloque' : 'hora'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── FUT11 deposit notice ──────────────────────────────── */}
-                {field.sport === 'futbol11' && selDate && selHour && (
-                  <div style={{
-                    padding: '10px 14px', borderRadius: 10,
-                    background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)',
-                    fontSize: 12, color: '#92400e', fontWeight: 600, marginBottom: 4,
-                    display: 'flex', alignItems: 'flex-start', gap: 8, lineHeight: 1.5,
-                  }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
-                    <span>Para confirmar la reserva de cancha FUT11, se requiere un adelanto del <strong>50%</strong> del monto total ({fmt(Math.round(price / 2))}). El complejo se pondrá en contacto para coordinar el pago.</span>
-                  </div>
-                )}
-
-                {/* ── CTA Button ───────────────────────────────────────────── */}
-                <button className="reserve-btn" onClick={openModal} disabled={!selDate || !selHour}>
-                  {!selDate
-                    ? <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Elegí una fecha</>
-                    : !selHour
-                    ? <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Elegí un horario</>
-                    : <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> Reservar {fmt(price)}</>
-                  }
-                </button>
-
-                <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', marginTop: 10, fontWeight: 500 }}>
-                  ✅ Sin cobro anticipado · Confirmación inmediata
-                </p>
-
-              </div>
-            </div>
-          </aside>
-
-        </div>
-      </div>
-
-      {/* ── BOOKING MODAL ───────────────────────────────────────────────────── */}
-      {showModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title"
-          onClick={e => { if (e.target === e.currentTarget && status !== 'sending') setShowModal(false) }}>
-          <div className="modal">
-
-            {/* Success */}
-            {status === 'success' ? (
-              <div style={{ padding: '52px 32px', textAlign: 'center' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--g100)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, margin: '0 auto 20px' }}>🎉</div>
-                <h3 style={{ fontFamily: 'var(--font-d)', fontSize: 26, fontWeight: 400, color: 'var(--ink)', fontStyle: 'italic', marginBottom: 10 }}>¡Reserva confirmada!</h3>
-                <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.7 }}>Te enviamos todos los detalles a <strong>{email}</strong>. ¡A jugar!</p>
-              </div>
-            ) : (
-              <>
-                {/* Modal header */}
-                <div style={{ padding: '24px 24px 0', borderBottom: '1px solid var(--border)', paddingBottom: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <p id="modal-title" style={{ fontFamily: 'var(--font-d)', fontSize: 22, fontWeight: 400, color: 'var(--ink)', fontStyle: 'italic', marginBottom: 2 }}>
-                        Confirmar reserva
+                      <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(139,92,246,.15)' }}/>
+                      <p style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: '#c4b5fd', textTransform: 'uppercase', marginBottom: 10 }}>
+                        🌙 Tarifa nocturna
                       </p>
-                      <p style={{ fontSize: 13, color: 'var(--muted)' }}>{field.name}</p>
+                      <p style={{ fontFamily: 'var(--font-h)', fontSize: 28, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 6 }}>
+                        {fmt(field.price_night)}
+                      </p>
+                      <p style={{ fontSize: 12, color: 'rgba(196,181,253,.7)', fontWeight: 500 }}>{String(field.night_from_hour).padStart(2,'0')}:00 – 22:00 h</p>
                     </div>
-                    <button onClick={() => setShowModal(false)} aria-label="Cerrar" disabled={status === 'sending'}
-                      style={{ width: 32, height: 32, borderRadius: 8, background: '#f1f5f1', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', flexShrink: 0 }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
+                  </div>
+                  <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderRadius: 12, background: 'rgba(34,197,94,.1)', border: '1px solid rgba(74,222,128,.2)' }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>✅</span>
+                    <p style={{ fontSize: 13, color: 'var(--g400)', fontWeight: 600 }}>
+                      GolPlay no cobra adelantos. Pagás directamente en el complejo.
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Booking summary */}
-                <div style={{ margin: '16px 24px', padding: '16px 18px', borderRadius: 16, background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: '1.5px solid #a7f3d0' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    {[
-                      { l: 'Fecha',  v: dateDisplay },
-                      { l: 'Hora',   v: selectedSlotLabel },
-                      { l: 'Tarifa', v: isNight ? '🌙 Nocturna' : '🌞 Diurna' },
-                      { l: 'Total',  v: fmt(price) },
-                    ].map(({ l, v }) => (
-                      <div key={l}>
-                        <p style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, color: 'var(--g700)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 2 }}>{l}</p>
-                        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--g900)' }}>{v}</p>
+              {/* MAP */}
+              <div className="info-card" style={{ animationDelay: '120ms' }}>
+                <div className="info-card__head">
+                  <p className="sec-label">Ubicación</p>
+                  <h2 className="sec-title">¿Dónde <em>encontrarnos</em>?</h2>
+                </div>
+                <div className="info-card__body" style={{ paddingTop: 0 }}>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: '1.5px solid var(--border)' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--g100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g400)" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{field.location}</p>
+                    {field.latitude && field.longitude && (
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${field.latitude},${field.longitude}`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: 'var(--g400)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, padding: '6px 12px', borderRadius: 8, background: 'var(--g100)', border: '1px solid rgba(74,222,128,.2)', fontFamily: 'var(--font-h)', letterSpacing: '.03em' }}
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                        Abrir en Maps
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="map-wrap">
+                    {field.latitude && field.longitude ? (
+                      <MapEmbed
+                        lat={field.latitude}
+                        lng={field.longitude}
+                        name={field.name}
+                        location={field.location}
+                        sport={sportMeta?.label}
+                        price={fmt(field.price_day)}
+                      />
+                    ) : (
+                      <div style={{ height: '100%', background: 'linear-gradient(135deg,rgba(34,197,94,.08),rgba(22,163,74,.04))', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                        <div style={{ fontSize: 40 }}>📍</div>
+                        <p style={{ fontFamily: 'var(--font-h)', fontSize: 14, fontWeight: 700, color: 'var(--g400)' }}>Mapa no disponible</p>
+                        <p style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', maxWidth: 240 }}>
+                          El propietario aún no ha configurado las coordenadas.<br/>
+                          Contactalo por teléfono para más info.
+                        </p>
                       </div>
-                    ))}
+                    )}
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+            {/* RIGHT COLUMN — Booking card */}
+            <aside>
+              <div className="booking-card">
+
+                <div className="booking-card__header">
+                  <div aria-hidden style={{ position:'absolute',top:'-30%',right:'-20%',width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(74,222,128,.10) 0%,transparent 65%)' }}/>
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--g400)', animation: 'pulseDot 2s infinite', flexShrink: 0 }}/>
+                      <span style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: '#86efac', textTransform: 'uppercase' }}>
+                        Disponible para reservar
+                      </span>
+                    </div>
+                    <h2 style={{ fontFamily: 'var(--font-d)', fontSize: 22, fontWeight: 700, color: '#fff', fontStyle: 'italic', lineHeight: 1.1, marginBottom: 16 }}>
+                      ¿Cuándo<br/>querés jugar?
+                    </h2>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.6)', fontFamily: 'var(--font-h)', background: 'rgba(255,255,255,.08)', padding: '4px 10px', borderRadius: 999 }}>
+                        🌞 {fmt(field.price_day)}
+                      </span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.6)', fontFamily: 'var(--font-h)', background: 'rgba(255,255,255,.08)', padding: '4px 10px', borderRadius: 999 }}>
+                        🌙 {fmt(field.price_night)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Form */}
-                <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <p style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>Tus datos</p>
+                <div className="booking-card__body">
 
-                  {/* Error */}
-                  {status === 'error' && (
-                    <div style={{ padding: '12px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, fontSize: 13, color: '#dc2626', fontWeight: 500 }}>
-                      ⚠️ No se pudo completar la reserva. Intentá de nuevo.
+                  <div style={{ border: '1.5px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 18 }}>
+                    <DatePicker value={selDate} onChange={handleDateChange} closedDates={closedDates}/>
+                    {selDate && (
+                      <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--g400)', fontFamily: 'var(--font-h)' }}>
+                          📅 {dateDisplay}
+                        </span>
+                        <button type="button" onClick={() => { if (selHour && fieldId) releaseHold(fieldId, selDate, selHour); setSelDate(''); setSelHour('') }}
+                          style={{ fontSize: 11, color: '#ef4444', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          ✕ Cambiar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {selDate && (
+                    <div style={{ animation: 'fadeUp .3s ease' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <p style={{ fontFamily: 'var(--font-h)', fontSize: 12, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                          Horarios
+                        </p>
+                        <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--g500)', display: 'inline-block' }}/>
+                            Libre
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,.2)', display: 'inline-block' }}/>
+                            Ocupado
+                          </span>
+                        </div>
+                      </div>
+
+                      {loadingHours ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: field?.slot_duration === 2 ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 7 }}>
+                          {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="skel" style={{ height: 52 }}/>
+                          ))}
+                        </div>
+                      ) : timeSlots.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: '16px 0' }}>
+                          No hay horarios configurados
+                        </p>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: field?.slot_duration === 2 ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 7 }}>
+                          {timeSlots.map(slot => {
+                            const blocked  = slot.coveredHours.some(h => bookedHours.includes(h))
+                            const selected = selHour === slot.startHour
+                            const night    = isNightHour(slot.startHour, field?.night_from_hour)
+                            return (
+                              <button key={slot.startHour} type="button"
+                                disabled={blocked}
+                                onClick={() => handleHourSelect(slot.startHour)}
+                                className={`hour-btn${selected ? (night ? ' night-sel' : ' sel') : ''}`}
+                                aria-label={`${slot.label}${blocked ? ', ocupado' : ''}`}
+                                aria-pressed={selected}
+                              >
+                                <span style={{ fontSize: 13 }}>{slot.label}</span>
+                                <span className="hour-tag" style={{
+                                  color: selected ? 'rgba(255,255,255,.75)' : blocked ? 'rgba(255,255,255,.25)' : night ? '#a78bfa' : 'var(--g400)'
+                                }}>
+                                  {blocked ? 'Ocupado' : night ? 'Noche' : 'Día'}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Name */}
-                  <div>
-                    <input className={`modal-input${formErrors.name ? ' err' : ''}`}
-                      placeholder="Nombre completo" value={name} autoComplete="name"
-                      onChange={e => { setName(e.target.value); setFormErrors(p => ({...p, name:''})) }}/>
-                    {formErrors.name && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.name}</p>}
-                  </div>
-
-                  {/* Phone */}
-                  <div>
-                    <input className={`modal-input${formErrors.phone ? ' err' : ''}`}
-                      placeholder="Teléfono (ej: 8888-8888)" value={phone} type="tel" autoComplete="tel"
-                      onChange={e => { setPhone(e.target.value); setFormErrors(p => ({...p, phone:''})) }}/>
-                    {formErrors.phone && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.phone}</p>}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <input className={`modal-input${formErrors.email ? ' err' : ''}`}
-                      placeholder="Correo electrónico" value={email} type="email" autoComplete="email"
-                      onChange={e => { setEmail(e.target.value); setFormErrors(p => ({...p, email:''})) }}/>
-                    {formErrors.email && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.email}</p>}
-                  </div>
-
-                  {/* Cédula / ID — tipo + input formateado */}
-                  <div>
-                    <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                      {([
-                        { value: 'fisica' as const, label: 'Persona física', hint: '9 dígitos' },
-                        { value: 'juridica' as const, label: 'Persona jurídica', hint: '10 dígitos' },
-                      ]).map(opt => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => { setIdType(opt.value); setIdNumber(''); setFormErrors(p => ({...p, idNumber:''})) }}
-                          style={{
-                            flex: 1,
-                            padding: '9px 10px',
-                            borderRadius: 10,
-                            border: idType === opt.value
-                              ? '2px solid var(--g500)'
-                              : '1.5px solid var(--border)',
-                            background: idType === opt.value ? 'var(--g100)' : 'var(--white)',
-                            cursor: 'pointer',
-                            transition: 'all .15s',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: 1,
-                          }}
-                        >
-                          <span style={{
-                            fontSize: 12,
-                            fontWeight: idType === opt.value ? 700 : 500,
-                            color: idType === opt.value ? 'var(--g700)' : 'var(--ink)',
-                            fontFamily: 'var(--font-h)',
-                          }}>
-                            {opt.value === 'fisica' ? '👤' : '🏢'} {opt.label}
-                          </span>
-                          <span style={{ fontSize: 10, color: 'var(--muted)' }}>{opt.hint}</span>
-                        </button>
-                      ))}
+                  {holdSecondsLeft !== null && selHour && (
+                    <div style={{
+                      marginTop: 12,
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '10px 14px', borderRadius: 12,
+                      background: holdSecondsLeft <= 60
+                        ? 'rgba(239,68,68,.12)'
+                        : 'rgba(245,158,11,.12)',
+                      border: `1px solid ${holdSecondsLeft <= 60 ? 'rgba(239,68,68,.3)' : 'rgba(245,158,11,.3)'}`,
+                      animation: 'fadeUp .25s ease',
+                    }}>
+                      <span style={{ fontSize: 16, flexShrink: 0 }}>
+                        {holdSecondsLeft <= 60 ? '⚠️' : '⏳'}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <p style={{
+                          fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700,
+                          letterSpacing: '.06em', textTransform: 'uppercase',
+                          color: holdSecondsLeft <= 60 ? '#fca5a5' : '#fbbf24',
+                          marginBottom: 1,
+                        }}>
+                          {holdSecondsLeft <= 60 ? 'Slot reservado por' : 'Reservado por'}
+                        </p>
+                        <p style={{
+                          fontSize: 13, fontWeight: 700,
+                          color: holdSecondsLeft <= 60 ? '#fca5a5' : '#fbbf24',
+                        }}>
+                          {Math.floor(holdSecondsLeft / 60)}:{String(holdSecondsLeft % 60).padStart(2,'0')} min
+                        </p>
+                      </div>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: '50%',
+                        background: holdSecondsLeft <= 60 ? 'rgba(239,68,68,.2)' : 'rgba(245,158,11,.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                          stroke={holdSecondsLeft <= 60 ? '#fca5a5' : '#fbbf24'} strokeWidth="2.5">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 6v6l4 2"/>
+                        </svg>
+                      </div>
                     </div>
-                    <input className={`modal-input${formErrors.idNumber ? ' err' : ''}`}
-                      placeholder={idType === 'fisica' ? 'Ej: 1-1234-5678' : 'Ej: 3-101-123456'}
-                      value={idNumber}
-                      autoComplete="off"
-                      inputMode="numeric"
-                      maxLength={idType === 'fisica' ? 11 : 12}
-                      onChange={e => {
-                        const formatted = formatCedula(e.target.value, idType)
-                        setIdNumber(formatted)
-                        setFormErrors(p => ({...p, idNumber:''}))
-                      }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-                      {formErrors.idNumber
-                        ? <p style={{ fontSize: 11, color: '#ef4444', fontWeight: 600 }}>⚠ {formErrors.idNumber}</p>
-                        : <span style={{ fontSize: 10, color: 'var(--muted)' }}>
-                            {idNumber.replace(/\D/g, '').length}/{idType === 'fisica' ? 9 : 10} dígitos
-                          </span>
-                      }
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Submit */}
-                  <button
-                    onClick={handleConfirm}
-                    disabled={status === 'sending'}
-                    style={{
-                      width: '100%', padding: '15px', borderRadius: 14, marginTop: 4,
-                      background: status === 'sending'
-                        ? 'var(--g100)'
-                        : 'linear-gradient(135deg,var(--g500),var(--g700))',
-                      color: status === 'sending' ? 'var(--g700)' : '#fff',
-                      fontWeight: 800, fontSize: 14, border: 'none',
-                      fontFamily: 'var(--font-h)', letterSpacing: '.04em', textTransform: 'uppercase',
-                      cursor: status === 'sending' ? 'not-allowed' : 'pointer',
-                      boxShadow: status === 'sending' ? 'none' : '0 4px 20px rgba(22,163,74,.32)',
-                      transition: 'all .2s',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    }}
-                  >
-                    {status === 'sending'
-                      ? <><Spinner/> Procesando…</>
-                      : `Confirmar — ${fmt(price)}`
+                  {selDate && selHour && (
+                    <div style={{
+                      marginTop: 16, padding: '14px 16px', borderRadius: 14,
+                      background: isNight
+                        ? 'rgba(124,58,237,.15)'
+                        : 'rgba(34,197,94,.12)',
+                      border: `1.5px solid ${isNight ? 'rgba(167,139,250,.3)' : 'rgba(74,222,128,.25)'}`,
+                      animation: 'expandIn .2s ease',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <div>
+                          <p style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: isNight ? '#c4b5fd' : 'var(--g400)', marginBottom: 4 }}>
+                            Tu reserva
+                          </p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
+                            {dateDisplay} · {selectedSlotLabel}
+                          </p>
+                          <p style={{ fontSize: 12, fontWeight: 500, color: isNight ? '#c4b5fd' : 'var(--g400)', marginTop: 2 }}>
+                            {isNight ? '🌙 Tarifa nocturna' : '🌞 Tarifa diurna'}
+                          </p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontFamily: 'var(--font-h)', fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+                            {fmt(price)}
+                          </p>
+                          <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>por {field.slot_duration === 2 ? 'bloque' : 'hora'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {field.sport === 'futbol11' && selDate && selHour && (
+                    <div style={{
+                      padding: '10px 14px', borderRadius: 10,
+                      background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)',
+                      fontSize: 12, color: '#fbbf24', fontWeight: 600, marginBottom: 4,
+                      display: 'flex', alignItems: 'flex-start', gap: 8, lineHeight: 1.5,
+                    }}>
+                      <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+                      <span>Para confirmar la reserva de cancha FUT11, se requiere un adelanto del <strong>50%</strong> del monto total ({fmt(Math.round(price / 2))}). El complejo se pondrá en contacto para coordinar el pago.</span>
+                    </div>
+                  )}
+
+                  <button className="reserve-btn" onClick={openModal} disabled={!selDate || !selHour}>
+                    {!selDate
+                      ? <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Elegí una fecha</>
+                      : !selHour
+                      ? <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Elegí un horario</>
+                      : <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> Reservar {fmt(price)}</>
                     }
                   </button>
 
-                  <button onClick={() => setShowModal(false)} disabled={status === 'sending'}
-                    style={{ width: '100%', padding: 10, background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-b)', fontSize: 13 }}>
-                    Cancelar
-                  </button>
+                  <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', marginTop: 10, fontWeight: 500 }}>
+                    ✅ Sin cobro anticipado · Confirmación inmediata
+                  </p>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4 }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>Reserva segura · Sin cobro anticipado</p>
-                  </div>
                 </div>
-              </>
-            )}
+              </div>
+            </aside>
+
           </div>
         </div>
-      )}
 
-      {/* ── WhatsApp Floating Bubble ── */}
-      {complexWhatsapp && (
-        <a
-          href={`https://wa.me/${complexWhatsapp.replace(/[^0-9]/g, '')}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Escribinos por WhatsApp"
-          className="wa-bubble"
-        >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-          </svg>
-        </a>
-      )}
+        {/* ── BOOKING MODAL ───────────────────────────────────────────────────── */}
+        {showModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+            onClick={e => { if (e.target === e.currentTarget && status !== 'sending') setShowModal(false) }}>
+            <div className="modal">
+
+              {status === 'success' ? (
+                <div style={{ padding: '52px 32px', textAlign: 'center' }}>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--g100)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, margin: '0 auto 20px' }}>🎉</div>
+                  <h3 style={{ fontFamily: 'var(--font-d)', fontSize: 26, fontWeight: 700, color: 'var(--ink)', fontStyle: 'italic', marginBottom: 10 }}>¡Reserva confirmada!</h3>
+                  <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.7 }}>Te enviamos todos los detalles a <strong style={{ color: 'var(--ink)' }}>{email}</strong>. ¡A jugar!</p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ padding: '24px 24px 0', borderBottom: '1px solid var(--border)', paddingBottom: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <p id="modal-title" style={{ fontFamily: 'var(--font-d)', fontSize: 22, fontWeight: 700, color: 'var(--ink)', fontStyle: 'italic', marginBottom: 2 }}>
+                          Confirmar reserva
+                        </p>
+                        <p style={{ fontSize: 13, color: 'var(--muted)' }}>{field.name}</p>
+                      </div>
+                      <button onClick={() => setShowModal(false)} aria-label="Cerrar" disabled={status === 'sending'}
+                        style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', flexShrink: 0 }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ margin: '16px 24px', padding: '16px 18px', borderRadius: 16, background: 'rgba(34,197,94,.12)', border: '1.5px solid rgba(74,222,128,.25)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      {[
+                        { l: 'Fecha',  v: dateDisplay },
+                        { l: 'Hora',   v: selectedSlotLabel },
+                        { l: 'Tarifa', v: isNight ? '🌙 Nocturna' : '🌞 Diurna' },
+                        { l: 'Total',  v: fmt(price) },
+                      ].map(({ l, v }) => (
+                        <div key={l}>
+                          <p style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, color: 'var(--g400)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 2 }}>{l}</p>
+                          <p style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{v}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <p style={{ fontFamily: 'var(--font-h)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>Tus datos</p>
+
+                    {status === 'error' && (
+                      <div style={{ padding: '12px 14px', background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 12, fontSize: 13, color: '#fca5a5', fontWeight: 500 }}>
+                        ⚠️ No se pudo completar la reserva. Intentá de nuevo.
+                      </div>
+                    )}
+
+                    <div>
+                      <input className={`modal-input${formErrors.name ? ' err' : ''}`}
+                        placeholder="Nombre completo" value={name} autoComplete="name"
+                        onChange={e => { setName(e.target.value); setFormErrors(p => ({...p, name:''})) }}/>
+                      {formErrors.name && <p style={{ fontSize: 11, color: '#fca5a5', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.name}</p>}
+                    </div>
+
+                    <div>
+                      <input className={`modal-input${formErrors.phone ? ' err' : ''}`}
+                        placeholder="Teléfono (ej: 8888-8888)" value={phone} type="tel" autoComplete="tel"
+                        onChange={e => { setPhone(e.target.value); setFormErrors(p => ({...p, phone:''})) }}/>
+                      {formErrors.phone && <p style={{ fontSize: 11, color: '#fca5a5', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.phone}</p>}
+                    </div>
+
+                    <div>
+                      <input className={`modal-input${formErrors.email ? ' err' : ''}`}
+                        placeholder="Correo electrónico" value={email} type="email" autoComplete="email"
+                        onChange={e => { setEmail(e.target.value); setFormErrors(p => ({...p, email:''})) }}/>
+                      {formErrors.email && <p style={{ fontSize: 11, color: '#fca5a5', marginTop: 3, fontWeight: 600 }}>⚠ {formErrors.email}</p>}
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                        {([
+                          { value: 'fisica' as const, label: 'Persona física', hint: '9 dígitos' },
+                          { value: 'juridica' as const, label: 'Persona jurídica', hint: '10 dígitos' },
+                        ]).map(opt => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => { setIdType(opt.value); setIdNumber(''); setFormErrors(p => ({...p, idNumber:''})) }}
+                            style={{
+                              flex: 1,
+                              padding: '9px 10px',
+                              borderRadius: 10,
+                              border: idType === opt.value
+                                ? '2px solid var(--g500)'
+                                : '1.5px solid var(--border)',
+                              background: idType === opt.value ? 'var(--g100)' : 'var(--white)',
+                              cursor: 'pointer',
+                              transition: 'all .15s',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <span style={{
+                              fontSize: 12,
+                              fontWeight: idType === opt.value ? 700 : 500,
+                              color: idType === opt.value ? 'var(--g400)' : 'var(--ink)',
+                              fontFamily: 'var(--font-h)',
+                            }}>
+                              {opt.value === 'fisica' ? '👤' : '🏢'} {opt.label}
+                            </span>
+                            <span style={{ fontSize: 10, color: 'var(--muted)' }}>{opt.hint}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <input className={`modal-input${formErrors.idNumber ? ' err' : ''}`}
+                        placeholder={idType === 'fisica' ? 'Ej: 1-1234-5678' : 'Ej: 3-101-123456'}
+                        value={idNumber}
+                        autoComplete="off"
+                        inputMode="numeric"
+                        maxLength={idType === 'fisica' ? 11 : 12}
+                        onChange={e => {
+                          const formatted = formatCedula(e.target.value, idType)
+                          setIdNumber(formatted)
+                          setFormErrors(p => ({...p, idNumber:''}))
+                        }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                        {formErrors.idNumber
+                          ? <p style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600 }}>⚠ {formErrors.idNumber}</p>
+                          : <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                              {idNumber.replace(/\D/g, '').length}/{idType === 'fisica' ? 9 : 10} dígitos
+                            </span>
+                        }
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleConfirm}
+                      disabled={status === 'sending'}
+                      style={{
+                        width: '100%', padding: '15px', borderRadius: 14, marginTop: 4,
+                        background: status === 'sending'
+                          ? 'var(--g100)'
+                          : 'linear-gradient(135deg,var(--g500),var(--g700))',
+                        color: status === 'sending' ? 'var(--g400)' : '#fff',
+                        fontWeight: 800, fontSize: 14, border: 'none',
+                        fontFamily: 'var(--font-h)', letterSpacing: '.04em', textTransform: 'uppercase',
+                        cursor: status === 'sending' ? 'not-allowed' : 'pointer',
+                        boxShadow: status === 'sending' ? 'none' : '0 4px 20px rgba(22,163,74,.32)',
+                        transition: 'all .2s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      }}
+                    >
+                      {status === 'sending'
+                        ? <><Spinner/> Procesando…</>
+                        : `Confirmar — ${fmt(price)}`
+                      }
+                    </button>
+
+                    <button onClick={() => setShowModal(false)} disabled={status === 'sending'}
+                      style={{ width: '100%', padding: 10, background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-b)', fontSize: 13 }}>
+                      Cancelar
+                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4 }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>Reserva segura · Sin cobro anticipado</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── WhatsApp Floating Bubble ── */}
+        {complexWhatsapp && (
+          <a href={`https://wa.me/${complexWhatsapp.replace(/[^0-9]/g, '')}`}
+            target="_blank" rel="noopener noreferrer"
+            title="Escribinos por WhatsApp"
+            className="wa-bubble"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </a>
+        )}
+      </div>
     </>
   )
 }

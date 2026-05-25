@@ -9,48 +9,53 @@ type Player = { id: string; name: string; slug: string; photo_url: string | null
 type Status = "loading" | "no_player" | "no_photo" | "ready" | "submitting";
 
 const CSS = `${GOLPLAY_BASE_CSS}
-.page { min-height: 100vh; background: var(--bone); padding-top: 62px; }
+.page { min-height: 100vh; background: var(--dark); padding-top: 62px; }
+.page .eyebrow { color: var(--g4); }
 .wrap { max-width: 560px; margin: 0 auto; padding: 48px clamp(16px,4vw,32px) 64px; animation: fadeUp .5s ease both; }
 .back {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 13px; color: var(--muted); text-decoration: none;
+  font-size: 13px; color: #9ca3af; text-decoration: none;
   margin-bottom: 20px; font-weight: 500; padding: 5px 10px; border-radius: 8px;
   transition: all .15s;
 }
-.back:hover { color: var(--ink); background: rgba(0,0,0,.04); }
+.back:hover { color: #fff; background: rgba(255,255,255,.06); }
 .heading {
   font-family: var(--font-d); font-size: clamp(32px,7vw,48px);
   font-weight: 800; line-height: .95; letter-spacing: -.02em;
-  color: var(--ink); margin: 0 0 10px;
+  color: #fff; margin: 0 0 10px;
 }
-.heading em { font-style: italic; color: var(--g6); }
-.subheading { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 32px; max-width: 440px; }
-.card { background: var(--white); border: 1.5px solid var(--bd); border-radius: var(--r-xl); padding: 28px; box-shadow: var(--sh-xs); }
+.heading em { font-style: italic; color: var(--g4); }
+.subheading { color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 0 0 32px; max-width: 440px; }
+.card { background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08); border-radius: var(--r-xl); padding: 28px; }
 .field { margin-bottom: 22px; }
 .label {
   display: block; font-size: 10px; font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 8px;
+  color: #9ca3af; margin-bottom: 8px;
 }
 .input, .textarea {
-  width: 100%; padding: 13px 14px; border: 1.5px solid var(--bd);
-  background: var(--white); font-family: var(--font-u); font-size: 15px;
-  border-radius: var(--r-md); outline: none; color: var(--ink);
+  width: 100%; padding: 13px 14px; border: 1.5px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04); font-family: var(--font-u); font-size: 15px;
+  border-radius: var(--r-md); outline: none; color: #fff;
   transition: border .15s, box-shadow .15s;
 }
-.input:focus, .textarea:focus { border-color: var(--g6); box-shadow: 0 0 0 4px rgba(22,163,74,.08); }
+.input::placeholder, .textarea::placeholder { color: rgba(255,255,255,.3); }
+.input:focus, .textarea:focus { border-color: var(--g4); box-shadow: 0 0 0 4px rgba(74,222,128,.12); }
+.input:-webkit-autofill, .input:-webkit-autofill:hover, .input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff; -webkit-box-shadow: 0 0 0 1000px #141914 inset; caret-color: #fff;
+}
 .textarea { resize: vertical; min-height: 90px; font-family: var(--font-u); }
-.char-count { font-size: 10px; color: var(--faint); text-align: right; margin-top: 4px; letter-spacing: .04em; }
+.char-count { font-size: 10px; color: rgba(255,255,255,.35); text-align: right; margin-top: 4px; letter-spacing: .04em; }
 .file-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .file-button {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 11px 18px; border: 1.5px dashed var(--bd); background: var(--bone);
-  font-family: inherit; font-size: 13px; color: var(--ink); font-weight: 600;
+  padding: 11px 18px; border: 1.5px dashed rgba(255,255,255,.18); background: rgba(255,255,255,.03);
+  font-family: inherit; font-size: 13px; color: #fff; font-weight: 600;
   cursor: pointer; border-radius: var(--r-md); transition: all .15s ease;
 }
-.file-button:hover { border-color: var(--g6); background: var(--g0); color: var(--g7); }
-.logo-preview { width: 80px; height: 80px; border-radius: 14px; object-fit: cover; border: 1.5px solid var(--bd); }
-.helper { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.file-button:hover { border-color: var(--g4); background: rgba(74,222,128,.08); color: var(--g4); }
+.logo-preview { width: 80px; height: 80px; border-radius: 14px; object-fit: cover; border: 1.5px solid rgba(255,255,255,.1); }
+.helper { font-size: 12px; color: #9ca3af; margin-top: 8px; line-height: 1.5; }
 .submit {
   width: 100%; padding: 15px; margin-top: 8px;
   background: linear-gradient(135deg, var(--g5), var(--g6));
@@ -63,19 +68,19 @@ const CSS = `${GOLPLAY_BASE_CSS}
 .submit:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(34,197,94,.42); }
 .submit:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 .error {
-  padding: 12px 14px; background: #fef2f2; border: 1px solid #fecaca;
-  color: #b91c1c; border-radius: var(--r-md); font-size: 13px; margin-bottom: 16px; font-weight: 500;
+  padding: 12px 14px; background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3);
+  color: #fca5a5; border-radius: var(--r-md); font-size: 13px; margin-bottom: 16px; font-weight: 500;
 }
 .warn-card {
-  background: var(--white); border: 1.5px solid var(--bd); border-radius: var(--r-xl);
+  background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08); border-radius: var(--r-xl);
   padding: 36px 28px; text-align: center; margin: 12px 0;
 }
 .warn-emoji { font-size: 44px; margin-bottom: 14px; display: block; }
 .warn-title {
   font-family: var(--font-d); font-size: 24px; font-weight: 800;
-  color: var(--ink); margin: 0 0 10px; letter-spacing: -.02em;
+  color: #fff; margin: 0 0 10px; letter-spacing: -.02em;
 }
-.warn-text { color: var(--muted); margin: 0 0 22px; font-size: 14px; line-height: 1.6; }
+.warn-text { color: #9ca3af; margin: 0 0 22px; font-size: 14px; line-height: 1.6; }
 .warn-cta {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 12px 22px; background: var(--g6); color: #fff;
@@ -83,7 +88,7 @@ const CSS = `${GOLPLAY_BASE_CSS}
   box-shadow: 0 2px 10px rgba(22,163,74,.28);
 }
 .warn-cta:hover { background: var(--g7); }
-.loading-text { text-align: center; padding: 80px; color: var(--muted); }
+.loading-text { text-align: center; padding: 80px; color: #9ca3af; }
 `;
 
 export default function CrearEquipo() {
@@ -155,10 +160,10 @@ export default function CrearEquipo() {
     <>
       <Head><title>Crear equipo · GolPlay</title></Head>
       <style>{CSS}</style>
-      <Navbar dark={false} />
+      <Navbar dark={true} />
       <div className="page">
         <div className="wrap">
-          <Link href="/equipos/mis-equipos" className="back">← Mis equipos</Link>
+          <Link href="/equipos" className="back">← Mis equipos</Link>
 
           {status === "loading" && <div className="loading-text">Cargando…</div>}
 

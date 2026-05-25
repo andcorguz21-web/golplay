@@ -1,10 +1,18 @@
 /**
  * GolPlay — pages/reserve/index.tsx  (Dark edition v2 — fix fetch)
  *
- * Fix principal: query idéntica al home
- *  - fields: id, name, price_day, location, sport  (sin complex_name, sin image)
- *  - field_images: field_id, url, is_main           (tabla separada, igual que home)
- *  - router.isReady guard para leer URL params
+ * Migrado al DS oficial (página pública = dark):
+ *   - @import (Kanit/DM Sans) + reset universal + body eliminados (vienen de globals).
+ *   - --font-h/--font-b ahora apuntan a var(--font-d)/var(--font-u) (Syne/DM Sans).
+ *     → unifica tipografía sin tocar las decenas de inline var(--font-h/b).
+ *   - Nav propio (.nav) → Navbar global (dark). Wrapper theme-dark + padding-top 62px.
+ *   - Footer logo → <Logo dark>.
+ *   - Se conserva el set de superficies local (--surface/2/3, --glow, --muted2, --text):
+ *     el DS global no define equivalentes; los greens locales ya == globales.
+ *
+ * Sin cambios: fetch (fields + complexes + field_images), availability,
+ *   filtros (sport/date/hour/price/loc), calendario, hour picker, drawer mobile,
+ *   FieldCard, sort, URL sync.
  */
 
 import {
@@ -15,6 +23,8 @@ import Head          from 'next/head'
 import Link          from 'next/link'
 import Image         from 'next/image'
 import { supabase }  from '@/lib/supabase'
+import Navbar        from '@/components/ui/Navbar'
+import Logo          from '@/components/ui/Logo'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Field = {
@@ -95,8 +105,6 @@ const todayStr = () => dateToStr(new Date())
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
-
   :root {
     --bg:         #0C0D0B;
     --surface:    #141614;
@@ -118,20 +126,13 @@ const CSS = `
     --r-md:       12px;
     --sh-card:    0 2px 12px rgba(0,0,0,.4), 0 8px 28px rgba(0,0,0,.35);
     --sh-lg:      0 8px 40px rgba(0,0,0,.55), 0 24px 56px rgba(0,0,0,.4);
-    --font-h:     'Kanit', sans-serif;
-    --font-b:     'DM Sans', sans-serif;
+    --font-h:     var(--font-d);
+    --font-b:     var(--font-u);
   }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    font-family: var(--font-b);
-    background: var(--bg);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
   ::selection { background: var(--g5); color: #0a1a10; }
+
+  .rsv-wrap { padding-top: 62px; min-height: 100vh; }
 
   @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
   @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
@@ -140,34 +141,9 @@ const CSS = `
   @keyframes overlayIn { from{opacity:0} to{opacity:1} }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  /* Nav */
-  .nav {
-    position:fixed; top:0; left:0; right:0; z-index:90;
-    height:64px; padding:0 32px;
-    display:flex; align-items:center; justify-content:space-between;
-    background:rgba(12,13,11,.92);
-    backdrop-filter:blur(20px) saturate(1.6);
-    border-bottom:1px solid var(--bd);
-  }
-  .nav__logo  { display:flex; align-items:center; height:30px; }
-  .nav__links { display:flex; align-items:center; gap:6px; }
-  .nav__link  {
-    padding:8px 14px; border-radius:var(--r-md);
-    font-size:13.5px; font-weight:500; color:var(--muted);
-    text-decoration:none; transition:all .15s;
-  }
-  .nav__link:hover { background:rgba(255,255,255,.05); color:var(--text); }
-  .nav__cta {
-    padding:9px 20px; border-radius:var(--r-md);
-    font-size:13.5px; font-weight:700; font-family:var(--font-h); letter-spacing:.03em;
-    background:var(--g5); color:#0a1a10; text-decoration:none;
-    box-shadow:0 2px 14px rgba(34,197,94,.3); transition:all .15s;
-  }
-  .nav__cta:hover { background:var(--g4); }
-
   /* Filter bar */
   .filter-bar {
-    position:sticky; top:64px; z-index:70;
+    position:sticky; top:62px; z-index:70;
     background:rgba(12,13,11,.96); backdrop-filter:blur(20px);
     border-bottom:1px solid var(--bd); padding:14px 32px;
   }
@@ -318,11 +294,6 @@ const CSS = `
   }
 
   @media (max-width:768px) {
-    .nav { padding:0 16px; }
-    .nav__links { gap:4px!important; }
-    .nav__link { display:none; }
-    .nav__link--login { display:flex!important; color:#fff!important; font-weight:600!important; border:1px solid rgba(255,255,255,.2); border-radius:8px; }
-    .nav__cta { display:flex!important; }
     .filter-bar { padding:12px 16px; }
     .desktop-pills { display:none!important; }
     .mobile-filter-btn { display:inline-flex!important; }
@@ -824,297 +795,291 @@ export default function ReserveIndex() {
         <meta name="description" content="Encontrá y reservá canchas deportivas cerca de vos." />
       </Head>
 
-      {/* Nav */}
-      <nav className="nav">
-        <Link href="/" className="nav__logo">
-          <Image src="/logo-golplay.svg" alt="GolPlay" width={120} height={85} style={{ objectFit: 'contain' }} />
-        </Link>
-        <div className="nav__links">
-          <Link href="/reserve" className="nav__link" style={{ color: 'var(--g4)', fontWeight: 700 }}>Canchas</Link>
-          <Link href="/login" className="nav__link nav__link--login">Iniciar sesión</Link>
-          <Link href="/register" className="nav__cta">Registrarse</Link>
-        </div>
-      </nav>
+      <div className="theme-dark rsv-wrap">
+        <Navbar dark={true} />
 
-      {/* Filter bar */}
-      <div className="filter-bar">
-        <div className="filter-inner">
+        {/* Filter bar */}
+        <div className="filter-bar">
+          <div className="filter-inner">
 
-          {/* Desktop pills */}
-          <div className="desktop-pills" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* Desktop pills */}
+            <div className="desktop-pills" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
 
-            {/* Sport */}
-            <div style={{ position: 'relative' }}>
-              <button type="button" className={`fpill ${filterSport ? 'active' : ''}`}
-                onClick={() => { closeAll(); setShowSportPop(v => !v) }}>
-                ⚽ {filterSport ? SPORT_META[filterSport]?.label : 'Deporte'} <span style={{ fontSize: 9 }}>▾</span>
-              </button>
-              {showSportPop && (
-                <>
-                  <div className="backdrop" onClick={closeAll} />
-                  <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0, minWidth: 260 }}>
-                    <div style={{ padding: '14px 16px' }}>
-                      <p className="fp-label" style={{ marginBottom: 10 }}>Deporte</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 6 }}>
-                        {SPORTS.map(s => (
-                          <button key={s.value} type="button"
-                            style={{ padding: '8px 12px', borderRadius: 10, textAlign: 'left', border: `1.5px solid ${filterSport === s.value ? 'var(--g5)' : 'var(--bd2)'}`, background: filterSport === s.value ? 'var(--glow)' : 'var(--surface3)', color: filterSport === s.value ? 'var(--g4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .12s' }}
-                            onClick={() => { const v = s.value === filterSport ? '' : s.value; setFilterSport(v); closeAll(); syncURL({ sport: v }) }}>
-                            {s.emoji} {s.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Date */}
-            <div style={{ position: 'relative' }}>
-              <button type="button" className={`fpill ${filterDate ? 'active' : ''}`}
-                onClick={() => { closeAll(); setShowDatePop(v => !v) }}>
-                📅 {filterDate ? formatDateDisplay(filterDate) : 'Fecha'} <span style={{ fontSize: 9 }}>▾</span>
-              </button>
-              {showDatePop && (
-                <>
-                  <div className="backdrop" onClick={closeAll} />
-                  <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0 }}>
-                    <Calendar value={filterDate} onChange={v => { setFilterDate(v); syncURL({ date: v }); closeAll() }} onClose={closeAll} />
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Hour */}
-            <div style={{ position: 'relative' }}>
-              <button type="button" className={`fpill ${filterHour ? 'active' : ''}`}
-                onClick={() => { closeAll(); setShowHourPop(v => !v) }}>
-                🕐 {filterHour || 'Hora'} <span style={{ fontSize: 9 }}>▾</span>
-              </button>
-              {showHourPop && (
-                <>
-                  <div className="backdrop" onClick={closeAll} />
-                  <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0 }}>
-                    <HourPicker value={filterHour} onChange={v => { setFilterHour(v); syncURL({ hour: v }); closeAll() }} onClose={closeAll} />
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Price */}
-            <div style={{ position: 'relative' }}>
-              <button type="button" className={`fpill ${filterPrice > 0 ? 'active' : ''}`}
-                onClick={() => { closeAll(); setShowPricePop(v => !v) }}>
-                💰 {filterPrice > 0 ? PRICE_RANGES[filterPrice].label : 'Precio'} <span style={{ fontSize: 9 }}>▾</span>
-              </button>
-              {showPricePop && (
-                <>
-                  <div className="backdrop" onClick={closeAll} />
-                  <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0, minWidth: 210 }}>
-                    <div style={{ padding: '14px 16px' }}>
-                      <p className="fp-label" style={{ marginBottom: 8 }}>Precio por hora</p>
-                      {PRICE_RANGES.map((pr, i) => (
-                        <button key={i} type="button"
-                          style={{ display: 'block', width: '100%', padding: '9px 12px', borderRadius: 10, textAlign: 'left', border: `1.5px solid ${filterPrice === i ? 'var(--g5)' : 'transparent'}`, background: filterPrice === i ? 'var(--glow)' : 'transparent', color: filterPrice === i ? 'var(--g4)' : 'var(--muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .12s', marginBottom: 2 }}
-                          onClick={() => { setFilterPrice(i === filterPrice ? 0 : i); closeAll(); syncURL() }}>
-                          {pr.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Location */}
-            {locations.length > 1 && (
+              {/* Sport */}
               <div style={{ position: 'relative' }}>
-                <button type="button" className={`fpill ${filterLoc ? 'active' : ''}`}
-                  onClick={() => { closeAll(); setShowLocPop(v => !v) }}>
-                  📍 {filterLoc || 'Zona'} <span style={{ fontSize: 9 }}>▾</span>
+                <button type="button" className={`fpill ${filterSport ? 'active' : ''}`}
+                  onClick={() => { closeAll(); setShowSportPop(v => !v) }}>
+                  ⚽ {filterSport ? SPORT_META[filterSport]?.label : 'Deporte'} <span style={{ fontSize: 9 }}>▾</span>
                 </button>
-                {showLocPop && (
+                {showSportPop && (
                   <>
                     <div className="backdrop" onClick={closeAll} />
-                    <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0, minWidth: 200 }}>
+                    <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0, minWidth: 260 }}>
                       <div style={{ padding: '14px 16px' }}>
-                        <p className="fp-label" style={{ marginBottom: 8 }}>Zona</p>
-                        {['', ...locations].map((loc, i) => {
-                          const active = loc === '' ? !filterLoc : filterLoc === loc
-                          return (
-                            <button key={i} type="button"
-                              style={{ display: 'block', width: '100%', padding: '9px 12px', borderRadius: 10, textAlign: 'left', border: `1.5px solid ${active ? 'var(--g5)' : 'transparent'}`, background: active ? 'var(--glow)' : 'transparent', color: active ? 'var(--g4)' : 'var(--muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .12s', marginBottom: 2 }}
-                              onClick={() => { setFilterLoc(loc); closeAll(); syncURL({ loc }) }}>
-                              {loc || 'Todas las zonas'}
+                        <p className="fp-label" style={{ marginBottom: 10 }}>Deporte</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 6 }}>
+                          {SPORTS.map(s => (
+                            <button key={s.value} type="button"
+                              style={{ padding: '8px 12px', borderRadius: 10, textAlign: 'left', border: `1.5px solid ${filterSport === s.value ? 'var(--g5)' : 'var(--bd2)'}`, background: filterSport === s.value ? 'var(--glow)' : 'var(--surface3)', color: filterSport === s.value ? 'var(--g4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .12s' }}
+                              onClick={() => { const v = s.value === filterSport ? '' : s.value; setFilterSport(v); closeAll(); syncURL({ sport: v }) }}>
+                              {s.emoji} {s.label}
                             </button>
-                          )
-                        })}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* Mobile: botón filtros */}
-          <button type="button" className="mobile-filter-btn"
-            style={{ position: 'relative', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 999, border: '1.5px solid var(--bd2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-b)', cursor: 'pointer' }}
-            onClick={() => setDrawerOpen(true)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="3" y1="6" x2="21" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-            </svg>
-            Filtros
-            {activeCount > 0 && (
-              <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: 'var(--g5)', color: '#0a1a10', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {activeCount}
-              </span>
-            )}
-          </button>
+              {/* Date */}
+              <div style={{ position: 'relative' }}>
+                <button type="button" className={`fpill ${filterDate ? 'active' : ''}`}
+                  onClick={() => { closeAll(); setShowDatePop(v => !v) }}>
+                  📅 {filterDate ? formatDateDisplay(filterDate) : 'Fecha'} <span style={{ fontSize: 9 }}>▾</span>
+                </button>
+                {showDatePop && (
+                  <>
+                    <div className="backdrop" onClick={closeAll} />
+                    <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0 }}>
+                      <Calendar value={filterDate} onChange={v => { setFilterDate(v); syncURL({ date: v }); closeAll() }} onClose={closeAll} />
+                    </div>
+                  </>
+                )}
+              </div>
 
-          {/* Sort */}
-          <div style={{ marginLeft: 'auto' }}>
-            <select className="sort-select" value={sortBy}
-              onChange={e => { setSortBy(e.target.value as SortOption); syncURL({ sort: e.target.value }) }}>
-              <option value="relevance">Más relevantes</option>
-              <option value="price_asc">Precio: menor a mayor</option>
-              <option value="price_desc">Precio: mayor a menor</option>
-            </select>
-          </div>
-        </div>
+              {/* Hour */}
+              <div style={{ position: 'relative' }}>
+                <button type="button" className={`fpill ${filterHour ? 'active' : ''}`}
+                  onClick={() => { closeAll(); setShowHourPop(v => !v) }}>
+                  🕐 {filterHour || 'Hora'} <span style={{ fontSize: 9 }}>▾</span>
+                </button>
+                {showHourPop && (
+                  <>
+                    <div className="backdrop" onClick={closeAll} />
+                    <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0 }}>
+                      <HourPicker value={filterHour} onChange={v => { setFilterHour(v); syncURL({ hour: v }); closeAll() }} onClose={closeAll} />
+                    </div>
+                  </>
+                )}
+              </div>
 
-        {/* Active filter tags */}
-        {activeCount > 0 && (
-          <div style={{ maxWidth: 1280, margin: '10px auto 0', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {filterSport && <span className="filter-tag">⚽ {SPORT_META[filterSport]?.label}<button className="filter-tag-x" onClick={() => { setFilterSport(''); syncURL({ sport: '' }) }}>✕</button></span>}
-            {filterLoc   && <span className="filter-tag">📍 {filterLoc}<button className="filter-tag-x" onClick={() => { setFilterLoc(''); syncURL({ loc: '' }) }}>✕</button></span>}
-            {filterDate  && <span className="filter-tag">📅 {formatDateDisplay(filterDate)}<button className="filter-tag-x" onClick={() => { setFilterDate(''); setAvail([]); syncURL({ date: '' }) }}>✕</button></span>}
-            {filterHour  && <span className="filter-tag">🕐 {filterHour}<button className="filter-tag-x" onClick={() => { setFilterHour(''); syncURL({ hour: '' }) }}>✕</button></span>}
-            {filterPrice > 0 && <span className="filter-tag">💰 {PRICE_RANGES[filterPrice].label}<button className="filter-tag-x" onClick={() => { setFilterPrice(0); syncURL() }}>✕</button></span>}
-          </div>
-        )}
-      </div>
+              {/* Price */}
+              <div style={{ position: 'relative' }}>
+                <button type="button" className={`fpill ${filterPrice > 0 ? 'active' : ''}`}
+                  onClick={() => { closeAll(); setShowPricePop(v => !v) }}>
+                  💰 {filterPrice > 0 ? PRICE_RANGES[filterPrice].label : 'Precio'} <span style={{ fontSize: 9 }}>▾</span>
+                </button>
+                {showPricePop && (
+                  <>
+                    <div className="backdrop" onClick={closeAll} />
+                    <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0, minWidth: 210 }}>
+                      <div style={{ padding: '14px 16px' }}>
+                        <p className="fp-label" style={{ marginBottom: 8 }}>Precio por hora</p>
+                        {PRICE_RANGES.map((pr, i) => (
+                          <button key={i} type="button"
+                            style={{ display: 'block', width: '100%', padding: '9px 12px', borderRadius: 10, textAlign: 'left', border: `1.5px solid ${filterPrice === i ? 'var(--g5)' : 'transparent'}`, background: filterPrice === i ? 'var(--glow)' : 'transparent', color: filterPrice === i ? 'var(--g4)' : 'var(--muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .12s', marginBottom: 2 }}
+                            onClick={() => { setFilterPrice(i === filterPrice ? 0 : i); closeAll(); syncURL() }}>
+                            {pr.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
-      {/* Main */}
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 32px 80px' }} className="main-pad">
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 style={{ fontFamily: 'var(--font-h)', fontSize: 'clamp(22px,3vw,32px)', fontWeight: 800, color: 'var(--text)', letterSpacing: '-.02em', lineHeight: 1.1 }}>
-              {loading ? 'Cargando canchas…' : (
-                filtered.length > 0
-                  ? <><span style={{ color: 'var(--g4)' }}>{filtered.length}</span> canchas disponibles</>
-                  : 'Sin resultados'
+              {/* Location */}
+              {locations.length > 1 && (
+                <div style={{ position: 'relative' }}>
+                  <button type="button" className={`fpill ${filterLoc ? 'active' : ''}`}
+                    onClick={() => { closeAll(); setShowLocPop(v => !v) }}>
+                    📍 {filterLoc || 'Zona'} <span style={{ fontSize: 9 }}>▾</span>
+                  </button>
+                  {showLocPop && (
+                    <>
+                      <div className="backdrop" onClick={closeAll} />
+                      <div className="popover" style={{ top: 'calc(100% + 8px)', left: 0, minWidth: 200 }}>
+                        <div style={{ padding: '14px 16px' }}>
+                          <p className="fp-label" style={{ marginBottom: 8 }}>Zona</p>
+                          {['', ...locations].map((loc, i) => {
+                            const active = loc === '' ? !filterLoc : filterLoc === loc
+                            return (
+                              <button key={i} type="button"
+                                style={{ display: 'block', width: '100%', padding: '9px 12px', borderRadius: 10, textAlign: 'left', border: `1.5px solid ${active ? 'var(--g5)' : 'transparent'}`, background: active ? 'var(--glow)' : 'transparent', color: active ? 'var(--g4)' : 'var(--muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .12s', marginBottom: 2 }}
+                                onClick={() => { setFilterLoc(loc); closeAll(); syncURL({ loc }) }}>
+                                {loc || 'Todas las zonas'}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
-            </h1>
-            {!loading && (filterDate || filterSport || filterLoc) && (
-              <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-                {[filterSport && SPORT_META[filterSport]?.label, filterLoc, filterDate && formatDateDisplay(filterDate)].filter(Boolean).join(' · ')}
-              </p>
-            )}
+            </div>
+
+            {/* Mobile: botón filtros */}
+            <button type="button" className="mobile-filter-btn"
+              style={{ position: 'relative', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 999, border: '1.5px solid var(--bd2)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-b)', cursor: 'pointer' }}
+              onClick={() => setDrawerOpen(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="3" y1="6" x2="21" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+              </svg>
+              Filtros
+              {activeCount > 0 && (
+                <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: 'var(--g5)', color: '#0a1a10', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {activeCount}
+                </span>
+              )}
+            </button>
+
+            {/* Sort */}
+            <div style={{ marginLeft: 'auto' }}>
+              <select className="sort-select" value={sortBy}
+                onChange={e => { setSortBy(e.target.value as SortOption); syncURL({ sort: e.target.value }) }}>
+                <option value="relevance">Más relevantes</option>
+                <option value="price_asc">Precio: menor a mayor</option>
+                <option value="price_desc">Precio: mayor a menor</option>
+              </select>
+            </div>
           </div>
-          {loadingAvail && filterDate && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--glow)', borderRadius: 999, border: '1px solid rgba(74,222,128,.2)' }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--g5)', animation: 'pulse 1s infinite' }} />
-              <p style={{ fontSize: 12, color: 'var(--g4)', fontWeight: 700 }}>Actualizando disponibilidad…</p>
+
+          {/* Active filter tags */}
+          {activeCount > 0 && (
+            <div style={{ maxWidth: 1280, margin: '10px auto 0', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {filterSport && <span className="filter-tag">⚽ {SPORT_META[filterSport]?.label}<button className="filter-tag-x" onClick={() => { setFilterSport(''); syncURL({ sport: '' }) }}>✕</button></span>}
+              {filterLoc   && <span className="filter-tag">📍 {filterLoc}<button className="filter-tag-x" onClick={() => { setFilterLoc(''); syncURL({ loc: '' }) }}>✕</button></span>}
+              {filterDate  && <span className="filter-tag">📅 {formatDateDisplay(filterDate)}<button className="filter-tag-x" onClick={() => { setFilterDate(''); setAvail([]); syncURL({ date: '' }) }}>✕</button></span>}
+              {filterHour  && <span className="filter-tag">🕐 {filterHour}<button className="filter-tag-x" onClick={() => { setFilterHour(''); syncURL({ hour: '' }) }}>✕</button></span>}
+              {filterPrice > 0 && <span className="filter-tag">💰 {PRICE_RANGES[filterPrice].label}<button className="filter-tag-x" onClick={() => { setFilterPrice(0); syncURL() }}>✕</button></span>}
             </div>
           )}
         </div>
 
-        {loading && (
-          <div className="results-grid">{[1,2,3,4,5,6].map(i => <CardSkeleton key={i} />)}</div>
-        )}
-
-        {!loading && loadError && (
-          <div className="state-box">
-            <div style={{ fontSize: 52, marginBottom: 16 }}>⚠️</div>
-            <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>No pudimos cargar las canchas</h2>
-            <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24 }}>Verificá tu conexión e intentá de nuevo.</p>
-            <button onClick={() => window.location.reload()}
-              style={{ padding: '11px 28px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 13 }}>
-              Reintentar
-            </button>
-          </div>
-        )}
-
-        {!loading && !loadError && filtered.length === 0 && (
-          <div className="state-box">
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🏟️</div>
-            <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 24, fontWeight: 800, color: 'var(--text)', marginBottom: 10, letterSpacing: '-.02em' }}>
-              No encontramos canchas
-            </h2>
-            <p style={{ fontSize: 14, color: 'var(--muted)', maxWidth: 380, margin: '0 auto 28px', lineHeight: 1.7 }}>
-              {activeCount > 0 ? 'Probá cambiando los filtros o ampliando la búsqueda.' : 'Aún no hay canchas publicadas. ¡Pronto habrá más!'}
-            </p>
-            {activeCount > 0 && (
-              <button onClick={clearAll}
-                style={{ padding: '13px 32px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 14, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 14, letterSpacing: '.03em', boxShadow: '0 3px 20px rgba(34,197,94,.3)', transition: 'all .15s' }}>
-                Limpiar filtros
-              </button>
+        {/* Main */}
+        <main style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 32px 80px' }} className="main-pad">
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h1 style={{ fontFamily: 'var(--font-h)', fontSize: 'clamp(22px,3vw,32px)', fontWeight: 800, color: 'var(--text)', letterSpacing: '-.02em', lineHeight: 1.1 }}>
+                {loading ? 'Cargando canchas…' : (
+                  filtered.length > 0
+                    ? <><span style={{ color: 'var(--g4)' }}>{filtered.length}</span> canchas disponibles</>
+                    : 'Sin resultados'
+                )}
+              </h1>
+              {!loading && (filterDate || filterSport || filterLoc) && (
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+                  {[filterSport && SPORT_META[filterSport]?.label, filterLoc, filterDate && formatDateDisplay(filterDate)].filter(Boolean).join(' · ')}
+                </p>
+              )}
+            </div>
+            {loadingAvail && filterDate && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--glow)', borderRadius: 999, border: '1px solid rgba(74,222,128,.2)' }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--g5)', animation: 'pulse 1s infinite' }} />
+                <p style={{ fontSize: 12, color: 'var(--g4)', fontWeight: 700 }}>Actualizando disponibilidad…</p>
+              </div>
             )}
           </div>
+
+          {loading && (
+            <div className="results-grid">{[1,2,3,4,5,6].map(i => <CardSkeleton key={i} />)}</div>
+          )}
+
+          {!loading && loadError && (
+            <div className="state-box">
+              <div style={{ fontSize: 52, marginBottom: 16 }}>⚠️</div>
+              <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>No pudimos cargar las canchas</h2>
+              <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24 }}>Verificá tu conexión e intentá de nuevo.</p>
+              <button onClick={() => window.location.reload()}
+                style={{ padding: '11px 28px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 13 }}>
+                Reintentar
+              </button>
+            </div>
+          )}
+
+          {!loading && !loadError && filtered.length === 0 && (
+            <div className="state-box">
+              <div style={{ fontSize: 64, marginBottom: 16 }}>🏟️</div>
+              <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 24, fontWeight: 800, color: 'var(--text)', marginBottom: 10, letterSpacing: '-.02em' }}>
+                No encontramos canchas
+              </h2>
+              <p style={{ fontSize: 14, color: 'var(--muted)', maxWidth: 380, margin: '0 auto 28px', lineHeight: 1.7 }}>
+                {activeCount > 0 ? 'Probá cambiando los filtros o ampliando la búsqueda.' : 'Aún no hay canchas publicadas. ¡Pronto habrá más!'}
+              </p>
+              {activeCount > 0 && (
+                <button onClick={clearAll}
+                  style={{ padding: '13px 32px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 14, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 14, letterSpacing: '.03em', boxShadow: '0 3px 20px rgba(34,197,94,.3)', transition: 'all .15s' }}>
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          )}
+
+          {!loading && !loadError && filtered.length > 0 && (
+            <div className="results-grid">
+              {filtered.map((field, i) => (
+                <FieldCard key={field.id} field={field} index={i}
+                  availableHours={availByField.get(field.id) || []}
+                  queryHour={filterHour} queryDate={filterDate} />
+              ))}
+            </div>
+          )}
+        </main>
+
+        {/* Mobile Drawer */}
+        {drawerOpen && (
+          <>
+            <div className="drawer-overlay" onClick={() => setDrawerOpen(false)} />
+            <div className="drawer">
+              <div className="drawer-handle" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px' }}>
+                <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>Filtros</h2>
+                <button onClick={() => setDrawerOpen(false)}
+                  style={{ width: 32, height: 32, borderRadius: 999, border: '1.5px solid var(--bd2)', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--muted)' }}>✕</button>
+              </div>
+              <div style={{ padding: '0 24px 24px' }}>
+                <FilterPanel
+                  filterSport={filterSport} setFilterSport={setFilterSport}
+                  filterDate={filterDate}   setFilterDate={setFilterDate}
+                  filterHour={filterHour}   setFilterHour={setFilterHour}
+                  filterPrice={filterPrice} setFilterPrice={setFilterPrice}
+                  filterLoc={filterLoc}     setFilterLoc={setFilterLoc}
+                  locations={locations}
+                  onApply={() => { setDrawerOpen(false); syncURL() }}
+                />
+              </div>
+            </div>
+          </>
         )}
 
-        {!loading && !loadError && filtered.length > 0 && (
-          <div className="results-grid">
-            {filtered.map((field, i) => (
-              <FieldCard key={field.id} field={field} index={i}
-                availableHours={availByField.get(field.id) || []}
-                queryHour={filterHour} queryDate={filterDate} />
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Mobile Drawer */}
-      {drawerOpen && (
-        <>
-          <div className="drawer-overlay" onClick={() => setDrawerOpen(false)} />
-          <div className="drawer">
-            <div className="drawer-handle" />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px' }}>
-              <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>Filtros</h2>
-              <button onClick={() => setDrawerOpen(false)}
-                style={{ width: 32, height: 32, borderRadius: 999, border: '1.5px solid var(--bd2)', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--muted)' }}>✕</button>
+        {/* Footer */}
+        <footer style={{ background: '#0a0b09', borderTop: '1px solid var(--bd)', padding: '48px 32px' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 32 }}>
+            <div>
+              <div style={{ marginBottom: 12 }}>
+                <Logo dark height={40} link={false} />
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>La plataforma de reservas para complejos deportivos en LATAM.</p>
             </div>
-            <div style={{ padding: '0 24px 24px' }}>
-              <FilterPanel
-                filterSport={filterSport} setFilterSport={setFilterSport}
-                filterDate={filterDate}   setFilterDate={setFilterDate}
-                filterHour={filterHour}   setFilterHour={setFilterHour}
-                filterPrice={filterPrice} setFilterPrice={setFilterPrice}
-                filterLoc={filterLoc}     setFilterLoc={setFilterLoc}
-                locations={locations}
-                onApply={() => { setDrawerOpen(false); syncURL() }}
-              />
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Información</p>
+              {[{ href: '/terms', label: 'Términos de uso' }, { href: '/privacy', label: 'Privacidad' }, { href: '/register?type=owner', label: 'Registrar complejo' }, { href: '/login', label: 'Iniciar sesión' }].map(({ href, label }) => (
+                <Link key={href} href={href} style={{ display: 'block', fontSize: 13, color: 'var(--muted)', textDecoration: 'none', marginBottom: 8 }}>{label}</Link>
+              ))}
+            </div>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Contacto</p>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>soporte@golplay.app</p>
+              <p style={{ fontSize: 13, color: 'var(--muted)' }}>Costa Rica 🇨🇷</p>
             </div>
           </div>
-        </>
-      )}
-
-      {/* Footer */}
-      <footer style={{ background: '#0a0b09', borderTop: '1px solid var(--bd)', padding: '48px 32px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 32 }}>
-          <div>
-            <Image src="/logo-golplay.svg" alt="GolPlay" width={120} height={50} style={{ objectFit: 'contain', marginBottom: 12 }} />
-            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>La plataforma de reservas para complejos deportivos en LATAM.</p>
+          <div style={{ maxWidth: 1280, margin: '24px auto 0', paddingTop: 20, borderTop: '1px solid var(--bd)', textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: 'var(--muted2)' }}>© {new Date().getFullYear()} GolPlay · golplay.app</p>
           </div>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Información</p>
-            {[{ href: '/terms', label: 'Términos de uso' }, { href: '/privacy', label: 'Privacidad' }, { href: '/register?type=owner', label: 'Registrar complejo' }, { href: '/login', label: 'Iniciar sesión' }].map(({ href, label }) => (
-              <Link key={href} href={href} style={{ display: 'block', fontSize: 13, color: 'var(--muted)', textDecoration: 'none', marginBottom: 8 }}>{label}</Link>
-            ))}
-          </div>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Contacto</p>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>soporte@golplay.app</p>
-            <p style={{ fontSize: 13, color: 'var(--muted)' }}>Costa Rica 🇨🇷</p>
-          </div>
-        </div>
-        <div style={{ maxWidth: 1280, margin: '24px auto 0', paddingTop: 20, borderTop: '1px solid var(--bd)', textAlign: 'center' }}>
-          <p style={{ fontSize: 12, color: 'var(--muted2)' }}>© {new Date().getFullYear()} GolPlay · golplay.app</p>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </>
   )
 }
