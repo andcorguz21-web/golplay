@@ -1,30 +1,44 @@
 // lib/playerSupabase.ts
-// Cliente server-only con service_role + helper para invocar la edge function.
-// NUNCA importar este archivo desde un componente client-side.
-// Solo importar desde API routes (pages/api/**).
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+type InvokeResult<T = any> = { data: T | null; error: string | null };
 
-export const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
-
-export async function invokeManagePlayer(payload: Record<string, any>) {
-  const { data, error } = await supabaseAdmin.functions.invoke("manage-player", {
+/**
+ * Llama a la Edge Function "manage-player" y devuelve {data, error}.
+ * Importante: cuando la función responde con un status != 2xx, supabase-js
+ * envuelve el error en un FunctionsHttpError con mensaje genérico
+ * ("Edge Function returned a non-2xx status code"). El mensaje real está
+ * en error.context (Response). Acá lo destapamos para que llegue al cliente.
+ */
+export async function invokeManagePlayer<T = any>(
+  payload: Record<string, any>
+): Promise<InvokeResult<T>> {
+  const { data, error } = await supabase.functions.invoke("manage-player", {
     body: payload,
   });
+
   if (error) {
+    let msg = error.message;
     const ctx: any = (error as any).context;
-    if (ctx && typeof ctx.json === "function") {
+
+    if (ctx && typeof ctx.clone === "function") {
       try {
-        const body = await ctx.json();
-        return { data: null, error: body.error || error.message };
-      } catch { /* ignore */ }
+        const body = await ctx.clone().json();
+        if (body && typeof body === "object" && body.error) {
+          msg = body.error;
+        } else if (body) {
+          msg = JSON.stringify(body);
+        }
+      } catch {
+        try {
+          const text = await ctx.clone().text();
+          if (text) msg = text;
+        } catch {}
+      }
     }
-    return { data: null, error: error.message };
+
+    return { data: null, error: msg };
   }
-  if (data?.error) return { data: null, error: data.error };
-  return { data, error: null };
+
+  return { data: data as T, error: null };
 }
