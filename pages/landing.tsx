@@ -89,14 +89,14 @@ function Navbar() {
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img src="/logo-golplay.svg" alt="GolPlay" style={{ height: 100, width: 'auto', filter: 'brightness(0) invert(1)' }} />
+          <img src="/logo-golplay1.svg" alt="GolPlay" style={{ height: 100, width: 'auto' }} />
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }} className="nav-desktop">
           {NAV.map(({ label, href }) => (
             <a key={label} href={href}
               style={{ fontSize: 14, color: 'var(--ink2)', textDecoration: 'none', fontWeight: 500, transition: 'color .2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--blue)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink2)')}
             >{label}</a>
           ))}
@@ -112,7 +112,7 @@ function Navbar() {
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--g7)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--g6)'; e.currentTarget.style.transform = 'translateY(0)' }}
           >Probá 1 mes gratis →</Link>
-          <button onClick={() => setMobileOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', padding: 4, display: 'none' }} className="nav-mobile-btn" aria-label="Menú">
+          <button onClick={() => setMobileOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink)', padding: 4, display: 'none' }} className="nav-mobile-btn" aria-label="Menú">
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
@@ -168,8 +168,8 @@ function PricingCalculator() {
               onChange={e => setReservas(Math.max(1, Number(e.target.value) || 1))}
               style={{
                 width: 78, padding: '8px 10px', borderRadius: 10,
-                border: '1.5px solid rgba(58,91,240,.3)', background: 'var(--line)',
-                color: '#fff', fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-d)',
+                border: '1.5px solid rgba(58,91,240,.3)', background: 'var(--paper)',
+                color: 'var(--blue)', fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-d)',
                 textAlign: 'center', outline: 'none',
               }} />
           </div>
@@ -215,11 +215,11 @@ function PhotoCarousel() {
   if (images.length === 0) return null
 
   return (
-    <section id="canchas" style={{ padding: '80px 0', background: 'var(--dark)', overflow: 'hidden' }}>
+    <section id="canchas" style={{ padding: '80px 0', background: '#fff', overflow: 'hidden' }}>
       <FadeIn>
         <div style={{ textAlign: 'center', marginBottom: 40, padding: '0 24px' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 14 }}>Canchas reales</div>
-          <h2 style={{ fontFamily: 'var(--font-d)', fontSize: 'clamp(28px,3.5vw,44px)', fontWeight: 800, letterSpacing: '-.03em', color: '#fff' }}>
+          <h2 style={{ fontFamily: 'var(--font-d)', fontSize: 'clamp(28px,3.5vw,44px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink)' }}>
             Así se ve GolPlay en acción
           </h2>
         </div>
@@ -268,7 +268,7 @@ export default function LandingPage() {
       </Head>
 
       <style>{`
-        body { background: var(--dark); color:var(--ink); font-family: var(--font-u); }
+        body { background: var(--paper); color:var(--ink); font-family: var(--font-u); }
         h1,h2,h3,h4 { font-family: var(--font-d); }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
         @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(58,91,240,.4)} 50%{box-shadow:0 0 0 16px rgba(58,91,240,0)} }
@@ -295,10 +295,10 @@ export default function LandingPage() {
       {/* ── 1. HERO ── */}
       <section style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
-        background: 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(58,91,240,.18) 0%, transparent 70%), var(--dark)',
+        background: 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(58,91,240,.10) 0%, transparent 70%), var(--paper)',
         padding: '100px 24px 80px', position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, backgroundImage: 'linear-gradient(rgba(58,91,240,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(58,91,240,.05) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
         <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
@@ -309,12 +309,12 @@ export default function LandingPage() {
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--blue)', letterSpacing: '.05em' }}>🌎 Pensado para toda LATAM</span>
               </div>
 
-              <h1 style={{ fontSize: 'clamp(40px,5vw,66px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-.03em', color: '#fff', marginBottom: 24 }}>
+              <h1 style={{ fontSize: 'clamp(40px,5vw,66px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-.03em', color: 'var(--ink)', marginBottom: 24 }}>
                 Tu complejo<br /><span style={{ color: 'var(--blue)' }}>lleno.</span> Sin el<br />caos del WhatsApp.
               </h1>
 
               <p style={{ fontSize: 18, color: 'var(--ink2)', lineHeight: 1.7, maxWidth: 460, marginBottom: 40 }}>
-                GolPlay automatiza tus reservas y te da control total de tu negocio — con un <strong style={{ color: '#fff' }}>plan fijo mensual, sin comisión por reserva</strong> y 1 mes gratis para probarlo sin riesgo.
+                GolPlay automatiza tus reservas y te da control total de tu negocio — con un <strong style={{ color: 'var(--ink)' }}>plan fijo mensual, sin comisión por reserva</strong> y 1 mes gratis para probarlo sin riesgo.
               </p>
 
               <div className="cta-btns" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 44 }}>
@@ -322,9 +322,9 @@ export default function LandingPage() {
                   onMouseEnter={e => { e.currentTarget.style.background = 'var(--g7)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'var(--g6)'; e.currentTarget.style.transform = 'none' }}
                 >Probá 1 mes gratis <ArrowRight size={16} /></Link>
-                <a href="#como-funciona" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--line)', color: '#fff', padding: '15px 28px', borderRadius: 14, textDecoration: 'none', fontSize: 15, fontWeight: 600, border: '1px solid var(--line)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--line)')}
+                <a href="#como-funciona" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: 'var(--blue)', padding: '15px 28px', borderRadius: 999, textDecoration: 'none', fontSize: 15, fontWeight: 600, border: '1px solid var(--line)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--paper)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
                 >Ver cómo funciona</a>
               </div>
 
@@ -344,9 +344,9 @@ export default function LandingPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                   <div>
                     <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>Panel GolPlay</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Dashboard</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>Dashboard</div>
                   </div>
-                  <div style={{ background: 'var(--blue)', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: 'var(--dark)' }}>EN VIVO</div>
+                  <div style={{ background: 'var(--blue)', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>EN VIVO</div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
@@ -371,10 +371,10 @@ export default function LandingPage() {
                     { hour: '16:00', name: 'Diego F.',  cancha: 'Cancha A', status: 'pending' },
                     { hour: '18:00', name: 'Mario S.',  cancha: 'Cancha B', status: 'active' },
                   ].map(row => (
-                    <div key={row.hour} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid #fff' }}>
+                    <div key={row.hour} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid var(--line)' }}>
                       <span style={{ fontSize: 11, color: 'var(--muted)', width: 36, flexShrink: 0 }}>{row.hour}</span>
-                      <div style={{ flex: 1, borderRadius: 7, padding: '5px 10px', background: row.status === 'free' ? 'transparent' : row.status === 'active' ? 'rgba(58,91,240,.12)' : 'rgba(251,191,36,.1)', border: row.status === 'free' ? '1px dashed var(--line)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: row.status === 'free' ? 'var(--faint)' : '#fff', fontWeight: row.status === 'free' ? 400 : 600 }}>{row.name}</span>
+                      <div style={{ flex: 1, borderRadius: 7, padding: '5px 10px', background: row.status === 'free' ? 'transparent' : row.status === 'active' ? 'rgba(58,91,240,.12)' : 'rgba(251,191,36,.14)', border: row.status === 'free' ? '1px dashed var(--line)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, color: row.status === 'free' ? 'var(--faint)' : 'var(--ink)', fontWeight: row.status === 'free' ? 400 : 600 }}>{row.name}</span>
                         {row.cancha && <span style={{ fontSize: 10, color: 'var(--muted)' }}>{row.cancha}</span>}
                       </div>
                     </div>
@@ -387,9 +387,9 @@ export default function LandingPage() {
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--blue)' }}>Nueva reserva · Cancha B</span>
               </div>
 
-              <div className="hero-card" style={{ position: 'absolute', bottom: 60, left: -28, background: 'var(--line)', border: '1px solid var(--line)', borderRadius: 14, padding: '12px 16px', backdropFilter: 'blur(12px)' }}>
+              <div className="hero-card" style={{ position: 'absolute', bottom: 60, left: -28, background: '#fff', border: '1px solid var(--line)', borderRadius: 14, padding: '12px 16px', boxShadow: '0 12px 30px rgba(20,26,51,.12)' }}>
                 <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3 }}>Plan mensual GolPlay</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-d)' }}>₡35.000</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-d)' }}>₡35.000</div>
                 <div style={{ fontSize: 11, color: 'var(--blue)', fontWeight: 600 }}>Fijo · Sin comisión · 1 mes gratis</div>
               </div>
             </div>
@@ -398,7 +398,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 2. MARQUEE PAÍSES (LATAM) ── */}
-      <section style={{ background: 'rgba(255,255,255,.025)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', padding: '14px 0', overflow: 'hidden' }}>
+      <section style={{ background: 'rgba(58,91,240,.05)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', padding: '14px 0', overflow: 'hidden' }}>
         <div style={{ display: 'flex', overflow: 'hidden' }}>
           <div className="marquee-track" style={{ display: 'flex', flexShrink: 0 }}>
             {[...COUNTRIES, ...COUNTRIES].map((c, i) => (
@@ -413,16 +413,16 @@ export default function LandingPage() {
       </section>
 
       {/* ── 3. PRECIO + CALCULADORA ── */}
-      <section id="precio" style={{ padding: '100px 24px', background: 'var(--dark)' }}>
+      <section id="precio" style={{ padding: '100px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <FadeIn>
             <div style={{ textAlign: 'center', maxWidth: 580, margin: '0 auto 56px' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 16 }}>Precio</div>
-              <h2 style={{ fontSize: 'clamp(32px,4vw,52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-.03em', marginBottom: 20, color: '#fff' }}>
+              <h2 style={{ fontSize: 'clamp(32px,4vw,52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-.03em', marginBottom: 20, color: 'var(--ink)' }}>
                 Un precio tan simple<br />como el deporte
               </h2>
               <p style={{ fontSize: 17, color: 'var(--muted)', lineHeight: 1.8 }}>
-                Sin niveles, sin letra chica, <strong style={{ color: '#fff' }}>sin comisión por reserva.</strong> Un solo monto mensual que siempre podés predecir.
+                Sin niveles, sin letra chica, <strong style={{ color: 'var(--ink)' }}>sin comisión por reserva.</strong> Un solo monto mensual que siempre podés predecir.
               </p>
             </div>
           </FadeIn>
@@ -430,7 +430,7 @@ export default function LandingPage() {
           <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 960, margin: '0 auto' }}>
             <FadeIn>
               <div style={{ background: 'rgba(58,91,240,.08)', border: '1px solid rgba(58,91,240,.3)', borderRadius: 24, padding: 40, position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 16, right: 16, background: 'var(--blue)', color: 'var(--dark)', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 999, letterSpacing: '.05em' }}>ÚNICO PLAN</div>
+                <div style={{ position: 'absolute', top: 16, right: 16, background: 'var(--blue)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 999, letterSpacing: '.05em' }}>ÚNICO PLAN</div>
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ fontSize: 50, fontWeight: 800, color: 'var(--blue)', fontFamily: 'var(--font-d)', lineHeight: 1 }}>₡35.000</span>
                   <span style={{ fontSize: 18, color: 'var(--muted)', marginLeft: 8 }}>/mes</span>
@@ -464,7 +464,7 @@ export default function LandingPage() {
                   El mismo precio, en tu moneda
                 </p>
                 {COUNTRIES.map(c => (
-                  <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #fff' }}>
+                  <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                       <span style={{ fontSize: 17 }}>{c.flag}</span>
                       <span style={{ fontSize: 13, color: 'var(--ink2)' }}>{c.name}</span>
@@ -486,12 +486,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── 4. BENEFICIOS ── */}
-      <section id="beneficios" style={{ padding: '100px 24px', background: '#0f1428' }}>
+      <section id="beneficios" style={{ padding: '100px 24px', background: 'var(--paper)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <FadeIn>
             <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 72px' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 16 }}>Beneficios</div>
-              <h2 style={{ fontSize: 'clamp(30px,4vw,48px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-.03em', color: '#fff' }}>Todo lo que necesitás<br />para crecer sin caos</h2>
+              <h2 style={{ fontSize: 'clamp(30px,4vw,48px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-.03em', color: 'var(--ink)' }}>Todo lo que necesitás<br />para crecer sin caos</h2>
             </div>
           </FadeIn>
           <div className="benefits-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
@@ -506,7 +506,7 @@ export default function LandingPage() {
                     <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(58,91,240,.12)', border: '1px solid rgba(58,91,240,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                       <Icon size={20} color="var(--blue)" />
                     </div>
-                    <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10, letterSpacing: '-.02em', color: '#fff' }}>{b.title}</h3>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10, letterSpacing: '-.02em', color: 'var(--ink)' }}>{b.title}</h3>
                     <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>{b.desc}</p>
                   </div>
                 </FadeIn>
@@ -517,12 +517,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── 5. CÓMO FUNCIONA ── */}
-      <section id="como-funciona" style={{ padding: '100px 24px', background: 'var(--dark)' }}>
+      <section id="como-funciona" style={{ padding: '100px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <FadeIn>
             <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 72px' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 16 }}>Cómo funciona</div>
-              <h2 style={{ fontSize: 'clamp(30px,4vw,48px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-.03em', color: '#fff' }}>Empezás en minutos,<br />ganás tiempo para siempre</h2>
+              <h2 style={{ fontSize: 'clamp(30px,4vw,48px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-.03em', color: 'var(--ink)' }}>Empezás en minutos,<br />ganás tiempo para siempre</h2>
             </div>
           </FadeIn>
           <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
@@ -536,7 +536,7 @@ export default function LandingPage() {
                     <span style={{ fontSize: 16, fontWeight: 800, color: i === 0 ? 'var(--blue)' : 'var(--muted)', fontFamily: 'var(--font-d)' }}>{step.num}</span>
                   </div>
                   <div>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, letterSpacing: '-.02em', color: '#fff' }}>{step.title}</h3>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, letterSpacing: '-.02em', color: 'var(--ink)' }}>{step.title}</h3>
                     <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.7 }}>{step.desc}</p>
                   </div>
                 </div>
@@ -550,12 +550,12 @@ export default function LandingPage() {
       <PhotoCarousel />
 
       {/* ── 7. VIDEO DEMO ── */}
-      <section style={{ padding: '100px 24px', background: '#0f1428' }}>
+      <section style={{ padding: '100px 24px', background: 'var(--paper)' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <FadeIn>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 14 }}>Demo en vivo</div>
-              <h2 style={{ fontSize: 'clamp(28px,3.5vw,44px)', fontWeight: 800, letterSpacing: '-.03em', color: '#fff' }}>Mirá el panel en acción</h2>
+              <h2 style={{ fontSize: 'clamp(28px,3.5vw,44px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink)' }}>Mirá el panel en acción</h2>
               <p style={{ fontSize: 15, color: 'var(--muted)', marginTop: 12, lineHeight: 1.7 }}>
                 90 segundos para ver cómo GolPlay gestiona reservas, horarios y métricas.
               </p>
@@ -573,8 +573,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── 8. CTA FINAL ── */}
-      <section style={{ padding: '120px 24px', background: 'radial-gradient(ellipse 70% 80% at 50% 50%, rgba(58,91,240,.15) 0%, transparent 70%), #0f1428', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+      <section style={{ padding: '120px 24px', background: 'radial-gradient(ellipse 70% 80% at 50% 50%, rgba(58,91,240,.15) 0%, transparent 70%), var(--paper)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(58,91,240,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(58,91,240,.05) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
         <div style={{ maxWidth: 720, margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <FadeIn>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(58,91,240,.12)', border: '1px solid rgba(58,91,240,.25)', borderRadius: 999, padding: '6px 16px', marginBottom: 28 }}>
@@ -582,7 +582,7 @@ export default function LandingPage() {
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', letterSpacing: '.05em' }}>PLAN FIJO · SIN COMISIÓN · 1 MES GRATIS</span>
             </div>
 
-            <h2 style={{ fontSize: 'clamp(36px,5vw,60px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: 24, color: '#fff' }}>
+            <h2 style={{ fontSize: 'clamp(36px,5vw,60px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: 24, color: 'var(--ink)' }}>
               Llená tu complejo<br /><span style={{ color: 'var(--blue)' }}>con tecnología real.</span>
             </h2>
 
