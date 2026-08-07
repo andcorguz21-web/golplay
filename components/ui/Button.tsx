@@ -10,7 +10,7 @@ type Props = {
         onClick={onClick}
         disabled={disabled}
         style={{
-          backgroundColor: disabled ? '#064e3b' : '#16a34a',
+          backgroundColor: disabled ? '#064e3b' : '#3a5bf0',
           color: '#ffffff',
           border: 'none',
           borderRadius: 8,

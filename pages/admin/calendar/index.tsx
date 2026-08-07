@@ -95,7 +95,7 @@ const S: any = {
   },
   todayBtn: {
     padding: '8px 14px', background: 'none', border: 'none',
-    fontSize: 13, fontWeight: 600, color: '#2563eb',
+    fontSize: 13, fontWeight: 600, color: '#3a5bf0',
     cursor: 'pointer', transition: 'background 0.15s',
   },
 
@@ -171,7 +171,7 @@ export default function AdminCalendar() {
       setFields(data?.map((f: any) => ({
         id: String(f.id),
         name: f.name,
-        color: f.color || '#3B82F6',
+        color: f.color || '#4a68f5',
         slotDuration: f.slot_duration ?? 1,
       })) ?? [])
     })
@@ -243,7 +243,7 @@ export default function AdminCalendar() {
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
         * { box-sizing: border-box; }
-        button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+        button:focus-visible { outline: 2px solid #3a5bf0; outline-offset: 2px; }
         .rdp { --rdp-accent-color: #0f172a; --rdp-background-color: #f1f5f9; }
       `}</style>
 
@@ -358,7 +358,7 @@ export default function AdminCalendar() {
           <div style={S.legend}>
             {/* Status legend */}
             {[
-              { label: 'Confirmada', color: '#16a34a' },
+              { label: 'Confirmada', color: '#3a5bf0' },
               { label: 'Pendiente',  color: '#d97706' },
               { label: 'Cancelada',  color: '#dc2626' },
               { label: 'Conflicto',  color: '#ef4444', dashed: true },
@@ -386,7 +386,7 @@ export default function AdminCalendar() {
             )}
 
             <div style={{ ...S.legendItem, marginLeft: 'auto' }}>
-              <span style={{ width: 24, height: 3, borderRadius: 999, background: 'linear-gradient(90deg,#16a34a,#d97706,#dc2626)', display: 'inline-block' }} />
+              <span style={{ width: 24, height: 3, borderRadius: 999, background: 'linear-gradient(90deg,#3a5bf0,#d97706,#dc2626)', display: 'inline-block' }} />
               <span style={{ marginLeft: 5 }}>Barra de ocupación (semanal)</span>
             </div>
           </div>

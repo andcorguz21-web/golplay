@@ -229,7 +229,7 @@ export default function Header() {
           border-radius: 8px;
         }
 
-        .hdr__logo:focus-visible { box-shadow: 0 0 0 3px rgba(22,163,74,0.3); }
+        .hdr__logo:focus-visible { box-shadow: 0 0 0 3px rgba(58,91,240,0.3); }
 
         .hdr__actions {
           display: flex;
@@ -259,8 +259,8 @@ export default function Header() {
         .btn--ghost { background: transparent; color: #374151; border: 1px solid #e5e7eb; }
         .btn--ghost:hover { background: #f9fafb; border-color: #d1d5db; }
 
-        .btn--primary { background: #16a34a; color: white; box-shadow: 0 2px 8px rgba(22,163,74,0.3); }
-        .btn--primary:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(22,163,74,0.4); }
+        .btn--primary { background: #3a5bf0; color: white; box-shadow: 0 2px 8px rgba(58,91,240,0.3); }
+        .btn--primary:hover { background: #2c46cf; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(58,91,240,0.4); }
 
         .btn--secondary { background: #f1f5f9; color: #374151; }
         .btn--secondary:hover { background: #e2e8f0; }
@@ -287,8 +287,8 @@ export default function Header() {
         }
 
         .search-bar--active {
-          border-color: #16a34a;
-          box-shadow: 0 4px 24px rgba(22,163,74,0.15);
+          border-color: #3a5bf0;
+          box-shadow: 0 4px 24px rgba(58,91,240,0.15);
         }
 
         .search-seg {
@@ -339,7 +339,7 @@ export default function Header() {
           height: 42px;
           border-radius: 50%;
           border: none;
-          background: #16a34a;
+          background: #3a5bf0;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -347,10 +347,10 @@ export default function Header() {
           margin-right: 5px;
           transition: background 0.15s, transform 0.15s;
           flex-shrink: 0;
-          box-shadow: 0 2px 10px rgba(22,163,74,0.35);
+          box-shadow: 0 2px 10px rgba(58,91,240,0.35);
         }
 
-        .search-btn:hover { background: #15803d; transform: scale(1.05); }
+        .search-btn:hover { background: #2c46cf; transform: scale(1.05); }
 
         /* ── Dropdown panels ── */
         .search-panel {
@@ -398,7 +398,7 @@ export default function Header() {
           background: #fafafa;
         }
 
-        .field-search-input:focus { border-color: #16a34a; background: white; }
+        .field-search-input:focus { border-color: #3a5bf0; background: white; }
 
         .field-list { max-height: 220px; overflow-y: auto; }
 
@@ -412,14 +412,14 @@ export default function Header() {
           gap: 10px;
         }
 
-        .field-option:hover { background: #f0fdf4; }
-        .field-option--selected { background: #f0fdf4; }
+        .field-option:hover { background: #f4f6fb; }
+        .field-option--selected { background: #f4f6fb; }
 
         .field-option__icon {
           width: 36px;
           height: 36px;
           border-radius: 10px;
-          background: #dcfce7;
+          background: #e8ecff;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -462,8 +462,8 @@ export default function Header() {
           color: #374151;
         }
 
-        .hour-chip:hover { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
-        .hour-chip--selected { background: #16a34a; border-color: #16a34a; color: white; box-shadow: 0 2px 8px rgba(22,163,74,0.3); }
+        .hour-chip:hover { border-color: #3a5bf0; color: #3a5bf0; background: #f4f6fb; }
+        .hour-chip--selected { background: #3a5bf0; border-color: #3a5bf0; color: white; box-shadow: 0 2px 8px rgba(58,91,240,0.3); }
 
         /* Sport grid */
         .sport-grid {
@@ -483,19 +483,19 @@ export default function Header() {
           background: white;
         }
 
-        .sport-chip:hover { border-color: #16a34a; background: #f0fdf4; }
-        .sport-chip--selected { border-color: #16a34a; background: #f0fdf4; box-shadow: 0 2px 8px rgba(22,163,74,0.2); }
+        .sport-chip:hover { border-color: #3a5bf0; background: #f4f6fb; }
+        .sport-chip--selected { border-color: #3a5bf0; background: #f4f6fb; box-shadow: 0 2px 8px rgba(58,91,240,0.2); }
 
         .sport-chip__emoji { font-size: 22px; display: block; margin-bottom: 4px; }
         .sport-chip__label { font-size: 12px; font-weight: 600; color: #374151; }
-        .sport-chip--selected .sport-chip__label { color: #16a34a; }
+        .sport-chip--selected .sport-chip__label { color: #3a5bf0; }
 
         /* Active filter indicator */
         .filter-dot {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: #16a34a;
+          background: #3a5bf0;
           display: inline-block;
           margin-left: 4px;
           vertical-align: middle;
@@ -508,7 +508,7 @@ export default function Header() {
           width: 36px;
           height: 36px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #16a34a, #0f6930);
+          background: linear-gradient(135deg, #3a5bf0, #0f6930);
           color: white;
           font-size: 13px;
           font-weight: 700;
@@ -522,8 +522,8 @@ export default function Header() {
         }
 
         .avatar:hover, .avatar--open {
-          border-color: #16a34a;
-          box-shadow: 0 0 0 3px rgba(22,163,74,0.15);
+          border-color: #3a5bf0;
+          box-shadow: 0 0 0 3px rgba(58,91,240,0.15);
         }
 
         .dropdown {
@@ -684,7 +684,7 @@ export default function Header() {
           background: white;
         }
 
-        .mobile-search__input:focus { border-color: #16a34a; }
+        .mobile-search__input:focus { border-color: #3a5bf0; }
 
         .mobile-search__row {
           display: grid;
@@ -797,17 +797,17 @@ export default function Header() {
                     {fieldQuery.trim() && !selectedField && (
                       <div
                         className="field-option"
-                        style={{ background: '#f0fdf4', marginBottom: 6, border: '1.5px solid #bbf7d0', borderRadius: 12 }}
+                        style={{ background: '#f4f6fb', marginBottom: 6, border: '1.5px solid #dfe6ff', borderRadius: 12 }}
                         onClick={(e) => {
                           e.stopPropagation()
                           setActivePanel(null)
                           // reactive effect will push the filter
                         }}
                       >
-                        <div className="field-option__icon" style={{ background: '#dcfce7' }}>🔍</div>
+                        <div className="field-option__icon" style={{ background: '#e8ecff' }}>🔍</div>
                         <div>
-                          <p className="field-option__name" style={{ color: '#15803d' }}>Buscar "{fieldQuery.trim()}"</p>
-                          <p className="field-option__loc" style={{ color: '#16a34a' }}>Filtrar resultados en la página</p>
+                          <p className="field-option__name" style={{ color: '#2c46cf' }}>Buscar "{fieldQuery.trim()}"</p>
+                          <p className="field-option__loc" style={{ color: '#3a5bf0' }}>Filtrar resultados en la página</p>
                         </div>
                       </div>
                     )}
@@ -999,33 +999,33 @@ export default function Header() {
           {hasAnyFilter && (
             <div style={{ maxWidth: 780, margin: '8px auto 0', display: 'flex', gap: 8, flexWrap: 'wrap', paddingLeft: 4 }}>
               {fieldQuery.trim() && !selectedField && (
-                <span style={{ fontSize: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 12, background: '#f4f6fb', border: '1px solid #dfe6ff', color: '#2c46cf', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                   🔍 "{fieldQuery.trim()}"
-                  <button onClick={() => setFieldQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16a34a', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
+                  <button onClick={() => setFieldQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3a5bf0', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
                 </span>
               )}
               {selectedField && (
-                <span style={{ fontSize: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 12, background: '#f4f6fb', border: '1px solid #dfe6ff', color: '#2c46cf', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                   ⚽ {selectedField.name}
-                  <button onClick={() => setSelectedField(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16a34a', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
+                  <button onClick={() => setSelectedField(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3a5bf0', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
                 </span>
               )}
               {selectedDate && (
-                <span style={{ fontSize: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 12, background: '#f4f6fb', border: '1px solid #dfe6ff', color: '#2c46cf', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                   📅 {selectedDate.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}
-                  <button onClick={() => setSelectedDate(undefined)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16a34a', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
+                  <button onClick={() => setSelectedDate(undefined)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3a5bf0', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
                 </span>
               )}
               {selectedHour && (
-                <span style={{ fontSize: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 12, background: '#f4f6fb', border: '1px solid #dfe6ff', color: '#2c46cf', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                   🕐 {to12h(selectedHour)}
-                  <button onClick={() => setSelectedHour(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16a34a', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
+                  <button onClick={() => setSelectedHour(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3a5bf0', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
                 </span>
               )}
               {selectedSport && sportLabel && (
-                <span style={{ fontSize: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 12, background: '#f4f6fb', border: '1px solid #dfe6ff', color: '#2c46cf', padding: '3px 10px', borderRadius: 999, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                   {sportLabel.emoji} {sportLabel.label}
-                  <button onClick={() => setSelectedSport(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16a34a', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
+                  <button onClick={() => setSelectedSport(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3a5bf0', fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
                 </span>
               )}
               <button

@@ -720,12 +720,12 @@ export default function AdminBookings() {
                 <div className="bk-drow" onClick={() => { setEditingDateTime(detail.id); setNewDate(detail.date); setNewHour(detail.hour); setDateTimeError('') }} style={{ cursor: 'pointer' }}>
                   <span className="bk-drow__ico">📅</span>
                   <span className="bk-drow__label">Fecha</span>
-                  <span className="bk-drow__value" style={{ borderBottom: '1px dashed #bbf7d0' }}>{fmtDate(detail.date)} ✏️</span>
+                  <span className="bk-drow__value" style={{ borderBottom: '1px dashed #dfe6ff' }}>{fmtDate(detail.date)} ✏️</span>
                 </div>
                 <div className="bk-drow" onClick={() => { setEditingDateTime(detail.id); setNewDate(detail.date); setNewHour(detail.hour); setDateTimeError('') }} style={{ cursor: 'pointer' }}>
                   <span className="bk-drow__ico">🕐</span>
                   <span className="bk-drow__label">Hora</span>
-                  <span className="bk-drow__value" style={{ borderBottom: '1px dashed #bbf7d0' }}>{detail.hour} ✏️</span>
+                  <span className="bk-drow__value" style={{ borderBottom: '1px dashed #dfe6ff' }}>{detail.hour} ✏️</span>
                 </div>
               </>
             )}
@@ -742,17 +742,17 @@ export default function AdminBookings() {
                     onChange={e => setPriceText(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') savePrice(detail.id); if (e.key === 'Escape') setEditingPrice(null) }}
                     autoFocus
-                    style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '2px solid #16a34a', fontSize: 14, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
+                    style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '2px solid #3a5bf0', fontSize: 14, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
                     min={0}
                   />
-                  <button onClick={() => savePrice(detail.id)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Guardar</button>
+                  <button onClick={() => savePrice(detail.id)} style={{ background: '#3a5bf0', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Guardar</button>
                   <button onClick={() => setEditingPrice(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 14 }}>✗</button>
                 </div>
               ) : (
                 <span
                   className="bk-drow__value"
                   onClick={() => { setEditingPrice(detail.id); setPriceText(String(detail.price ?? 0)) }}
-                  style={{ cursor: 'pointer', color: '#15803d', fontWeight: 700, borderBottom: '1px dashed #bbf7d0' }}
+                  style={{ cursor: 'pointer', color: '#2c46cf', fontWeight: 700, borderBottom: '1px dashed #dfe6ff' }}
                   title="Click para editar"
                 >
                   {fCRC(detail.price)} ✏️
@@ -903,17 +903,17 @@ function BookingRow({ booking: b, today, acting, onDetail, onAction, editingPric
               onChange={e => onPriceChange(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') onSavePrice(b.id); if (e.key === 'Escape') onCancelEditPrice() }}
               autoFocus
-              style={{ width: 80, padding: '4px 6px', borderRadius: 6, border: '2px solid #16a34a', fontSize: 13, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
+              style={{ width: 80, padding: '4px 6px', borderRadius: 6, border: '2px solid #3a5bf0', fontSize: 13, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
               min={0}
             />
-            <button onClick={() => onSavePrice(b.id)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 5, padding: '4px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>✓</button>
+            <button onClick={() => onSavePrice(b.id)} style={{ background: '#3a5bf0', color: '#fff', border: 'none', borderRadius: 5, padding: '4px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>✓</button>
             <button onClick={onCancelEditPrice} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 13 }}>✗</button>
           </div>
         ) : (
           <span
             onClick={e => { e.stopPropagation(); onStartEditPrice(b) }}
             title="Click para editar precio"
-            style={{ cursor: 'pointer', borderBottom: '1px dashed #bbf7d0', paddingBottom: 1 }}
+            style={{ cursor: 'pointer', borderBottom: '1px dashed #dfe6ff', paddingBottom: 1 }}
           >
             {fCRC(b.price)}
           </span>
@@ -1082,10 +1082,10 @@ const CSS = `
 .bk-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; border:none; transition:all .13s; white-space:nowrap; }
 .bk-btn--ghost   { background:white; color:#374151; border:1.5px solid #e2e8f0; }
 .bk-btn--ghost:hover { background:#f8fafc; }
-.bk-btn--export  { background:#0f172a; color:white; }
-.bk-btn--export:hover { background:#1e293b; }
-.bk-btn--primary { background:#16a34a; color:white; }
-.bk-btn--primary:hover { background:#15803d; }
+.bk-btn--export  { background:#3a5bf0; color:white; }
+.bk-btn--export:hover { background:#2c46cf; }
+.bk-btn--primary { background:#3a5bf0; color:white; }
+.bk-btn--primary:hover { background:#2c46cf; }
 .bk-btn--danger  { background:#ef4444; color:white; }
 .bk-btn--danger:hover  { background:#dc2626; }
 .bk-btn--sm { padding:6px 12px; font-size:11px; border-radius:7px; }
@@ -1094,29 +1094,29 @@ const CSS = `
 .bk-tabs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:16px; }
 .bk-tab { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:9px; font-size:12px; font-weight:600; font-family:inherit; border:1.5px solid transparent; background:white; color:#64748b; cursor:pointer; transition:all .13s; }
 .bk-tab:hover { background:#f8fafc; color:#0f172a; border-color:#e2e8f0; }
-.bk-tab--active { background:#0f172a; color:white; border-color:#0f172a; }
+.bk-tab--active { background:#3a5bf0; color:white; border-color:#3a5bf0; }
 .bk-tab__count { font-size:10px; font-weight:700; padding:1px 6px; border-radius:999px; background:rgba(0,0,0,.07); }
 .bk-tab--active .bk-tab__count { background:rgba(255,255,255,.18); }
 
 .bk-filters { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:white; padding:12px 16px; border-radius:14px; border:1px solid #eaecf0; margin-bottom:16px; }
 .bk-search { display:flex; align-items:center; gap:8px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:9px; padding:0 12px; flex:1; min-width:180px; transition:border-color .12s; }
-.bk-search:focus-within { border-color:#22c55e; background:white; }
+.bk-search:focus-within { border-color:#4a68f5; background:white; }
 .bk-search svg { color:#94a3b8; flex-shrink:0; }
 .bk-search__input { border:none; background:transparent; font-size:13px; font-family:inherit; color:#0f172a; flex:1; outline:none; padding:8px 0; }
 .bk-search__input::placeholder { color:#94a3b8; }
 .bk-search__clear { background:none; border:none; cursor:pointer; color:#94a3b8; font-size:12px; padding:0; }
 .bk-select { padding:8px 10px; border-radius:9px; border:1.5px solid #e2e8f0; background:white; font-size:12px; font-weight:500; font-family:inherit; color:#374151; cursor:pointer; outline:none; }
-.bk-select:focus { border-color:#22c55e; }
+.bk-select:focus { border-color:#4a68f5; }
 .bk-daterange { display:flex; align-items:center; gap:6px; }
 .bk-daterange__sep { font-size:11px; color:#cbd5e1; }
 
 .bk-created-btns { display:flex; gap:4px; }
 .bk-created-btn { padding:7px 12px; border-radius:9px; border:1.5px solid #e2e8f0; background:white; font-size:11px; font-weight:600; font-family:inherit; color:#64748b; cursor:pointer; transition:all .13s; white-space:nowrap; }
-.bk-created-btn:hover { border-color:#16a34a; color:#15803d; background:#f0fdf4; }
-.bk-created-btn--active { border-color:#16a34a; background:#16a34a; color:#fff; }
-.bk-created-btn--active:hover { background:#15803d; }
+.bk-created-btn:hover { border-color:#3a5bf0; color:#2c46cf; background:#f4f6fb; }
+.bk-created-btn--active { border-color:#3a5bf0; background:#3a5bf0; color:#fff; }
+.bk-created-btn--active:hover { background:#2c46cf; }
 .bk-dateinput { padding:7px 10px; border-radius:8px; border:1.5px solid #e2e8f0; font-size:12px; font-family:inherit; color:#374151; outline:none; }
-.bk-dateinput:focus { border-color:#22c55e; }
+.bk-dateinput:focus { border-color:#4a68f5; }
 
 .bk-error { display:flex; align-items:center; gap:10px; padding:14px 20px; border-radius:12px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:13px; margin-bottom:16px; }
 
@@ -1135,34 +1135,34 @@ const CSS = `
 .bk-tr--conflict { background:#fffbeb !important; border-left:3px solid #f59e0b; }
 .bk-tr--cancelled { opacity:.55; }
 .bk-td { padding:13px 16px; font-size:13px; vertical-align:middle; }
-.bk-td--price { font-weight:700; color:#15803d; }
+.bk-td--price { font-weight:700; color:#2c46cf; }
 .bk-td--right { text-align:right; }
 .bk-mono { font-variant-numeric:tabular-nums; font-weight:600; }
 .bk-td__field { display:flex; align-items:center; gap:8px; }
 .bk-td__fname { font-weight:600; color:#0f172a; }
 .bk-cdot { color:#f59e0b; font-size:12px; cursor:help; }
 .bk-td__client { display:flex; align-items:center; gap:10px; }
-.bk-av { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,#16a34a,#166534); color:white; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.bk-av { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,#3a5bf0,#26379e); color:white; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
 .bk-av--sm { width:26px; height:26px; font-size:11px; }
 .bk-td__cname  { font-size:13px; font-weight:600; color:#0f172a; margin:0; }
 .bk-td__cemail { font-size:11px; color:#94a3b8; margin:1px 0 0; }
 .bk-date { font-size:12px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap; }
-.bk-date--today  { background:#dcfce7; color:#15803d; }
-.bk-date--future { background:#eff6ff; color:#2563eb; }
+.bk-date--today  { background:#e8ecff; color:#2c46cf; }
+.bk-date--future { background:#eef2ff; color:#3a5bf0; }
 .bk-date--past   { background:#f1f5f9; color:#64748b; }
 .bk-source { font-size:11px; color:#94a3b8; }
 .b-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; }
-.b-badge--active    { background:#dcfce7; color:#15803d; }
+.b-badge--active    { background:#e8ecff; color:#2c46cf; }
 .b-badge--pending   { background:#fef9c3; color:#854d0e; }
 .b-badge--cancelled { background:#f1f5f9; color:#64748b; }
-.b-badge--completed { background:#eff6ff; color:#1d4ed8; }
+.b-badge--completed { background:#eef2ff; color:#2c46cf; }
 .b-badge--noshow    { background:#fef2f2; color:#b91c1c; }
 
 .bk-act { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; border:1.5px solid #e2e8f0; background:white; cursor:pointer; transition:all .12s; color:#64748b; margin-left:4px; }
 .bk-act:hover { transform:scale(1.08); }
-.bk-act--view:hover     { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
+.bk-act--view:hover     { border-color:#3a5bf0; color:#3a5bf0; background:#eef2ff; }
 .bk-act--cancel:hover   { border-color:#ef4444; color:#ef4444; background:#fef2f2; }
-.bk-act--activate:hover { border-color:#16a34a; color:#16a34a; background:#f0fdf4; }
+.bk-act--activate:hover { border-color:#3a5bf0; color:#3a5bf0; background:#f4f6fb; }
 .bk-act:disabled { opacity:.35; cursor:not-allowed; transform:none; }
 
 .bk-footer { padding:12px; font-size:12px; color:#94a3b8; text-align:center; margin-top:4px; }
@@ -1189,7 +1189,7 @@ const CSS = `
 .bk-card__row    { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
 .bk-card__client { display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; }
 .bk-card__foot   { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f1f5f9; padding-top:10px; }
-.bk-card__price  { font-size:14px; font-weight:700; color:#15803d; }
+.bk-card__price  { font-size:14px; font-weight:700; color:#2c46cf; }
 
 .bk-overlay { position:fixed; inset:0; background:rgba(15,23,42,.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:500; padding:20px; animation:bkOvIn .18s ease; }
 @keyframes bkOvIn { from{opacity:0} to{opacity:1} }
@@ -1197,7 +1197,7 @@ const CSS = `
 .bk-modal--sm { max-width:380px; }
 @keyframes bkMdIn { from{opacity:0;transform:scale(.96) translateY(8px)} to{opacity:1;transform:none} }
 .bk-modal__header { display:flex; align-items:center; gap:14px; padding:24px 24px 0; }
-.bk-modal__av { width:46px; height:46px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,#16a34a,#166534); color:white; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.bk-modal__av { width:46px; height:46px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,#3a5bf0,#26379e); color:white; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center; }
 .bk-modal__name { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; margin:0; }
 .bk-modal__sub  { font-size:12px; color:#94a3b8; margin:2px 0 0; }
 .bk-modal__conflict { margin:16px 24px 0; padding:10px 14px; border-radius:10px; background:#fffbeb; border:1px solid #fde68a; font-size:12px; color:#92400e; }
@@ -1212,14 +1212,14 @@ const CSS = `
 .bk-confirm { padding:28px 24px 24px; text-align:center; }
 .bk-confirm__ico { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 16px; }
 .bk-confirm__ico--danger { background:#fef2f2; }
-.bk-confirm__ico--ok     { background:#f0fdf4; }
+.bk-confirm__ico--ok     { background:#f4f6fb; }
 .bk-confirm__title { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; margin:0 0 8px; }
 .bk-confirm__body  { font-size:13px; color:#64748b; margin:0 0 24px; line-height:1.6; }
 .bk-confirm__btns  { display:flex; flex-direction:column; gap:8px; }
 
 .bk-toast { position:fixed; bottom:28px; right:28px; z-index:9999; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif; box-shadow:0 8px 32px rgba(0,0,0,.18); animation:bkToastIn .2s ease; }
 @keyframes bkToastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-.bk-toast--ok  { background:#0f172a; color:white; }
+.bk-toast--ok  { background:#3a5bf0; color:white; }
 .bk-toast--err { background:#ef4444; color:white; }
 
 @media (max-width:900px) {

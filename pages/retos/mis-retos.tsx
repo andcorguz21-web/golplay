@@ -3,10 +3,10 @@
  * Recuperar retos sin login: meté tu cédula y ves tus retos
  *
  * Migrado al DS oficial:
- *   - Theme: dark (envuelto en <div className="theme-dark">).
- *   - Navbar: <Navbar dark={true} /> reemplaza el header inline.
+ *   - Theme: dark (envuelto en <div className="theme-light">).
+ *   - Navbar: <Navbar /> reemplaza el header inline.
  *   - Tipografía: Syne (var(--font-d)) + DM Sans (body default).
- *   - Tokens CSS: var(--g4), var(--g6), var(--g7).
+ *   - Tokens CSS: var(--blue), var(--g6), var(--g7).
  *   - Back link "← Volver al feed" arriba (entrada al recovery).
  *   - Removido el console.log de debug en handleSearch.
  *
@@ -59,12 +59,12 @@ const SPORT_META: Record<string, { label: string; emoji: string }> = {
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  open:      { label: 'Buscando rival', color: '#4ade80'              },
+  open:      { label: 'Buscando rival', color: '#d4f24d'              },
   matched:   { label: 'Aceptado',       color: '#fbbf24'              },
-  confirmed: { label: 'Confirmado',     color: '#4ade80'              },
+  confirmed: { label: 'Confirmado',     color: '#d4f24d'              },
   finished:  { label: 'Jugado',         color: '#a78bfa'              },
   cancelled: { label: 'Cancelado',      color: '#f87171'              },
-  expired:   { label: 'Expirado',       color: 'rgba(255,255,255,.5)' },
+  expired:   { label: 'Expirado',       color: 'var(--muted)' },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -175,8 +175,8 @@ export default function MisRetosPage() {
       </Head>
       <style>{CSS}</style>
 
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         <div className="mr">
           <div className="mr-top">
@@ -310,12 +310,12 @@ const CSS = `
 }
 .mr-top__back {
   font-size: 13px;
-  color: rgba(255,255,255,.6);
+  color: var(--ink2);
   text-decoration: none;
   font-weight: 500;
   transition: color .15s;
 }
-.mr-top__back:hover { color: var(--g4); }
+.mr-top__back:hover { color: var(--blue); }
 
 .mr-stage {
   max-width: 540px;
@@ -325,7 +325,7 @@ const CSS = `
 .mr-eyebrow {
   font-size: 11px;
   font-weight: 700;
-  color: var(--g4);
+  color: var(--blue);
   text-transform: uppercase;
   letter-spacing: .12em;
   margin: 0 0 12px;
@@ -336,12 +336,12 @@ const CSS = `
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -.02em;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 14px;
 }
 .mr-lead {
   font-size: 15px;
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   line-height: 1.6;
   margin: 0 0 28px;
 }
@@ -355,16 +355,16 @@ const CSS = `
   flex: 1;
   padding: 13px 16px;
   border-radius: 12px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color:var(--ink);
   font-family: inherit;
   font-size: 15px;
   outline: none;
   transition: all .15s;
 }
-.mr-input:focus { border-color: var(--g4); background: rgba(255,255,255,.06); }
-.mr-input::placeholder { color: rgba(255,255,255,.3); }
+.mr-input:focus { border-color: var(--blue); background: var(--line); }
+.mr-input::placeholder { color: var(--faint); }
 
 .mr-error {
   padding: 12px 16px;
@@ -380,17 +380,17 @@ const CSS = `
 .mr-empty {
   text-align: center;
   padding: 40px 24px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 14px;
 }
 .mr-empty span { font-size: 36px; display: block; margin-bottom: 12px; opacity: .6; }
-.mr-empty p { font-size: 14px; color: rgba(255,255,255,.6); margin: 0; }
+.mr-empty p { font-size: 14px; color: var(--ink2); margin: 0; }
 
 .mr-stats {
   padding: 20px;
-  background: linear-gradient(160deg, rgba(74,222,128,.06), rgba(74,222,128,.02));
-  border: 1px solid rgba(74,222,128,.2);
+  background: linear-gradient(160deg, rgba(58,91,240,.06), rgba(58,91,240,.02));
+  border: 1px solid rgba(58,91,240,.2);
   border-radius: 16px;
   margin-bottom: 24px;
 }
@@ -398,11 +398,11 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 24px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 4px;
 }
 .mr-stats__score { font-size: 13px; color: #fbbf24; font-weight: 700; margin: 0 0 16px; }
-.mr-stats__score--new { color: rgba(255,255,255,.5); font-weight: 500; }
+.mr-stats__score--new { color: var(--muted); font-weight: 500; }
 .mr-stats__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -413,15 +413,15 @@ const CSS = `
   flex-direction: column;
   align-items: center;
   padding: 10px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.06);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 10px;
 }
 .mr-stat--bad { border-color: rgba(248,113,113,.25); }
-.mr-stat__value { font-size: 20px; font-weight: 800; color: #fff; }
+.mr-stat__value { font-size: 20px; font-weight: 800; color:var(--ink); }
 .mr-stat__label {
   font-size: 10px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .06em;
   margin-top: 2px;
@@ -432,17 +432,17 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 22px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 14px;
 }
 
 .mr-no-history {
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   text-align: center;
   padding: 30px;
 }
-.mr-no-history a { color: var(--g4); }
+.mr-no-history a { color: var(--blue); }
 
 .mr-list { display: flex; flex-direction: column; gap: 8px; }
 .mr-card {
@@ -451,26 +451,26 @@ const CSS = `
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
   transition: all .15s;
 }
-.mr-card:hover { background: rgba(255,255,255,.06); border-color: rgba(74,222,128,.25); }
+.mr-card:hover { background: var(--line); border-color: rgba(58,91,240,.25); }
 .mr-card__left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 .mr-card__role { font-size: 18px; flex-shrink: 0; }
 .mr-card__team {
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.mr-card__meta { font-size: 11.5px; color: rgba(255,255,255,.55); margin: 0; }
+.mr-card__meta { font-size: 11.5px; color: var(--muted); margin: 0; }
 .mr-card__status { font-size: 11px; font-weight: 700; flex-shrink: 0; }
 
 .mr-btn {
@@ -489,13 +489,13 @@ const CSS = `
   transition: all .15s;
 }
 .mr-btn--primary {
-  background: linear-gradient(135deg, var(--g6), var(--g7));
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(22,163,74,.3);
+  background: var(--blue);
+  color:#fff;
+  box-shadow: 0 4px 16px rgba(58,91,240,.3);
 }
 .mr-btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(22,163,74,.4);
+  box-shadow: 0 8px 24px rgba(58,91,240,.4);
 }
 .mr-btn--primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 

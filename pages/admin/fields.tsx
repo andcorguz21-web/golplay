@@ -85,8 +85,8 @@ const ALL_HOURS = [
 const NIGHT_HOURS = ['17','18','19','20','21']
 
 const COLOR_PALETTE = [
-  { hex: '#3B82F6', label: 'Azul' },
-  { hex: '#22C55E', label: 'Verde' },
+  { hex: '#4a68f5', label: 'Azul' },
+  { hex: '#4a68f5', label: 'Verde' },
   { hex: '#F97316', label: 'Naranja' },
   { hex: '#A855F7', label: 'Morado' },
   { hex: '#EC4899', label: 'Rosa' },
@@ -103,10 +103,10 @@ const DAY_KEYS  = ['mon','tue','wed','thu','fri','sat','sun']
 const DEFAULT_IMG = 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=800&q=60'
 
 const SPORT_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
-  futbol5:  { icon:'⚽', label:'Fútbol 5',  color:'#16a34a' },
-  futbol7:  { icon:'⚽', label:'Fútbol 7',  color:'#16a34a' },
-  futbol11: { icon:'⚽', label:'Fútbol 11', color:'#16a34a' },
-  padel:    { icon:'🎾', label:'Pádel',     color:'#2563eb' },
+  futbol5:  { icon:'⚽', label:'Fútbol 5',  color:'#3a5bf0' },
+  futbol7:  { icon:'⚽', label:'Fútbol 7',  color:'#3a5bf0' },
+  futbol11: { icon:'⚽', label:'Fútbol 11', color:'#3a5bf0' },
+  padel:    { icon:'🎾', label:'Pádel',     color:'#3a5bf0' },
   tenis:    { icon:'🥎', label:'Tenis',     color:'#0891b2' },
   basquet:  { icon:'🏀', label:'Básquet',   color:'#ea580c' },
   voleibol: { icon:'🏐', label:'Voleibol',  color:'#7c3aed' },
@@ -157,7 +157,7 @@ export default function AdminFields() {
   const [fLng,           setFLng]           = useState('')
   const [fActive,        setFActive]        = useState(true)
   const [fSlotDuration,  setFSlotDuration]  = useState(1)
-  const [fColor,         setFColor]         = useState('#3B82F6')
+  const [fColor,         setFColor]         = useState('#4a68f5')
   const [fRates,         setFRates]         = useState<any[]>([])
   const [ratesLoading,   setRatesLoading]   = useState(false)
   const [errors,         setErrors]         = useState<FormErrors>({})
@@ -428,7 +428,7 @@ export default function AdminFields() {
     setFLng(field.longitude != null ? String(field.longitude) : '')
     setFActive(field.active !== false)
     setFSlotDuration((field as any).slot_duration ?? 1)
-    setFColor((field as any).color || '#3B82F6')
+    setFColor((field as any).color || '#4a68f5')
     await loadGallery(field.id)
     // Load field_rates
     setRatesLoading(true)
@@ -453,7 +453,7 @@ export default function AdminFields() {
     setEditingId(null); setFName(''); setFSport('futbol5'); setFPrice('')
     setFPriceDay(''); setFPriceNight(''); setFNightFrom(18)
     setFDescription(''); setFFeatures([]); setFHours([])
-    setFLocation(''); setFLat(''); setFLng(''); setFActive(true); setFSlotDuration(1); setFColor('#3B82F6'); setFRates([]); setGallery([]); setErrors({})  }
+    setFLocation(''); setFLat(''); setFLng(''); setFActive(true); setFSlotDuration(1); setFColor('#4a68f5'); setFRates([]); setGallery([]); setErrors({})  }
 
   const toggle = <T extends string>(val: T, list: T[], set: (v: T[]) => void) =>
     set(list.includes(val) ? list.filter(v => v !== val) : [...list, val])
@@ -581,15 +581,15 @@ export default function AdminFields() {
                       onClick={() => setFSlotDuration(opt.value)}
                       style={{
                         flex: 1, padding: '10px 12px', borderRadius: 10,
-                        border: `1.5px solid ${fSlotDuration === opt.value ? '#16a34a' : '#e2e8f0'}`,
-                        background: fSlotDuration === opt.value ? '#f0fdf4' : '#fff',
+                        border: `1.5px solid ${fSlotDuration === opt.value ? '#3a5bf0' : '#e2e8f0'}`,
+                        background: fSlotDuration === opt.value ? '#f4f6fb' : '#fff',
                         cursor: 'pointer', textAlign: 'center', fontFamily: 'inherit',
                       }}
                     >
-                      <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: fSlotDuration === opt.value ? '#15803d' : '#0f172a' }}>
+                      <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: fSlotDuration === opt.value ? '#2c46cf' : '#0f172a' }}>
                         {opt.label}
                       </span>
-                      <span style={{ display: 'block', fontSize: 11, color: fSlotDuration === opt.value ? '#16a34a' : '#94a3b8', marginTop: 2 }}>
+                      <span style={{ display: 'block', fontSize: 11, color: fSlotDuration === opt.value ? '#3a5bf0' : '#94a3b8', marginTop: 2 }}>
                         {opt.desc}
                       </span>
                     </button>
@@ -629,7 +629,7 @@ export default function AdminFields() {
                 <label className="f-label">
                   Ubicación en el mapa
                   <span className="f-label__hint">
-                    Usada para mostrar tu cancha en el mapa · <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" style={{color:'#16a34a',textDecoration:'none'}}>Obtener coordenadas →</a>
+                    Usada para mostrar tu cancha en el mapa · <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" style={{color:'#3a5bf0',textDecoration:'none'}}>Obtener coordenadas →</a>
                   </span>
                 </label>
                 <div className="f-price-grid">
@@ -790,7 +790,7 @@ export default function AdminFields() {
                                   {dayRates.map(r => (
                                     <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 8, padding: '5px 10px', border: '1px solid #e2e8f0', fontSize: 11 }}>
                                       <span style={{ fontWeight: 600, color: '#374151' }}>{r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}</span>
-                                      <span style={{ fontWeight: 700, color: '#16a34a' }}>₡{Number(r.price).toLocaleString('es-CR')}</span>
+                                      <span style={{ fontWeight: 700, color: '#3a5bf0' }}>₡{Number(r.price).toLocaleString('es-CR')}</span>
                                       <button type="button" onClick={async () => { await supabase.from('field_rates').delete().eq('id', r.id); setFRates(prev => prev.filter(x => x.id !== r.id)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: 0, lineHeight: 1 }} title="Eliminar tarifa">×</button>
                                     </div>
                                   ))}
@@ -805,7 +805,7 @@ export default function AdminFields() {
                         </div>
                       )}
                       <details style={{ marginTop: 10 }}>
-                        <summary style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', cursor: 'pointer', padding: '8px 0', userSelect: 'none' }}>
+                        <summary style={{ fontSize: 12, fontWeight: 700, color: '#3a5bf0', cursor: 'pointer', padding: '8px 0', userSelect: 'none' }}>
                           + Agregar tarifa por horario
                         </summary>
                         <AddRateForm fieldId={editingId} onAdded={(newRate: any) => setFRates(prev => [...prev, newRate])} showToast={showToast} />
@@ -1239,11 +1239,11 @@ function AddRateForm({ fieldId, onAdded, showToast }: { fieldId: number; onAdded
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {DAY_KEYS.map((d, i) => (
             <button key={d} type="button" onClick={() => setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])}
-              style={{ padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, border: days.includes(d) ? '1.5px solid #16a34a' : '1.5px solid #e2e8f0', background: days.includes(d) ? '#f0fdf4' : '#fff', color: days.includes(d) ? '#15803d' : '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, border: days.includes(d) ? '1.5px solid #3a5bf0' : '1.5px solid #e2e8f0', background: days.includes(d) ? '#f4f6fb' : '#fff', color: days.includes(d) ? '#2c46cf' : '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}
             >{DAY_NAMES[i].slice(0, 3)}</button>
           ))}
           <button type="button" onClick={() => setDays(days.length === 7 ? [] : [...DAY_KEYS])}
-            style={{ padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, border: '1.5px solid #e2e8f0', background: '#fff', color: '#2563eb', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, border: '1.5px solid #e2e8f0', background: '#fff', color: '#3a5bf0', cursor: 'pointer', fontFamily: 'inherit' }}
           >{days.length === 7 ? 'Ninguno' : 'Todos'}</button>
         </div>
       </div>
@@ -1312,7 +1312,7 @@ const CSS = `
 }
 .f-title    { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; letter-spacing:-.5px; margin:0; }
 .f-subtitle { font-size:13px; color:#94a3b8; margin:3px 0 0; }
-.f-subtitle__active   { color:#16a34a; font-weight:600; }
+.f-subtitle__active   { color:#3a5bf0; font-weight:600; }
 .f-subtitle__inactive { color:#f59e0b; font-weight:600; }
 
 /* ── Filters ───────────────────────────────────────────────────────────────── */
@@ -1324,7 +1324,7 @@ const CSS = `
   padding:0 12px; height:38px; flex:1; min-width:200px; max-width:320px;
   transition:border-color .15s;
 }
-.f-search:focus-within { border-color:#22c55e; }
+.f-search:focus-within { border-color:#4a68f5; }
 .f-search__ico   { color:#94a3b8; flex-shrink:0; }
 .f-search__input { border:none; outline:none; font-family:inherit; font-size:13px; flex:1; background:transparent; color:#0f172a; }
 .f-search__input::placeholder { color:#94a3b8; }
@@ -1337,7 +1337,7 @@ const CSS = `
   background:white; font-size:13px; font-family:inherit; color:#374151;
   cursor:pointer; outline:none; transition:border-color .15s;
 }
-.f-filter-select:focus { border-color:#22c55e; }
+.f-filter-select:focus { border-color:#4a68f5; }
 
 .f-status-filter { display:flex; gap:2px; background:#f1f5f9; border-radius:10px; padding:3px; }
 .f-status-btn    { padding:5px 12px; border-radius:7px; border:none; background:transparent; font-size:12px; font-weight:500; color:#64748b; cursor:pointer; font-family:inherit; transition:all .12s; white-space:nowrap; }
@@ -1407,7 +1407,7 @@ const CSS = `
 .f-card__actions { display:flex; gap:4px; }
 .f-card__action  { width:30px; height:30px; border-radius:8px; border:1.5px solid #e8ecf0; background:white; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .12s; color:#64748b; }
 .f-card__action:hover:not(:disabled)   { border-color:#cbd5e1; color:#0f172a; background:#f8fafc; }
-.f-card__action--edit:hover:not(:disabled)  { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
+.f-card__action--edit:hover:not(:disabled)  { border-color:#3a5bf0; color:#3a5bf0; background:#eef2ff; }
 .f-card__action--dupe:hover:not(:disabled)  { border-color:#0891b2; color:#0891b2; background:#ecfeff; }
 .f-card__action--del:hover:not(:disabled)   { border-color:#ef4444; color:#ef4444; background:#fef2f2; }
 .f-card__action:disabled { opacity:.35; cursor:not-allowed; }
@@ -1419,11 +1419,11 @@ const CSS = `
   gap:10px; padding:32px; cursor:pointer; transition:all .18s;
   min-height:200px;
 }
-.f-card-add:hover { border-color:#22c55e; background:#f0fdf4; }
+.f-card-add:hover { border-color:#4a68f5; background:#f4f6fb; }
 .f-card-add__icon { width:44px; height:44px; border-radius:12px; background:#f1f5f9; color:#94a3b8; font-size:24px; display:flex; align-items:center; justify-content:center; transition:all .18s; }
-.f-card-add:hover .f-card-add__icon { background:#dcfce7; color:#16a34a; }
+.f-card-add:hover .f-card-add__icon { background:#e8ecff; color:#3a5bf0; }
 .f-card-add__text { font-size:13px; font-weight:600; color:#94a3b8; transition:color .18s; }
-.f-card-add:hover .f-card-add__text { color:#16a34a; }
+.f-card-add:hover .f-card-add__text { color:#3a5bf0; }
 
 /* ── Toggle ────────────────────────────────────────────────────────────────── */
 .f-toggle       { display:flex; align-items:center; gap:7px; cursor:pointer; }
@@ -1437,16 +1437,16 @@ const CSS = `
   width:14px; height:14px; border-radius:50%; background:white;
   box-shadow:0 1px 3px rgba(0,0,0,.2); transition:transform .2s;
 }
-.f-toggle input:checked + .f-toggle__track { background:#22c55e; }
+.f-toggle input:checked + .f-toggle__track { background:#4a68f5; }
 .f-toggle input:checked + .f-toggle__track::after { transform:translateX(16px); }
 .f-toggle input:disabled + .f-toggle__track { opacity:.45; }
 .f-toggle__label     { font-size:11px; font-weight:700; }
-.f-toggle__label--on { color:#16a34a; }
+.f-toggle__label--on { color:#3a5bf0; }
 .f-toggle__label--off{ color:#94a3b8; }
 
 /* ── Status dot ────────────────────────────────────────────────────────────── */
 .f-dot     { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
-.f-dot--on { background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.2); }
+.f-dot--on { background:#4a68f5; box-shadow:0 0 0 3px rgba(58,91,240,.2); }
 .f-dot--off{ background:#e2e8f0; }
 
 /* ── Empty state ───────────────────────────────────────────────────────────── */
@@ -1498,9 +1498,9 @@ const CSS = `
   margin-bottom:-1px; transition:all .14s; display:flex; align-items:center; gap:6px;
 }
 .f-tab:hover    { color:#0f172a; }
-.f-tab--active  { color:#16a34a; border-bottom-color:#16a34a; }
+.f-tab--active  { color:#3a5bf0; border-bottom-color:#3a5bf0; }
 .f-tab__badge   { background:#f1f5f9; color:#64748b; font-size:10px; font-weight:700; padding:1px 6px; border-radius:999px; }
-.f-tab--active .f-tab__badge { background:#dcfce7; color:#15803d; }
+.f-tab--active .f-tab__badge { background:#e8ecff; color:#2c46cf; }
 
 .f-drawer__body  { flex:1; overflow-y:auto; padding:20px 24px; }
 .f-drawer__footer{ padding:16px 24px; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:10px; flex-shrink:0; background:white; }
@@ -1521,7 +1521,7 @@ const CSS = `
   transition:border-color .15s, box-shadow .15s;
   box-sizing:border-box;
 }
-.f-input:focus { border-color:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.1); }
+.f-input:focus { border-color:#4a68f5; box-shadow:0 0 0 3px rgba(58,91,240,.1); }
 .f-input--err  { border-color:#ef4444; }
 .f-input--err:focus { box-shadow:0 0 0 3px rgba(239,68,68,.1); }
 .f-textarea    { height:80px; resize:vertical; }
@@ -1544,9 +1544,9 @@ const CSS = `
 }
 .f-sport-chip span:first-child { font-size:20px; }
 .f-sport-chip span:last-child  { font-size:10px; font-weight:700; color:#64748b; }
-.f-sport-chip:hover { border-color:#22c55e; background:#f0fdf4; }
-.f-sport-chip--active { border-color:#22c55e; background:#f0fdf4; box-shadow:0 0 0 3px rgba(34,197,94,.12); }
-.f-sport-chip--active span:last-child { color:#16a34a; }
+.f-sport-chip:hover { border-color:#4a68f5; background:#f4f6fb; }
+.f-sport-chip--active { border-color:#4a68f5; background:#f4f6fb; box-shadow:0 0 0 3px rgba(58,91,240,.12); }
+.f-sport-chip--active span:last-child { color:#3a5bf0; }
 
 /* Chips */
 .f-chips { display:flex; flex-wrap:wrap; gap:7px; }
@@ -1557,8 +1557,8 @@ const CSS = `
   font-size:12px; font-weight:600; color:#64748b;
   cursor:pointer; transition:all .12s; font-family:inherit;
 }
-.f-chip:hover { border-color:#22c55e; color:#16a34a; background:#f0fdf4; }
-.f-chip--active { background:#16a34a; border-color:#16a34a; color:white; }
+.f-chip:hover { border-color:#4a68f5; color:#3a5bf0; background:#f4f6fb; }
+.f-chip--active { background:#3a5bf0; border-color:#3a5bf0; color:white; }
 .f-chip__check { font-size:10px; }
 
 /* Status toggle */
@@ -1570,13 +1570,13 @@ const CSS = `
   font-size:12px; font-weight:600; color:#64748b;
   cursor:pointer; transition:all .13s; font-family:inherit;
 }
-.f-status-opt--on  { border-color:#22c55e; background:#f0fdf4; color:#15803d; }
+.f-status-opt--on  { border-color:#4a68f5; background:#f4f6fb; color:#2c46cf; }
 .f-status-opt--off { border-color:#e8ecf0; background:#f8fafc; color:#94a3b8; }
 
 /* Hours */
 .f-schedule-head    { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .f-schedule-actions { display:flex; gap:8px; flex-shrink:0; }
-.f-btn-link { background:none; border:none; font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; color:#16a34a; padding:0; }
+.f-btn-link { background:none; border:none; font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; color:#3a5bf0; padding:0; }
 .f-btn-link--red { color:#ef4444; }
 
 .f-hours { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:4px; }
@@ -1590,15 +1590,15 @@ const CSS = `
 .f-hour__tag  { font-size:9px; line-height:1; }
 .f-hour--night { border-color:#e0e7ff; }
 .f-hour--night .f-hour__time { color:#4f46e5; }
-.f-hour:hover  { border-color:#22c55e; background:#f0fdf4; }
-.f-hour--active { background:#0f172a; border-color:#0f172a; }
+.f-hour:hover  { border-color:#4a68f5; background:#f4f6fb; }
+.f-hour--active { background:#3a5bf0; border-color:#3a5bf0; }
 .f-hour--active .f-hour__time { color:white; }
 .f-hour--day-demo, .f-hour--night-demo, .f-hour--sel-demo {
   display:inline-block; width:24px; height:14px; border-radius:4px; vertical-align:middle;
 }
 .f-hour--day-demo   { background:white; border:1.5px solid #e8ecf0; }
 .f-hour--night-demo { background:white; border:1.5px solid #e0e7ff; }
-.f-hour--sel-demo   { background:#0f172a; border:1.5px solid #0f172a; }
+.f-hour--sel-demo   { background:#3a5bf0; border:1.5px solid #3a5bf0; }
 .f-hours-legend     { display:flex; gap:16px; align-items:center; font-size:11px; color:#94a3b8; font-weight:600; flex-wrap:wrap; margin-top:4px; }
 .f-legend__item     { display:flex; align-items:center; gap:5px; }
 
@@ -1624,18 +1624,18 @@ const CSS = `
   cursor:pointer; transition:all .15s;
   background:white;
 }
-.f-upload-area:hover { border-color:#22c55e; background:#f0fdf4; }
+.f-upload-area:hover { border-color:#4a68f5; background:#f4f6fb; }
 .f-upload-area__icon { color:#94a3b8; transition:color .15s; }
-.f-upload-area:hover .f-upload-area__icon { color:#16a34a; }
+.f-upload-area:hover .f-upload-area__icon { color:#3a5bf0; }
 .f-upload-area__text { font-size:13px; font-weight:600; color:#374151; }
 .f-upload-area__sub  { font-size:11px; color:#94a3b8; }
 .f-upload-area__loading { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:13px; color:#94a3b8; }
 
 .f-gallery { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
 .f-gallery-item { position:relative; border-radius:10px; overflow:hidden; aspect-ratio:4/3; border:2px solid transparent; transition:border-color .15s; }
-.f-gallery-item--main { border-color:#22c55e; }
+.f-gallery-item--main { border-color:#4a68f5; }
 .f-gallery-img   { width:100%; height:100%; object-fit:cover; display:block; }
-.f-gallery-main-badge { position:absolute; bottom:6px; left:6px; font-size:9px; font-weight:700; background:#22c55e; color:white; padding:2px 6px; border-radius:999px; letter-spacing:.04em; text-transform:uppercase; }
+.f-gallery-main-badge { position:absolute; bottom:6px; left:6px; font-size:9px; font-weight:700; background:#4a68f5; color:white; padding:2px 6px; border-radius:999px; letter-spacing:.04em; text-transform:uppercase; }
 .f-gallery-actions { position:absolute; top:6px; right:6px; display:flex; gap:4px; opacity:0; transition:opacity .15s; }
 .f-gallery-item:hover .f-gallery-actions { opacity:1; }
 .f-gallery-btn { width:24px; height:24px; border-radius:6px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s; }
@@ -1650,19 +1650,19 @@ const CSS = `
   cursor:pointer; border:none; transition:all .14s;
   white-space:nowrap;
 }
-.f-btn--primary { background:#0f172a; color:white; }
-.f-btn--primary:hover:not(:disabled) { background:#1e293b; }
+.f-btn--primary { background:#3a5bf0; color:white; }
+.f-btn--primary:hover:not(:disabled) { background:#2c46cf; }
 .f-btn--primary:disabled { opacity:.5; cursor:not-allowed; }
 .f-btn--ghost   { background:transparent; color:#374151; border:1.5px solid #e2e8f0; }
 .f-btn--ghost:hover { background:#f8fafc; }
 .f-btn--danger  { background:#ef4444; color:white; }
 .f-btn--danger:hover { background:#dc2626; }
-.f-btn--add     { background:#16a34a; box-shadow:0 2px 8px rgba(22,163,74,.3); }
-.f-btn--add:hover { background:#15803d; transform:translateY(-1px); }
+.f-btn--add     { background:#3a5bf0; box-shadow:0 2px 8px rgba(58,91,240,.3); }
+.f-btn--add:hover { background:#2c46cf; transform:translateY(-1px); }
 .f-btn--sm { padding:6px 13px; font-size:12px; border-radius:8px; }
 
 /* ── Spinner ───────────────────────────────────────────────────────────────── */
-.f-spinner { width:16px; height:16px; border-radius:50%; border:2px solid rgba(0,0,0,.1); border-top-color:#22c55e; animation:fSpin .7s linear infinite; }
+.f-spinner { width:16px; height:16px; border-radius:50%; border:2px solid rgba(0,0,0,.1); border-top-color:#4a68f5; animation:fSpin .7s linear infinite; }
 .f-spinner--sm    { width:13px; height:13px; }
 .f-spinner--white { border-color:rgba(255,255,255,.2); border-top-color:white; }
 @keyframes fSpin { to{transform:rotate(360deg)} }
@@ -1674,7 +1674,7 @@ const CSS = `
   font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif;
   box-shadow:0 8px 32px rgba(0,0,0,.18); animation:fToastIn .2s ease;
 }
-.f-toast--ok  { background:#0f172a; color:white; }
+.f-toast--ok  { background:#3a5bf0; color:white; }
 .f-toast--err { background:#ef4444; color:white; }
 @keyframes fToastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
@@ -1698,12 +1698,12 @@ const CSS = `
 .f-fab {
   display:none; position:fixed; bottom:24px; right:24px;
   width:52px; height:52px; border-radius:50%;
-  background:#16a34a; border:none;
-  box-shadow:0 4px 20px rgba(22,163,74,.45);
+  background:#3a5bf0; border:none;
+  box-shadow:0 4px 20px rgba(58,91,240,.45);
   align-items:center; justify-content:center;
   cursor:pointer; z-index:100; transition:all .15s;
 }
-.f-fab:hover { background:#15803d; transform:scale(1.05); }
+.f-fab:hover { background:#2c46cf; transform:scale(1.05); }
 
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width:900px) {

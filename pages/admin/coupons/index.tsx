@@ -191,8 +191,8 @@ export default function CouponsPage() {
               </button>
               <button onClick={openCreate} style={{
                 display:'flex',alignItems:'center',gap:6,padding:'8px 16px',borderRadius:10,
-                background:'linear-gradient(135deg,#16a34a,#15803d)',color:'#fff',border:'none',
-                fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(22,163,74,.3)',
+                background:'linear-gradient(135deg,#3a5bf0,#2c46cf)',color:'#fff',border:'none',
+                fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(58,91,240,.3)',
               }}>
                 <Plus size={14} /> Nuevo cupón
               </button>
@@ -202,8 +202,8 @@ export default function CouponsPage() {
           {/* KPIs */}
           <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:14,marginBottom:24 }}>
             {[
-              { icon: Tag, bg:'#f0fdf4', color:'#16a34a', value: String(coupons.length), label:'Total cupones' },
-              { icon: ToggleRight, bg:'#eff6ff', color:'#2563eb', value: String(activeCoupons.length), label:'Activos' },
+              { icon: Tag, bg:'#f4f6fb', color:'#3a5bf0', value: String(coupons.length), label:'Total cupones' },
+              { icon: ToggleRight, bg:'#eef2ff', color:'#3a5bf0', value: String(activeCoupons.length), label:'Activos' },
               { icon: Users, bg:'#fffbeb', color:'#d97706', value: String(totalRedemptions), label:'Canjes totales' },
             ].map(k => (
               <div key={k.label} style={{ background:'#fff',border:'1px solid #f1f5f9',borderRadius:14,padding:'16px 18px',boxShadow:'0 1px 4px rgba(0,0,0,.04)' }}>
@@ -236,7 +236,7 @@ export default function CouponsPage() {
               <p style={{ fontSize:13,color:'#94a3b8',margin:'0 0 20px' }}>Creá tu primer cupón de descuento para tus owners.</p>
               <button onClick={openCreate} style={{
                 display:'inline-flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:10,
-                background:'#16a34a',color:'#fff',border:'none',fontSize:13,fontWeight:700,cursor:'pointer',
+                background:'#3a5bf0',color:'#fff',border:'none',fontSize:13,fontWeight:700,cursor:'pointer',
               }}><Plus size={14} /> Crear cupón</button>
             </div>
           )}
@@ -281,9 +281,9 @@ export default function CouponsPage() {
                     {/* Status */}
                     <span style={{
                       fontSize:10,fontWeight:700,padding:'3px 9px',borderRadius:999,
-                      background: c.active ? '#f0fdf4' : '#f1f5f9',
-                      color: c.active ? '#15803d' : '#94a3b8',
-                      border: `1px solid ${c.active ? '#bbf7d0' : '#e2e8f0'}`,
+                      background: c.active ? '#f4f6fb' : '#f1f5f9',
+                      color: c.active ? '#2c46cf' : '#94a3b8',
+                      border: `1px solid ${c.active ? '#dfe6ff' : '#e2e8f0'}`,
                     }}>{c.active ? 'Activo' : 'Inactivo'}</span>
 
                     {/* Actions */}
@@ -292,7 +292,7 @@ export default function CouponsPage() {
                         width:32,height:32,borderRadius:8,border:'1px solid #e2e8f0',background:'#fff',
                         cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
                       }}>
-                        {c.active ? <ToggleRight size={14} color="#16a34a" /> : <ToggleLeft size={14} color="#94a3b8" />}
+                        {c.active ? <ToggleRight size={14} color="#3a5bf0" /> : <ToggleLeft size={14} color="#94a3b8" />}
                       </button>
                       <button onClick={() => openEdit(c)} title="Editar" style={{
                         width:32,height:32,borderRadius:8,border:'1px solid #e2e8f0',background:'#fff',
@@ -366,9 +366,9 @@ export default function CouponsPage() {
                     {(['percentage', 'fixed_usd'] as const).map(t => (
                       <button key={t} onClick={() => setDiscountType(t)} style={{
                         flex:1,padding:'9px 12px',borderRadius:10,
-                        border:`1.5px solid ${discountType === t ? '#16a34a' : '#e2e8f0'}`,
-                        background: discountType === t ? '#f0fdf4' : '#fff',
-                        color: discountType === t ? '#15803d' : '#64748b',
+                        border:`1.5px solid ${discountType === t ? '#3a5bf0' : '#e2e8f0'}`,
+                        background: discountType === t ? '#f4f6fb' : '#fff',
+                        color: discountType === t ? '#2c46cf' : '#64748b',
                         fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',
                         display:'flex',alignItems:'center',justifyContent:'center',gap:4,
                       }}>
@@ -408,8 +408,8 @@ export default function CouponsPage() {
 
               {/* Preview */}
               {discountValue && Number(discountValue) > 0 && (
-                <div style={{ background:'#f0fdf4',borderRadius:10,padding:'10px 14px',border:'1px solid #bbf7d0',
-                  display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#15803d' }}>
+                <div style={{ background:'#f4f6fb',borderRadius:10,padding:'10px 14px',border:'1px solid #dfe6ff',
+                  display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#2c46cf' }}>
                   <Tag size={14} />
                   <strong>{fmtDiscount(discountType, Number(discountValue))}</strong> de descuento
                   {maxUses && <span style={{ color:'#6b7280' }}> · máx {maxUses} usos</span>}
@@ -429,9 +429,9 @@ export default function CouponsPage() {
               }}>Cancelar</button>
               <button onClick={handleSave} disabled={saving} style={{
                 flex:2,padding:12,borderRadius:12,border:'none',
-                background:'linear-gradient(135deg,#16a34a,#15803d)',color:'#fff',
+                background:'linear-gradient(135deg,#3a5bf0,#2c46cf)',color:'#fff',
                 fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
-                boxShadow:'0 2px 8px rgba(22,163,74,.3)',
+                boxShadow:'0 2px 8px rgba(58,91,240,.3)',
                 opacity: saving ? 0.6 : 1,
               }}>
                 {saving ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite',display:'inline' }} /> Guardando...</> : (editing ? 'Guardar cambios' : 'Crear cupón')}

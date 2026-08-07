@@ -19,12 +19,12 @@ const createGolPlayIcon = () => L.divIcon({
     <div style="
       width: 44px; height: 52px;
       position: relative;
-      filter: drop-shadow(0 4px 12px rgba(22,163,74,.5));
+      filter: drop-shadow(0 4px 12px rgba(58,91,240,.5));
     ">
       <div style="
         width: 44px; height: 44px; border-radius: 50% 50% 50% 0;
         transform: rotate(-45deg);
-        background: linear-gradient(135deg, #16a34a, #0B4D2C);
+        background: linear-gradient(135deg, #3a5bf0, #26379e);
         border: 3px solid white;
         box-shadow: 0 2px 8px rgba(0,0,0,.3);
         display: flex; align-items: center; justify-content: center;
@@ -62,18 +62,18 @@ const buildPopupHTML = (name: string, location: string, sport?: string, price?: 
     ${sport ? `
     <div style="
       display: inline-flex; align-items: center; gap: 5px;
-      background: #f0fdf4; color: #15803d;
+      background: #f4f6fb; color: #2c46cf;
       padding: 3px 10px; border-radius: 999px;
       font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-      border: 1px solid #bbf7d0; margin-bottom: 8px;
+      border: 1px solid #dfe6ff; margin-bottom: 8px;
     ">${sport}</div>` : ''}
     <p style="
       font-family: 'Kanit', sans-serif;
-      font-size: 15px; font-weight: 700; color: #1a1d19;
+      font-size: 15px; font-weight: 700; color: #1a2140;
       margin: 0 0 4px; line-height: 1.2;
     ">${name}</p>
     <p style="
-      font-size: 12px; color: #6b7569;
+      font-size: 12px; color: #6b7385;
       margin: 0 0 8px; display: flex; align-items: center; gap: 4px;
     ">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -86,10 +86,10 @@ const buildPopupHTML = (name: string, location: string, sport?: string, price?: 
       display: flex; justify-content: space-between; align-items: center;
       padding-top: 8px; border-top: 1px solid #e8ece6;
     ">
-      <span style="font-size: 11px; color: #6b7569; font-weight: 500;">Desde</span>
+      <span style="font-size: 11px; color: #6b7385; font-weight: 500;">Desde</span>
       <span style="
         font-family: 'Kanit', sans-serif;
-        font-size: 15px; font-weight: 800; color: #16a34a;
+        font-size: 15px; font-weight: 800; color: #3a5bf0;
       ">${price}</span>
     </div>` : ''}
   </div>

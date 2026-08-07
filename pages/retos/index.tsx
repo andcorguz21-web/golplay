@@ -6,7 +6,7 @@
  *   - Theme: dark (envuelto en <div className="theme-dark">).
  *   - Navbar: <Navbar dark={true} /> reemplaza el header inline.
  *   - Tipografía: Syne (var(--font-d)) + DM Sans (body default).
- *   - Tokens CSS: var(--g4), var(--g5), var(--g6), var(--g7).
+ *   - Tokens CSS: var(--blue), var(--blue), var(--g6), var(--g7).
  *   - Link "Mis retos" movido al hero como botón secundario.
  *
  * Sin cambios:
@@ -60,10 +60,10 @@ interface MyChallengeRef {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPORT_META: Record<string, { label: string; emoji: string; color: string }> = {
-  futbol5:  { label: 'Fútbol 5',  emoji: '⚽',  color: '#16a34a' },
-  futbol7:  { label: 'Fútbol 7',  emoji: '⚽',  color: '#16a34a' },
-  futbol8:  { label: 'Fútbol 8',  emoji: '⚽',  color: '#16a34a' },
-  futbol11: { label: 'Fútbol 11', emoji: '⚽',  color: '#16a34a' },
+  futbol5:  { label: 'Fútbol 5',  emoji: '⚽',  color: '#3a5bf0' },
+  futbol7:  { label: 'Fútbol 7',  emoji: '⚽',  color: '#3a5bf0' },
+  futbol8:  { label: 'Fútbol 8',  emoji: '⚽',  color: '#3a5bf0' },
+  futbol11: { label: 'Fútbol 11', emoji: '⚽',  color: '#3a5bf0' },
   padel:    { label: 'Pádel',     emoji: '🎾',  color: '#eab308' },
   tenis:    { label: 'Tenis',     emoji: '🎾',  color: '#eab308' },
   basquet:  { label: 'Básquet',   emoji: '🏀',  color: '#f97316' },
@@ -214,8 +214,8 @@ export default function RetosFeedPage({ challenges }: Props) {
       </Head>
       <style>{CSS}</style>
 
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         <div className="rt-wrap">
           {/* Hero */}
@@ -411,7 +411,7 @@ const CSS = `
 .rt-hero__eyebrow {
   font-size: 11px;
   font-weight: 700;
-  color: var(--g4);
+  color: var(--blue);
   letter-spacing: .14em;
   margin: 0 0 12px;
 }
@@ -420,13 +420,13 @@ const CSS = `
   font-size: clamp(36px, 6vw, 52px);
   font-weight: 800;
   letter-spacing: -.02em;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 14px;
   line-height: 1.05;
 }
 .rt-hero__sub {
   font-size: 15px;
-  color: rgba(255,255,255,.6);
+  color: var(--ink2);
   margin: 0 0 24px;
   line-height: 1.6;
 }
@@ -446,7 +446,7 @@ const CSS = `
 .rt-mine__title {
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .08em;
   margin: 0 0 10px;
@@ -461,24 +461,24 @@ const CSS = `
   flex-direction: column;
   gap: 4px;
   padding: 10px 14px;
-  background: rgba(74,222,128,.08);
-  border: 1px solid rgba(74,222,128,.2);
+  background: rgba(58,91,240,.08);
+  border: 1px solid rgba(58,91,240,.2);
   border-radius: 10px;
   text-decoration: none;
   min-width: 140px;
   transition: all .15s;
 }
-.rt-mine__card:hover { background: rgba(74,222,128,.14); }
+.rt-mine__card:hover { background: rgba(58,91,240,.14); }
 .rt-mine__role {
   font-size: 10px;
   font-weight: 700;
-  color: var(--g4);
+  color: var(--blue);
   letter-spacing: .06em;
 }
 .rt-mine__team {
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color:var(--ink);
 }
 
 /* — Filtros ──────────────────────────────────────────────────── */
@@ -498,9 +498,9 @@ const CSS = `
 .rt-filter {
   padding: 7px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--line);
   background: transparent;
-  color: rgba(255,255,255,.6);
+  color: var(--ink2);
   font-size: 12px;
   font-weight: 600;
   font-family: inherit;
@@ -508,13 +508,13 @@ const CSS = `
   transition: all .13s;
 }
 .rt-filter:hover {
-  color: #fff;
-  border-color: rgba(255,255,255,.25);
+  color:var(--ink);
+  border-color: var(--faint);
 }
 .rt-filter--active {
-  border-color: var(--g5);
-  background: rgba(34,197,94,.12);
-  color: var(--g4);
+  border-color: var(--blue);
+  background: rgba(58,91,240,.12);
+  color: var(--blue);
   font-weight: 700;
 }
 
@@ -530,8 +530,8 @@ const CSS = `
 
 /* — Card ─────────────────────────────────────────────────────── */
 .rt-card {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 20px;
   cursor: pointer;
@@ -543,10 +543,10 @@ const CSS = `
   gap: 16px;
 }
 .rt-card:hover {
-  background: rgba(255,255,255,.06);
-  border-color: rgba(74,222,128,.3);
+  background: var(--line);
+  border-color: rgba(58,91,240,.3);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  box-shadow: 0 8px 24px rgba(20,26,51,.12);
 }
 
 .rt-card__head {
@@ -569,7 +569,7 @@ const CSS = `
   color: #fbbf24;
 }
 .rt-card__score--new {
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   font-weight: 500;
 }
 
@@ -591,25 +591,25 @@ const CSS = `
   width: 44px;
   height: 44px;
   border-radius: 13px;
-  background: rgba(34,197,94,.15);
-  border: 2px solid rgba(34,197,94,.3);
+  background: rgba(58,91,240,.15);
+  border: 2px solid rgba(58,91,240,.3);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   font-weight: 800;
-  color: var(--g4);
+  color: var(--blue);
   font-family: var(--font-d);
 }
 .rt-card__avatar--empty {
-  background: rgba(255,255,255,.04);
-  border: 2px dashed rgba(255,255,255,.18);
-  color: rgba(255,255,255,.4);
+  background: #fff;
+  border: 2px dashed var(--line);
+  color: var(--muted);
 }
 .rt-card__team-name {
   font-size: 12px;
   font-weight: 700;
-  color: #fff;
+  color:var(--ink);
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -617,20 +617,20 @@ const CSS = `
   text-align: center;
 }
 .rt-card__team-name--empty {
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   font-weight: 500;
 }
 .rt-card__vs {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255,255,255,.06);
+  background: var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 9px;
   font-weight: 800;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   flex-shrink: 0;
   letter-spacing: .05em;
   font-family: var(--font-d);
@@ -646,7 +646,7 @@ const CSS = `
   gap: 8px;
   align-items: flex-start;
   font-size: 13px;
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   line-height: 1.4;
 }
 .rt-card__icon {
@@ -656,10 +656,10 @@ const CSS = `
 }
 .rt-card__desc {
   font-style: italic;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
 }
 .rt-card__badge { font-size: 11px; }
-.rt-card__badge--ok  { color: var(--g4); }
+.rt-card__badge--ok  { color: var(--blue); }
 .rt-card__badge--tbd { color: #fbbf24; }
 
 .rt-card__foot {
@@ -667,21 +667,21 @@ const CSS = `
   justify-content: space-between;
   align-items: center;
   padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid var(--line);
 }
 .rt-card__when {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
 }
 .rt-card__cta {
   font-size: 12px;
   font-weight: 700;
-  color: var(--g4);
+  color: var(--blue);
   padding: 6px 12px;
   border-radius: 8px;
-  background: rgba(74,222,128,.1);
-  border: 1px solid rgba(74,222,128,.2);
+  background: rgba(58,91,240,.1);
+  border: 1px solid rgba(58,91,240,.2);
 }
 
 /* — Empty state ──────────────────────────────────────────────── */
@@ -701,12 +701,12 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 26px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 8px;
 }
 .rt-empty__sub {
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin: 0 0 22px;
   line-height: 1.6;
 }
@@ -718,36 +718,37 @@ const CSS = `
   justify-content: center;
   gap: 8px;
   padding: 13px 26px;
-  border-radius: 12px;
+  border-radius: 99px;
   font-size: 14px;
   font-weight: 700;
-  font-family: var(--font-d);
+  font-family: var(--font-u);
   cursor: pointer;
   border: none;
   text-decoration: none;
   transition: all .15s;
 }
 .rt-btn--big {
-  padding: 16px 30px;
+  padding: 16px 32px;
   font-size: 15px;
 }
 .rt-btn--primary {
-  background: linear-gradient(135deg, var(--g6), var(--g7));
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(22,163,74,.3);
+  background: var(--blue);
+  color:#fff;
+  box-shadow: 0 8px 22px rgba(58,91,240,.28);
 }
 .rt-btn--primary:hover {
+  background: var(--blue2);
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(22,163,74,.4);
+  box-shadow: 0 12px 28px rgba(58,91,240,.35);
 }
 .rt-btn--secondary {
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.85);
-  border: 1px solid rgba(255,255,255,.12);
+  background: #fff;
+  color: var(--ink2);
+  border: 1px solid var(--line);
 }
 .rt-btn--secondary:hover {
-  background: rgba(255,255,255,.1);
-  border-color: rgba(255,255,255,.2);
+  background: var(--paper);
+  border-color: var(--faint);
 }
 
 /* — Footer ───────────────────────────────────────────────────── */
@@ -756,18 +757,18 @@ const CSS = `
   margin: 60px auto 0;
   padding: 30px 24px;
   text-align: center;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid var(--line);
 }
 .rt-foot__brand {
   font-family: var(--font-d);
   font-size: 18px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 4px;
 }
 .rt-foot__sub {
   font-size: 12px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   margin: 0;
 }
 

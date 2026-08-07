@@ -34,9 +34,9 @@ const SPORT_META: Record<string, { label: string; emoji: string }> = {
 
 const STATUS_CFG: Record<TournamentStatus, { label: string; color: string; bg: string }> = {
   DRAFT:       { label: 'Borrador',               color: '#6b7280', bg: '#f1f5f9' },
-  OPEN:        { label: 'Inscripciones abiertas', color: '#16a34a', bg: '#f0fdf4' },
+  OPEN:        { label: 'Inscripciones abiertas', color: '#3a5bf0', bg: '#f4f6fb' },
   FULL:        { label: 'Lleno',                  color: '#d97706', bg: '#fffbeb' },
-  IN_PROGRESS: { label: 'En curso',               color: '#2563eb', bg: '#eff6ff' },
+  IN_PROGRESS: { label: 'En curso',               color: '#3a5bf0', bg: '#eef2ff' },
   FINISHED:    { label: 'Finalizado',             color: '#7c3aed', bg: '#f5f3ff' },
   CANCELLED:   { label: 'Cancelado',              color: '#dc2626', bg: '#fef2f2' },
 }
@@ -317,26 +317,26 @@ const CSS = `
 .tn-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 20px; }
 .tn-tab { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 9px; font-size: 12px; font-weight: 600; font-family: inherit; border: 1.5px solid transparent; background: white; color: #64748b; cursor: pointer; transition: all .13s; }
 .tn-tab:hover { background: #f8fafc; color: #0f172a; border-color: #e2e8f0; }
-.tn-tab--active { background: #0f172a; color: white; border-color: #0f172a; }
+.tn-tab--active { background:#3a5bf0; color: white; border-color:#3a5bf0; }
 .tn-tab__count { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,.07); }
 .tn-tab--active .tn-tab__count { background: rgba(255,255,255,.18); }
 
 .tn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 
 .tn-card { background: white; border: 1px solid #eaecf0; border-radius: 16px; overflow: hidden; transition: all .15s; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
-.tn-card:hover { border-color: #16a34a; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.tn-card:hover { border-color: #3a5bf0; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
 
-.tn-card__cover { height: 140px; background: linear-gradient(135deg, #052e16 0%, #0B4D2C 100%); position: relative; overflow: hidden; }
+.tn-card__cover { height: 140px; background: linear-gradient(135deg, #141a33 0%, #26379e 100%); position: relative; overflow: hidden; }
 .tn-card__cover-img { width: 100%; height: 100%; object-fit: cover; }
 .tn-card__cover-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .tn-card__cover-emoji { font-size: 56px; opacity: .35; }
 
 .tn-badge { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; text-transform: uppercase; letter-spacing: .03em; }
 .tn-badge--abs-tl { position: absolute; top: 12px; left: 12px; }
-.tn-badge--external { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,.95); color: #0B4D2C; }
+.tn-badge--external { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,.95); color: #26379e; }
 
 .tn-card__body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.tn-card__sport { font-size: 11px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+.tn-card__sport { font-size: 11px; font-weight: 700; color: #3a5bf0; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
 .tn-card__name { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.25; }
 
 .tn-card__rows { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
@@ -351,14 +351,14 @@ const CSS = `
 .tn-empty { text-align: center; padding: 64px 24px; background: white; border-radius: 16px; border: 1px solid #eaecf0; color: #64748b; }
 
 .tn-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; border: none; transition: all .15s; text-decoration: none; }
-.tn-btn--primary { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; box-shadow: 0 2px 12px rgba(22,163,74,.25); }
-.tn-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(22,163,74,.35); }
+.tn-btn--primary { background: linear-gradient(135deg, #3a5bf0, #2c46cf); color: #fff; box-shadow: 0 2px 12px rgba(58,91,240,.25); }
+.tn-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(58,91,240,.35); }
 .tn-btn--ghost { background: #f1f5f9; color: #374151; }
 .tn-btn--ghost:hover { background: #e2e8f0; }
 
 .tn-toast { position: fixed; bottom: 28px; right: 28px; z-index: 9999; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; box-shadow: 0 8px 32px rgba(0,0,0,.18); animation: tnToastIn .2s ease; }
 @keyframes tnToastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.tn-toast--ok { background: #0f172a; color: white; }
+.tn-toast--ok { background:#3a5bf0; color: white; }
 .tn-toast--err { background: #ef4444; color: white; }
 
 @media (max-width: 640px) {

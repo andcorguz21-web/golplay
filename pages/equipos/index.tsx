@@ -14,43 +14,43 @@ type TeamRow = {
 type State = "loading" | "no_player" | "ready" | "error";
 
 const CSS = `${GOLPLAY_BASE_CSS}
-.page { min-height: 100vh; background: var(--dark); padding-top: 62px; }
-.page .eyebrow { color: var(--g4); }
-.page .h2 { color: #fff; }
-.page .h2 em { color: var(--g4); }
+.page { min-height: 100vh; background: var(--paper); padding-top: 62px; }
+.page .eyebrow { color: var(--blue); }
+.page .h2 { color: var(--ink); }
+.page .h2 em { color: var(--blue); }
 .header-section { padding: 48px clamp(16px,4vw,40px) 28px; max-width: 1100px; margin: 0 auto; }
 .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .title-block { animation: fadeUp .5s ease both; }
 .create-cta {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 11px 22px; background: var(--g6); color: #fff;
-  border-radius: 12px; font-family: inherit; font-weight: 700; font-size: 13px;
-  text-decoration: none; box-shadow: 0 2px 10px rgba(22,163,74,.28);
+  padding: 12px 24px; background: var(--blue); color: #fff;
+  border-radius: 99px; font-family: inherit; font-weight: 700; font-size: 13px;
+  text-decoration: none; box-shadow: 0 8px 20px rgba(58,91,240,.28);
   transition: all .15s ease; border: none; cursor: pointer;
 }
-.create-cta:hover { background: var(--g7); transform: translateY(-1px); }
+.create-cta:hover { background: var(--blue2); transform: translateY(-1px); }
 .content-section { padding: 0 clamp(16px,4vw,40px) clamp(60px,8vw,100px); max-width: 1100px; margin: 0 auto; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; }
 .team-card {
   display: flex; gap: 14px; padding: 18px;
-  border: 1.5px solid rgba(255,255,255,.08); border-radius: var(--r-lg);
-  background: rgba(255,255,255,.04); text-decoration: none; color: inherit;
+  border: 1.5px solid var(--line); border-radius: var(--r-lg);
+  background: var(--card); text-decoration: none; color: inherit;
   transition: all .22s cubic-bezier(.16,1,.3,1); align-items: center;
   animation: fadeUp .5s ease both; position: relative;
 }
-.team-card:hover { border-color: var(--g4); transform: translateY(-4px); background: rgba(255,255,255,.06); box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+.team-card:hover { border-color: var(--blue); transform: translateY(-4px); background: var(--card); box-shadow: 0 12px 30px rgba(20,26,51,.10); }
 .card-logo {
   width: 64px; height: 64px; border-radius: 14px; flex-shrink: 0;
-  background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center;
+  background: var(--paper); display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
 .card-logo img { width: 100%; height: 100%; object-fit: cover; }
-.card-logo-fallback { color: var(--g4); font-family: var(--font-d); font-size: 28px; font-weight: 800; line-height: 1; }
+.card-logo-fallback { color: var(--blue); font-family: var(--font-d); font-size: 28px; font-weight: 800; line-height: 1; }
 .card-body { flex: 1; min-width: 0; }
 .card-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .card-name {
   font-family: var(--font-d); font-weight: 800; font-size: 17px;
-  color: #fff; letter-spacing: -.01em;
+  color: var(--ink); letter-spacing: -.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   flex: 1; min-width: 0;
 }
@@ -69,19 +69,19 @@ const CSS = `${GOLPLAY_BASE_CSS}
   font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   padding: 3px 9px; border-radius: 99px;
 }
-.role-pill.captain { background: rgba(34,197,94,.14); color: var(--g4); border: 1px solid rgba(74,222,128,.25); }
-.role-pill.member { background: rgba(255,255,255,.06); color: #9ca3af; border: 1px solid rgba(255,255,255,.1); }
-.card-date { font-size: 11px; color: rgba(255,255,255,.45); }
-.empty { text-align: center; padding: 60px 28px; background: rgba(255,255,255,.03); border: 1.5px dashed rgba(255,255,255,.12); border-radius: var(--r-xl); }
+.role-pill.captain { background: rgba(58,91,240,.12); color: var(--blue); border: 1px solid rgba(58,91,240,.25); }
+.role-pill.member { background: var(--paper); color: #6b7385; border: 1px solid var(--line); }
+.card-date { font-size: 11px; color: var(--muted); }
+.empty { text-align: center; padding: 60px 28px; background: var(--paper); border: 1.5px dashed var(--line); border-radius: var(--r-xl); }
 .empty-emoji { font-size: 48px; margin-bottom: 16px; display: block; }
-.empty-title { font-family: var(--font-d); font-size: 26px; font-weight: 800; color: #fff; margin: 0 0 8px; letter-spacing: -.02em; }
-.empty-text { color: #9ca3af; margin: 0 auto 22px; font-size: 14px; line-height: 1.6; max-width: 360px; }
-.warn-card { background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08); border-radius: var(--r-xl); padding: 36px 28px; text-align: center; max-width: 480px; margin: 12px auto; animation: fadeUp .5s ease both; }
+.empty-title { font-family: var(--font-d); font-size: 26px; font-weight: 800; color: var(--ink); margin: 0 0 8px; letter-spacing: -.02em; }
+.empty-text { color: #6b7385; margin: 0 auto 22px; font-size: 14px; line-height: 1.6; max-width: 360px; }
+.warn-card { background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r-xl); padding: 36px 28px; text-align: center; max-width: 480px; margin: 12px auto; box-shadow: 0 12px 30px rgba(20,26,51,.06); animation: fadeUp .5s ease both; }
 .warn-emoji { font-size: 44px; margin-bottom: 12px; display: block; }
-.warn-title { font-family: var(--font-d); font-size: 24px; font-weight: 800; color: #fff; margin: 0 0 10px; letter-spacing: -.02em; }
-.warn-text { color: #9ca3af; margin: 0 0 22px; font-size: 14px; line-height: 1.6; }
-.skeleton-card { height: 100px; border: 1.5px solid rgba(255,255,255,.08); border-radius: var(--r-lg); background: rgba(255,255,255,.03); padding: 18px; display: flex; gap: 14px; align-items: center; }
-.page .sk { background: rgba(255,255,255,.06); }
+.warn-title { font-family: var(--font-d); font-size: 24px; font-weight: 800; color: var(--ink); margin: 0 0 10px; letter-spacing: -.02em; }
+.warn-text { color: #6b7385; margin: 0 0 22px; font-size: 14px; line-height: 1.6; }
+.skeleton-card { height: 100px; border: 1.5px solid var(--line); border-radius: var(--r-lg); background: var(--paper); padding: 18px; display: flex; gap: 14px; align-items: center; }
+.page .sk { background: #eef1f8; }
 `;
 
 function teamInitial(name: string): string { return name.trim()[0]?.toUpperCase() ?? "?"; }
@@ -122,7 +122,7 @@ export default function MisEquipos() {
     <>
       <Head><title>Mis equipos · GolPlay</title></Head>
       <style>{CSS}</style>
-      <Navbar dark={true} />
+      <Navbar />
       <div className="page">
         <div className="header-section">
           <div className="header-row">

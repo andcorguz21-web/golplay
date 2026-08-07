@@ -291,7 +291,7 @@ const CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #052e16 0%, #14532d 50%, #166534 100%);
+  background: linear-gradient(135deg, #141a33 0%, #1e2a66 50%, #26379e 100%);
   padding: 20px;
   position: relative;
   overflow: hidden;
@@ -328,34 +328,34 @@ const CSS = `
 }
 
 .rp-card {
-  background: var(--dark2);
-  border: 1px solid rgba(255,255,255,.08);
+  background: var(--card);
+  border: 1px solid var(--line);
   border-radius: 24px;
   padding: 36px 32px;
-  box-shadow: 0 25px 60px rgba(0,0,0,.45);
+  box-shadow: 0 25px 60px rgba(20,26,51,.28);
 }
 
 .rp-title {
   font-family: var(--font-d);
   font-size: 22px;
   font-weight: 800;
-  color: #fff;
+  color: var(--ink);
   letter-spacing: -.02em;
 }
 
 .rp-text {
   font-size: 14px;
-  color: rgba(255,255,255,.65);
+  color: var(--ink2);
   line-height: 1.7;
   margin-bottom: 24px;
 }
-.rp-muted { font-size: 13px; color: rgba(255,255,255,.4); }
+.rp-muted { font-size: 13px; color: var(--muted); }
 
 .rp-done-circle {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: rgba(74,222,128,.12);
+  background: rgba(58,91,240,.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -373,61 +373,61 @@ const CSS = `
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: rgba(74,222,128,.12);
+  background: rgba(58,91,240,.12);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.rp-head__sub { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 2px; }
+.rp-head__sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
 /* — Error ────────────────────────────────────────────────────── */
 .rp-error {
   display: flex;
   gap: 10px;
-  background: rgba(248,113,113,.1);
-  border: 1px solid rgba(248,113,113,.3);
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 20px;
 }
-.rp-error span { font-size: 13px; color: #fca5a5; line-height: 1.5; }
+.rp-error span { font-size: 13px; color: #dc2626; line-height: 1.5; }
 
 /* — Fields ───────────────────────────────────────────────────── */
 .rp-label {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,.85);
+  color: var(--ink2);
   margin-bottom: 6px;
 }
 .rp-pass-wrap { position: relative; }
 .rp-input {
   width: 100%;
-  padding: 11px 14px;
+  padding: 13px 16px;
   font-size: 14px;
-  border-radius: 11px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
   outline: none;
   font-family: inherit;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
-.rp-input::placeholder { color: rgba(255,255,255,.3); }
+.rp-input::placeholder { color: var(--faint); }
 .rp-input:focus {
-  border-color: var(--g4);
-  box-shadow: 0 0 0 3px rgba(74,222,128,.15);
-  background: rgba(255,255,255,.06);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(58,91,240,.14);
+  background: #fff;
 }
-.rp-input--err { border-color: #f87171; }
+.rp-input--err { border-color: #ef4444; }
 .rp-input--pass { padding-right: 44px; }
 .rp-input:-webkit-autofill,
 .rp-input:-webkit-autofill:hover,
 .rp-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px rgba(8,14,10,.95) inset;
-  -webkit-text-fill-color: #fff;
-  caret-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
 }
 
 .rp-eye {
@@ -438,21 +438,21 @@ const CSS = `
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255,255,255,.5);
+  color: var(--faint);
   display: flex;
   align-items: center;
   padding: 2px;
   transition: color .15s;
 }
-.rp-eye:hover { color: #fff; }
+.rp-eye:hover { color: var(--ink2); }
 
-.rp-field-error { font-size: 12px; color: #fca5a5; margin-top: 4px; }
-.rp-valid { font-size: 12px; color: var(--g4); margin-top: 4px; }
+.rp-field-error { font-size: 12px; color: #dc2626; margin-top: 4px; }
+.rp-valid { font-size: 12px; color: var(--blue); margin-top: 4px; }
 
 /* — Requisitos ───────────────────────────────────────────────── */
 .rp-reqs {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.06);
+  background: var(--paper);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 14px;
   margin: 8px 0 20px;
@@ -460,7 +460,7 @@ const CSS = `
 .rp-reqs__title {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: .05em;
@@ -471,34 +471,35 @@ const CSS = `
   gap: 6px;
   margin-bottom: 3px;
 }
-.rp-req__mark { font-size: 12px; color: rgba(255,255,255,.3); }
-.rp-req__label { font-size: 12px; color: rgba(255,255,255,.5); }
+.rp-req__mark { font-size: 12px; color: var(--faint); }
+.rp-req__label { font-size: 12px; color: var(--muted); }
 .rp-req--ok .rp-req__mark,
-.rp-req--ok .rp-req__label { color: var(--g4); }
+.rp-req--ok .rp-req__label { color: var(--blue); }
 
 /* — Buttons ──────────────────────────────────────────────────── */
 .rp-btn {
   width: 100%;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 15px;
+  border-radius: 99px;
   border: none;
-  background: linear-gradient(135deg, var(--g6), var(--g7));
+  background: var(--blue);
   color: #fff;
   font-weight: 700;
   font-size: 15px;
-  font-family: var(--font-d);
+  font-family: var(--font-u);
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(22,163,74,.25);
+  box-shadow: 0 8px 22px rgba(58,91,240,.28);
   margin-bottom: 16px;
   transition: all .15s;
 }
 .rp-btn:hover:not(:disabled) {
+  background: var(--blue2);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(22,163,74,.35);
+  box-shadow: 0 12px 28px rgba(58,91,240,.35);
 }
 .rp-btn:disabled {
-  background: rgba(255,255,255,.1);
-  color: rgba(255,255,255,.4);
+  background: #e7ebf3;
+  color: var(--faint);
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -513,24 +514,24 @@ const CSS = `
   display: block;
   text-align: center;
   font-size: 13px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   text-decoration: none;
   font-weight: 500;
 }
-.rp-back:hover { color: rgba(255,255,255,.8); }
+.rp-back:hover { color: var(--ink2); }
 
 .rp-linkBtn {
   display: inline-block;
-  background: linear-gradient(135deg, var(--g6), var(--g7));
+  background: var(--blue);
   color: #fff;
-  padding: 12px 24px;
-  border-radius: 12px;
+  padding: 13px 26px;
+  border-radius: 99px;
   font-weight: 700;
   font-size: 14px;
-  font-family: var(--font-d);
+  font-family: var(--font-u);
   text-decoration: none;
-  box-shadow: 0 4px 16px rgba(22,163,74,.25);
+  box-shadow: 0 8px 22px rgba(58,91,240,.28);
   transition: all .15s;
 }
-.rp-linkBtn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(22,163,74,.35); }
+.rp-linkBtn:hover { background: var(--blue2); transform: translateY(-1px); box-shadow: 0 12px 28px rgba(58,91,240,.35); }
 `

@@ -94,7 +94,7 @@ export default function MapView({ fields, onSelect }: Props) {
           <button
             onClick={() => onSelect(f.id)}
             style={{
-              background: '#16a34a',
+              background: '#3a5bf0',
               color: 'white',
               border: 'none',
               borderRadius: '50%',

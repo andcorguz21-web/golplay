@@ -73,10 +73,10 @@ const SPORT_LABELS: Record<string, { label: string; emoji: string }> = {
 }
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  open: { label: 'Buscando rival', color: '#2563eb', bg: '#eff6ff' },
+  open: { label: 'Buscando rival', color: '#3a5bf0', bg: '#eef2ff' },
   challenged: { label: 'Rival encontrado', color: '#d97706', bg: '#fffbeb' },
   pending_pay: { label: 'Pago pendiente', color: '#d97706', bg: '#fffbeb' },
-  confirmed: { label: 'Confirmado', color: '#16a34a', bg: '#f0fdf4' },
+  confirmed: { label: 'Confirmado', color: '#3a5bf0', bg: '#f4f6fb' },
   expired: { label: 'Expirado', color: '#6b7280', bg: '#f1f5f9' },
   cancelled: { label: 'Cancelado', color: '#dc2626', bg: '#fef2f2' },
   completed: { label: 'Jugado', color: '#7c3aed', bg: '#f5f3ff' },
@@ -84,8 +84,8 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> =
 
 const RESP_STATUS: Record<string, { label: string; color: string; bg: string }> = {
   joined: { label: 'Esperando pago', color: '#d97706', bg: '#fffbeb' },
-  payment_sent: { label: 'Pago enviado', color: '#2563eb', bg: '#eff6ff' },
-  payment_ok: { label: 'Pago validado', color: '#16a34a', bg: '#f0fdf4' },
+  payment_sent: { label: 'Pago enviado', color: '#3a5bf0', bg: '#eef2ff' },
+  payment_ok: { label: 'Pago validado', color: '#3a5bf0', bg: '#f4f6fb' },
   rejected: { label: 'Rechazado', color: '#dc2626', bg: '#fef2f2' },
   no_payment: { label: 'No pago', color: '#6b7280', bg: '#f1f5f9' },
   cancelled: { label: 'Se retiro', color: '#6b7280', bg: '#f1f5f9' },
@@ -344,14 +344,14 @@ export default function AdminChallenges() {
     respTeam: { fontSize: 14, fontWeight: 700, color: '#0f172a', display: 'block' as const },
     respCaptain: { fontSize: 12, color: '#64748b', display: 'block' as const, marginTop: 2 },
     respEmail: { fontSize: 11, color: '#94a3b8', display: 'block' as const },
-    respSinpe: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, padding: '10px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 13, color: '#1e40af', flexWrap: 'wrap' as const },
+    respSinpe: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, padding: '10px 12px', background: '#eef2ff', border: '1px solid #cdd8ff', borderRadius: 8, fontSize: 13, color: '#2c46cf', flexWrap: 'wrap' as const },
     respActions: { display: 'flex', gap: 8, marginTop: 10 },
-    respValidated: { fontSize: 12, color: '#16a34a', fontWeight: 600, margin: '8px 0 0' },
+    respValidated: { fontSize: 12, color: '#3a5bf0', fontWeight: 600, margin: '8px 0 0' },
     noResp: { padding: 24, textAlign: 'center' as const, color: '#94a3b8', fontSize: 13, background: '#f8fafc', borderRadius: 12, marginTop: 16 },
     empty: { textAlign: 'center' as const, padding: '64px 24px', background: '#fff', borderRadius: 16, border: '1px solid #eaecf0', color: '#64748b' },
     overlay: { position: 'fixed' as const, inset: 0, background: 'rgba(15,23,42,.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500, padding: 20 },
     modal: { background: '#fff', borderRadius: 22, width: '100%', maxWidth: 540, boxShadow: '0 24px 80px rgba(0,0,0,.2)', overflow: 'hidden', maxHeight: '92vh', display: 'flex', flexDirection: 'column' as const },
-    modalHeader: { padding: '24px 24px 20px', background: 'linear-gradient(160deg,#052e16 0%,#0B4D2C 100%)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
+    modalHeader: { padding: '24px 24px 20px', background: 'linear-gradient(160deg,#141a33 0%,#26379e 100%)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
     modalLabel: { fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: 'rgba(255,255,255,.5)', textTransform: 'uppercase' as const, margin: '0 0 4px' },
     modalTitle: { fontSize: 20, fontWeight: 800, margin: 0, color: '#fff' },
     modalClose: { background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.15)', color: 'rgba(255,255,255,.6)', width: 32, height: 32, borderRadius: 10, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' },
@@ -368,9 +368,9 @@ export default function AdminChallenges() {
   }
 
   const btnBase: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', border: 'none' }
-  const btnPrimary: React.CSSProperties = { ...btnBase, background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', boxShadow: '0 2px 12px rgba(22,163,74,.25)' }
+  const btnPrimary: React.CSSProperties = { ...btnBase, background: 'linear-gradient(135deg,#3a5bf0,#2c46cf)', color: '#fff', boxShadow: '0 2px 12px rgba(58,91,240,.25)' }
   const btnGhost: React.CSSProperties = { ...btnBase, background: '#f1f5f9', color: '#374151' }
-  const btnSuccess: React.CSSProperties = { ...btnBase, background: '#16a34a', color: '#fff', padding: '7px 14px', fontSize: 12 }
+  const btnSuccess: React.CSSProperties = { ...btnBase, background: '#3a5bf0', color: '#fff', padding: '7px 14px', fontSize: 12 }
   const btnDanger: React.CSSProperties = { ...btnBase, background: '#ef4444', color: '#fff', padding: '7px 14px', fontSize: 12 }
   const btnSm: React.CSSProperties = { padding: '7px 14px', fontSize: 12, borderRadius: 8 }
 
@@ -387,8 +387,8 @@ export default function AdminChallenges() {
 
   const fieldCardStyle = (sel: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10,
-    border: sel ? '1.5px solid #16a34a' : '1.5px solid #e2e8f0',
-    background: sel ? '#16a34a' : '#fff', color: sel ? '#fff' : '#374151',
+    border: sel ? '1.5px solid #3a5bf0' : '1.5px solid #e2e8f0',
+    background: sel ? '#3a5bf0' : '#fff', color: sel ? '#fff' : '#374151',
     cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
   })
 
@@ -475,7 +475,7 @@ export default function AdminChallenges() {
                     <div style={S.cardBody}>
                       <div style={S.detailGrid}>
                         <div style={S.detailRow}><span style={S.detailLabel}>Deporte</span><span style={S.detailValue}>{sp.emoji} {sp.label}</span></div>
-                        <div style={S.detailRow}><span style={S.detailLabel}>Senal requerida</span><span style={{ ...S.detailValue, color: '#16a34a', fontWeight: 700 }}>{fmtCRC(ch.deposit_amount)}</span></div>
+                        <div style={S.detailRow}><span style={S.detailLabel}>Senal requerida</span><span style={{ ...S.detailValue, color: '#3a5bf0', fontWeight: 700 }}>{fmtCRC(ch.deposit_amount)}</span></div>
                         <div style={S.detailRow}><span style={S.detailLabel}>SINPE a</span><span style={S.detailValue}>{ch.sinpe_number}</span></div>
                         <div style={S.detailRow}><span style={S.detailLabel}>Deadline pago</span><span style={S.detailValue}>{fmtDateTime(ch.payment_deadline)}</span></div>
                         {ch.team_a_captain && <div style={S.detailRow}><span style={S.detailLabel}>Capitan Eq. A</span><span style={S.detailValue}>{ch.team_a_captain} {ch.team_a_phone ? '- ' + ch.team_a_phone : ''}</span></div>}

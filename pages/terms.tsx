@@ -42,11 +42,11 @@ const SECTIONS = [
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
-  ::selection { background: var(--g4); color: #052e16; }
+  ::selection { background: var(--blue); color: #141a33; }
 
   /* ── Hero ── */
   .terms-hero {
-    background: linear-gradient(140deg, #040f06 0%, #0B4D2C 70%, #134a21 100%);
+    background: linear-gradient(140deg, #040f06 0%, #26379e 70%, #134a21 100%);
     padding: clamp(96px,12vw,128px) 32px 52px;
     position: relative; overflow: hidden;
   }
@@ -59,16 +59,16 @@ const CSS = `
   .terms-hero__inner { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
   .terms-badge {
     display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(74,222,128,.10); border: 1px solid rgba(74,222,128,.22);
+    background: rgba(58,91,240,.10); border: 1px solid rgba(58,91,240,.22);
     border-radius: 999px; padding: 5px 14px; margin-bottom: 20px;
   }
-  .terms-badge__text { font-size: 11px; font-weight: 700; color: #86efac; letter-spacing: .09em; text-transform: uppercase; }
+  .terms-badge__text { font-size: 11px; font-weight: 700; color: #e3f77d; letter-spacing: .09em; text-transform: uppercase; }
   .terms-hero__title {
     font-family: var(--font-d); font-size: clamp(32px,4.5vw,52px); font-weight: 800;
-    color: #fff; letter-spacing: -.02em; line-height: 1.05; margin-bottom: 14px;
+    color:var(--ink); letter-spacing: -.02em; line-height: 1.05; margin-bottom: 14px;
   }
-  .terms-hero__sub { font-size: 15px; color: rgba(255,255,255,.5); line-height: 1.75; max-width: 540px; margin-bottom: 20px; }
-  .terms-hero__updated { font-size: 12px; color: rgba(255,255,255,.3); font-weight: 600; letter-spacing: .04em; }
+  .terms-hero__sub { font-size: 15px; color: var(--muted); line-height: 1.75; max-width: 540px; margin-bottom: 20px; }
+  .terms-hero__updated { font-size: 12px; color: var(--faint); font-weight: 600; letter-spacing: .04em; }
   .terms-wave { position: absolute; bottom: -2px; left: 0; right: 0; }
   .terms-wave svg { display: block; width: 100%; }
 
@@ -91,8 +91,8 @@ const CSS = `
     text-decoration: none; border-left: 2px solid transparent;
     transition: all .14s; line-height: 1.3;
   }
-  .toc-link:hover { color: var(--g7); background: rgba(74,222,128,.12); border-left-color: var(--g6); }
-  .toc-link.active { color: var(--g7); background: rgba(74,222,128,.12); border-left-color: var(--g6); font-weight: 700; }
+  .toc-link:hover { color: var(--g7); background: rgba(58,91,240,.12); border-left-color: var(--g6); }
+  .toc-link.active { color: var(--g7); background: rgba(58,91,240,.12); border-left-color: var(--g6); font-weight: 700; }
 
   /* ── Content / Section ── */
   .content-col { flex: 1; max-width: 720px; }
@@ -112,7 +112,7 @@ const CSS = `
   .prose p + p { margin-top: 12px; }
 
   /* ── Boxes ── */
-  .highlight-box { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); border-radius: 14px; padding: 16px 18px; margin: 16px 0; }
+  .highlight-box { background: rgba(58,91,240,.1); border: 1px solid rgba(58,91,240,.25); border-radius: 14px; padding: 16px 18px; margin: 16px 0; }
   .highlight-box p { color: var(--g7); font-weight: 600; opacity: 1; }
   .warning-box { background: #fef3c7; border: 1px solid #fde68a; border-radius: 14px; padding: 16px 18px; margin: 16px 0; }
   .warning-box p { color: #92400e; font-weight: 600; opacity: 1; }
@@ -125,19 +125,19 @@ const CSS = `
     max-width: 1100px; margin: 0 auto;
     display: grid; grid-template-columns: 1.6fr 1fr 1fr;
     gap: 40px; padding-bottom: 36px;
-    border-bottom: 1px solid rgba(255,255,255,.05); margin-bottom: 22px;
+    border-bottom: 1px solid #fff; margin-bottom: 22px;
   }
-  .footer__brand-text { font-size: 13px; color: rgba(255,255,255,.3); line-height: 1.75; max-width: 260px; font-family: var(--font-u); }
-  .footer__label { font-family: var(--font-d); font-size: 10px; font-weight: 700; letter-spacing: .10em; color: rgba(255,255,255,.2); text-transform: uppercase; margin-bottom: 14px; }
-  .footer-link { display: block; font-size: 13px; color: rgba(255,255,255,.4); text-decoration: none; margin-bottom: 10px; transition: color .15s; font-family: var(--font-u); }
-  .footer-link:hover { color: var(--g4); }
-  .footer__copy { text-align: center; font-size: 12px; color: rgba(255,255,255,.12); font-family: var(--font-u); max-width: 1100px; margin: 0 auto; }
+  .footer__brand-text { font-size: 13px; color: var(--faint); line-height: 1.75; max-width: 260px; font-family: var(--font-u); }
+  .footer__label { font-family: var(--font-d); font-size: 10px; font-weight: 700; letter-spacing: .10em; color: var(--faint); text-transform: uppercase; margin-bottom: 14px; }
+  .footer-link { display: block; font-size: 13px; color: var(--muted); text-decoration: none; margin-bottom: 10px; transition: color .15s; font-family: var(--font-u); }
+  .footer-link:hover { color: var(--blue); }
+  .footer__copy { text-align: center; font-size: 12px; color: var(--line); font-family: var(--font-u); max-width: 1100px; margin: 0 auto; }
 
   /* ── Back-to-top ── */
   .back-top {
     position: fixed; bottom: 28px; right: 28px; z-index: 80;
     width: 44px; height: 44px; border-radius: 999px;
-    background: var(--ink); color: #fff; border: none; cursor: pointer;
+    background: var(--ink); color:var(--ink); border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; transition: all .18s;
     box-shadow: 0 4px 18px rgba(0,0,0,.24);
@@ -203,8 +203,8 @@ export default function Terms() {
       <style>{CSS}</style>
 
       {/* Navbar + Hero (dark) */}
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         <div className="terms-hero">
           <div className="terms-hero__grid" aria-hidden />

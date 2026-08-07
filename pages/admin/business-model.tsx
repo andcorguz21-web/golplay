@@ -38,7 +38,7 @@ import {
 } from '@/sports'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const FIELD_COLORS = ['#16a34a', '#15803d', '#4ade80', '#86efac', '#bbf7d0']
+const FIELD_COLORS = ['#3a5bf0', '#2c46cf', '#d4f24d', '#e3f77d', '#dfe6ff']
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Booking {
@@ -535,7 +535,7 @@ const S: Record<string, React.CSSProperties> = {
     width: 40,
     height: 40,
     borderRadius: 12,
-    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+    background: 'linear-gradient(135deg, #3a5bf0, #2c46cf)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -554,9 +554,9 @@ const S: Record<string, React.CSSProperties> = {
     gap: 4,
     fontSize: 10,
     fontWeight: 600,
-    color: '#15803d',
-    background: '#f0fdf4',
-    border: '1px solid #bbf7d0',
+    color: '#2c46cf',
+    background: '#f4f6fb',
+    border: '1px solid #dfe6ff',
     padding: '2px 8px',
     borderRadius: 999,
     marginTop: 3,
@@ -601,26 +601,26 @@ const S: Record<string, React.CSSProperties> = {
     color: '#374151',
   },
   planSavingsBanner: {
-    background: '#f0fdf4',
+    background: '#f4f6fb',
     borderRadius: 10,
     padding: '10px 14px',
     marginTop: 14,
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    border: '1px solid #bbf7d0',
+    border: '1px solid #dfe6ff',
   },
   planTrialBanner: {
-    background: '#eff6ff',
+    background: '#eef2ff',
     borderRadius: 10,
     padding: '10px 14px',
     marginTop: 10,
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    border: '1px solid #bfdbfe',
+    border: '1px solid #cdd8ff',
     fontSize: 12,
-    color: '#1d4ed8',
+    color: '#2c46cf',
     fontWeight: 500,
   },
   footer: {
@@ -667,8 +667,8 @@ function KPICard({
           <span style={{
             display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600,
             padding: '3px 8px', borderRadius: 999,
-            background: isPos ? '#f0fdf4' : '#fef2f2',
-            color: isPos ? '#15803d' : '#b91c1c',
+            background: isPos ? '#f4f6fb' : '#fef2f2',
+            color: isPos ? '#2c46cf' : '#b91c1c',
           }}>
             {isPos ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
             {Math.abs(delta).toFixed(1)}%
@@ -842,8 +842,8 @@ export default function BusinessModel() {
 
           {/* KPIs */}
           <div style={S.kpiGrid}>
-            <KPICard value={fMoneyShort(kpi.totalRevenue)} sub={`vs ${fMoneyShort(kpi.prevRevenue)} período ant.`} delta={revDelta} icon={DollarSign} iconBg="#f0fdf4" iconColor="#16a34a" loading={loading} />
-            <KPICard value={String(kpi.totalCount)} sub={`vs ${kpi.prevCount} período ant.`} delta={bkDelta} icon={CalendarCheck} iconBg="#eff6ff" iconColor="#2563eb" loading={loading} />
+            <KPICard value={fMoneyShort(kpi.totalRevenue)} sub={`vs ${fMoneyShort(kpi.prevRevenue)} período ant.`} delta={revDelta} icon={DollarSign} iconBg="#f4f6fb" iconColor="#3a5bf0" loading={loading} />
+            <KPICard value={String(kpi.totalCount)} sub={`vs ${kpi.prevCount} período ant.`} delta={bkDelta} icon={CalendarCheck} iconBg="#eef2ff" iconColor="#3a5bf0" loading={loading} />
             <KPICard value={`${kpi.occupancyRate.toFixed(0)}%`} sub={`vs ${kpi.prevOccupancy.toFixed(0)}% período ant.`} delta={occDelta} icon={Activity} iconBg="#fffbeb" iconColor="#d97706" loading={loading} />
             <KPICard value={kpi.topField} sub="Por ingresos generados" delta={null} icon={Trophy} iconBg="#faf5ff" iconColor="#7c3aed" loading={loading} />
           </div>
@@ -858,15 +858,15 @@ export default function BusinessModel() {
                   <AreaChart data={dailyRevenue} margin={{ top: 5, right: 4, bottom: 0, left: 0 }}>
                     <defs>
                       <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#16a34a" stopOpacity={0.15} />
-                        <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#3a5bf0" stopOpacity={0.15} />
+                        <stop offset="100%" stopColor="#3a5bf0" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={filters.dateRange === '90d' ? 6 : filters.dateRange === '30d' ? 3 : 0} />
                     <YAxis tickFormatter={(v) => fMoneyShort(v)} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={62} />
                     <Tooltip content={<ChartTooltip currency={ownerCurrency} />} />
-                    <Area type="monotone" dataKey="revenue" stroke="#16a34a" strokeWidth={2} fill="url(#grad)" dot={false} activeDot={{ r: 4, fill: '#16a34a' }} />
+                    <Area type="monotone" dataKey="revenue" stroke="#3a5bf0" strokeWidth={2} fill="url(#grad)" dot={false} activeDot={{ r: 4, fill: '#3a5bf0' }} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -919,7 +919,7 @@ export default function BusinessModel() {
                       {hourlyStats.map((entry, i) => {
                         const max = Math.max(...hourlyStats.map(h => h.bookings), 1)
                         const opacity = entry.bookings === 0 ? 0.1 : 0.25 + (entry.bookings / max) * 0.75
-                        return <Cell key={i} fill={`rgba(22,163,74,${opacity})`} />
+                        return <Cell key={i} fill={`rgba(58,91,240,${opacity})`} />
                       })}
                     </Bar>
                   </BarChart>
@@ -996,7 +996,7 @@ export default function BusinessModel() {
                   </div>
                   <div style={{ ...S.planRow, fontSize: 15, fontWeight: 700 }}>
                     <span style={{ color: '#0f172a' }}>Neto para vos</span>
-                    <span style={{ color: '#16a34a', fontWeight: 700 }}>
+                    <span style={{ color: '#3a5bf0', fontWeight: 700 }}>
                       {fMoney(kpi.netRevenue)}
                     </span>
                   </div>
@@ -1004,8 +1004,8 @@ export default function BusinessModel() {
                   {/* Ahorro vs modelo anterior */}
                   {plan.savingsVsOld > 0 && (
                     <div style={S.planSavingsBanner}>
-                      <Gift size={15} color="#15803d" />
-                      <span style={{ fontSize: 12, color: '#15803d', fontWeight: 500 }}>
+                      <Gift size={15} color="#2c46cf" />
+                      <span style={{ fontSize: 12, color: '#2c46cf', fontWeight: 500 }}>
                         Ahorrás {fMoney(plan.savingsVsOld)} vs comisión por reserva
                       </span>
                     </div>

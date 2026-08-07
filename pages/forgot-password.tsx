@@ -132,7 +132,7 @@ const CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #052e16 0%, #14532d 50%, #166534 100%);
+  background: linear-gradient(135deg, #141a33 0%, #1e2a66 50%, #26379e 100%);
   padding: 20px;
   position: relative;
   overflow: hidden;
@@ -161,18 +161,18 @@ const CSS = `
 }
 
 .fp-card {
-  background: var(--dark2);
-  border: 1px solid rgba(255,255,255,.08);
+  background: var(--card);
+  border: 1px solid var(--line);
   border-radius: 24px;
   padding: 40px 36px;
-  box-shadow: 0 25px 60px rgba(0,0,0,.45);
+  box-shadow: 0 25px 60px rgba(20,26,51,.28);
 }
 
 .fp-icon {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: rgba(74,222,128,.12);
+  background: rgba(58,91,240,.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,32 +184,32 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 24px;
   font-weight: 800;
-  color: #fff;
+  color: var(--ink);
   margin-bottom: 8px;
 }
 
 .fp-text {
   font-size: 14px;
-  color: rgba(255,255,255,.65);
+  color: var(--ink2);
   line-height: 1.7;
   margin-bottom: 28px;
 }
 .fp-text--lead { line-height: 1.6; }
-.fp-text strong { color: #fff; }
+.fp-text strong { color: var(--ink); }
 
 .fp-muted {
   font-size: 12px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   margin-bottom: 24px;
 }
 
 .fp-error {
-  background: rgba(248,113,113,.1);
-  border: 1px solid rgba(248,113,113,.3);
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
   border-radius: 12px;
   padding: 12px 14px;
   font-size: 13px;
-  color: #fca5a5;
+  color: #dc2626;
   margin-bottom: 20px;
 }
 
@@ -217,59 +217,60 @@ const CSS = `
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,.85);
+  color: var(--ink2);
   margin-bottom: 6px;
 }
 
 .fp-input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 13px 16px;
   font-size: 14px;
-  border-radius: 11px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
   outline: none;
   margin-bottom: 20px;
   font-family: inherit;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
-.fp-input::placeholder { color: rgba(255,255,255,.3); }
+.fp-input::placeholder { color: var(--faint); }
 .fp-input:focus {
-  border-color: var(--g4);
-  box-shadow: 0 0 0 3px rgba(74,222,128,.15);
-  background: rgba(255,255,255,.06);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(58,91,240,.14);
+  background: #fff;
 }
 .fp-input:-webkit-autofill,
 .fp-input:-webkit-autofill:hover,
 .fp-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px rgba(8,14,10,.95) inset;
-  -webkit-text-fill-color: #fff;
-  caret-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
 }
 
 .fp-btn {
   width: 100%;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 15px;
+  border-radius: 99px;
   border: none;
-  background: linear-gradient(135deg, var(--g6), var(--g7));
+  background: var(--blue);
   color: #fff;
   font-weight: 700;
   font-size: 15px;
-  font-family: var(--font-d);
+  font-family: var(--font-u);
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(22,163,74,.25);
+  box-shadow: 0 8px 22px rgba(58,91,240,.28);
   margin-bottom: 16px;
   transition: all .15s;
 }
 .fp-btn:hover:not(:disabled) {
+  background: var(--blue2);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(22,163,74,.35);
+  box-shadow: 0 12px 28px rgba(58,91,240,.35);
 }
 .fp-btn:disabled {
-  background: rgba(255,255,255,.1);
-  color: rgba(255,255,255,.4);
+  background: #e7ebf3;
+  color: var(--faint);
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -278,15 +279,15 @@ const CSS = `
   display: block;
   text-align: center;
   font-size: 13px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   text-decoration: none;
   font-weight: 500;
 }
-.fp-back:hover { color: rgba(255,255,255,.8); }
+.fp-back:hover { color: var(--ink2); }
 .fp-back--accent {
   font-size: 14px;
-  color: var(--g4);
+  color: var(--blue);
   font-weight: 600;
 }
-.fp-back--accent:hover { color: var(--g4); text-decoration: underline; }
+.fp-back--accent:hover { color: var(--blue2); text-decoration: underline; }
 `

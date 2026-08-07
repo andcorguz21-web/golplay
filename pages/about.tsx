@@ -4,7 +4,7 @@
  * Migrado al DS oficial (marketing = light/bone, NO dark):
  *   - Header.tsx eliminado → Navbar global (variante clara).
  *   - Tipografía: Syne (var(--font-d)) + DM Sans (body).
- *   - Tokens CSS: var(--bone/white/ink/muted/bd), var(--g4) accent, var(--dark) footer.
+ *   - Tokens CSS: var(--bone/white/ink/muted/bd), var(--blue) accent, var(--dark) footer.
  *   - styles object inline → clases CSS.
  *
  * Sin cambios: contenido, imagen hero (next/image), estructura de secciones.
@@ -211,7 +211,7 @@ const CSS = `
 /* ===== FOOTER ===== */
 .ab-footer {
   background: var(--dark);
-  color: #fff;
+  color:var(--ink);
   padding: 50px 20px;
   margin-top: 80px;
 }
@@ -226,35 +226,35 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 20px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 8px;
 }
 .ab-footer__heading {
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 4px;
 }
 .ab-footer__text {
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin: 0;
   line-height: 1.6;
 }
 .ab-footer__link {
   display: block;
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin-top: 8px;
   text-decoration: none;
   transition: color .15s;
 }
-.ab-footer__link:hover { color: var(--g4); }
+.ab-footer__link:hover { color: var(--blue); }
 .ab-footer__copy {
   text-align: center;
   margin: 30px 0 0;
   font-size: 13px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
 }
 
 @media (min-width: 768px) {

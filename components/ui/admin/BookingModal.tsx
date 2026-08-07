@@ -27,7 +27,7 @@ interface Props {
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; icon: string }> = {
-  confirmed: { label: 'Confirmada', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', icon: '✓' },
+  confirmed: { label: 'Confirmada', color: '#2c46cf', bg: '#f4f6fb', border: '#dfe6ff', icon: '✓' },
   pending:   { label: 'Pendiente',  color: '#92400e', bg: '#fffbeb', border: '#fde68a', icon: '⏳' },
   cancelled: { label: 'Cancelada',  color: '#b91c1c', bg: '#fef2f2', border: '#fecaca', icon: '✗' },
 }
@@ -280,7 +280,7 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
           {/* Status quick actions */}
           {booking.status !== 'confirmed' && (
             <button
-              style={{ ...S.statusAction, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0' }}
+              style={{ ...S.statusAction, color: '#2c46cf', background: '#f4f6fb', border: '1px solid #dfe6ff' }}
               onClick={() => changeStatus('confirmed')}
               disabled={saving}
             >
@@ -316,14 +316,14 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
                 <span style={{ fontSize: 14, lineHeight: 1, marginTop: 1 }}>📅</span>
                 <div>
                   <p style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Fecha</p>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', margin: '2px 0 0', borderBottom: '1px dashed #bbf7d0' }}>{formatDate(booking.date)} ✏️</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', margin: '2px 0 0', borderBottom: '1px dashed #dfe6ff' }}>{formatDate(booking.date)} ✏️</p>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }} onClick={() => { setEditingDateTime(true); setNewDate(booking.date); setNewHour(booking.hour); setDateTimeError('') }}>
                 <span style={{ fontSize: 14, lineHeight: 1, marginTop: 1 }}>🕐</span>
                 <div>
                   <p style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Hora</p>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', margin: '2px 0 0', borderBottom: '1px dashed #bbf7d0' }}>{booking.hour} ✏️</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', margin: '2px 0 0', borderBottom: '1px dashed #dfe6ff' }}>{booking.hour} ✏️</p>
                 </div>
               </div>
             </>
@@ -380,7 +380,7 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
                 <button
                   onClick={saveDateTime}
                   disabled={saving}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#16a34a', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
+                  style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#3a5bf0', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
                 >
                   {saving ? '...' : 'Guardar cambio'}
                 </button>
@@ -472,7 +472,7 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
             {!editingNotes && (
               <button
                 onClick={() => { setEditingNotes(true); setNotesText(booking.notes || '') }}
-                style={{ background: 'none', border: 'none', fontSize: 11, color: '#2563eb', fontWeight: 600, cursor: 'pointer', padding: '2px 6px' }}
+                style={{ background: 'none', border: 'none', fontSize: 11, color: '#3a5bf0', fontWeight: 600, cursor: 'pointer', padding: '2px 6px' }}
               >
                 {booking.notes ? '✏️ Editar' : '+ Agregar nota'}
               </button>
@@ -487,7 +487,7 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
                 autoFocus
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 10,
-                  border: '2px solid #2563eb', fontSize: 13, fontFamily: 'inherit',
+                  border: '2px solid #3a5bf0', fontSize: 13, fontFamily: 'inherit',
                   resize: 'vertical', minHeight: 60, outline: 'none', color: '#0f172a',
                   boxSizing: 'border-box',
                 }}
@@ -502,7 +502,7 @@ export default function BookingModal({ booking, onClose, onDelete, onUpdate }: P
                 <button
                   onClick={saveNotes}
                   disabled={saving}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#16a34a', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
+                  style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#3a5bf0', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
                 >
                   {saving ? '...' : 'Guardar'}
                 </button>
@@ -584,9 +584,9 @@ function CustomerRow({ icon, label, value, action }: {
         <a
           href={action.href}
           style={{
-            fontSize: 11, fontWeight: 600, color: '#2563eb',
+            fontSize: 11, fontWeight: 600, color: '#3a5bf0',
             textDecoration: 'none', padding: '4px 10px',
-            borderRadius: 8, background: '#eff6ff',
+            borderRadius: 8, background: '#eef2ff',
             transition: 'background 0.15s', flexShrink: 0,
           }}
         >
@@ -728,9 +728,9 @@ const S: Record<string, React.CSSProperties> = {
     gap: 5,
     fontSize: 12,
     fontWeight: 600,
-    color: '#2563eb',
-    background: '#eff6ff',
-    border: '1px solid #bfdbfe',
+    color: '#3a5bf0',
+    background: '#eef2ff',
+    border: '1px solid #cdd8ff',
     borderRadius: 8,
     padding: '6px 12px',
     cursor: 'pointer',
@@ -747,7 +747,7 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: '#0f172a',
     background: '#fff',
-    border: '2px solid #2563eb',
+    border: '2px solid #3a5bf0',
     borderRadius: 10,
     padding: '6px 12px',
     outline: 'none',
@@ -757,7 +757,7 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 12,
     fontWeight: 700,
     color: '#fff',
-    background: '#16a34a',
+    background: '#3a5bf0',
     border: 'none',
     borderRadius: 8,
     padding: '8px 14px',

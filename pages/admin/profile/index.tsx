@@ -782,7 +782,7 @@ function PasswordStrength({ password }: { password: string }) {
     { label: 'Símbolo',       ok: /[^A-Za-z0-9]/.test(password) },
   ]
   const score  = checks.filter(c => c.ok).length
-  const colors = ['#ef4444', '#f59e0b', '#22c55e', '#16a34a']
+  const colors = ['#ef4444', '#f59e0b', '#4a68f5', '#3a5bf0']
   const labels = ['Muy débil', 'Regular', 'Fuerte', 'Muy fuerte']
   return (
     <div className="p-pw-strength">
@@ -838,14 +838,14 @@ const CSS = `
 .p-hero {
   position: relative;
   overflow: hidden;
-  background: #0f172a;
+  background:#3a5bf0;
   padding: 32px 28px 28px;
   margin-bottom: 24px;
 }
 .p-hero__bg {
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse at 80% 50%, rgba(34,197,94,.15), transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(58,91,240,.15), transparent 60%),
     radial-gradient(ellipse at 20% 80%, rgba(37,99,235,.1), transparent 60%);
   pointer-events: none;
 }
@@ -855,10 +855,10 @@ const CSS = `
 
 .p-avatar {
   width: 72px; height: 72px; border-radius: 20px;
-  background: linear-gradient(135deg, #16a34a, #166534);
+  background: linear-gradient(135deg, #3a5bf0, #26379e);
   display: flex; align-items: center; justify-content: center;
   position: relative; flex-shrink: 0;
-  box-shadow: 0 8px 24px rgba(22,163,74,.35);
+  box-shadow: 0 8px 24px rgba(58,91,240,.35);
 }
 .p-avatar__initials { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: white; }
 .p-avatar__role {
@@ -868,7 +868,7 @@ const CSS = `
   font-size: 11px; border: 2px solid #0f172a;
 }
 .p-avatar__role--admin { background: #fbbf24; }
-.p-avatar__role--owner { background: #22c55e; }
+.p-avatar__role--owner { background: #4a68f5; }
 
 .p-hero__info { flex: 1; min-width: 180px; }
 .p-hero__name  { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: white; margin: 0 0 3px; }
@@ -877,11 +877,11 @@ const CSS = `
 
 .p-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
 .p-badge--admin   { background: rgba(251,191,36,.2);  color: #fbbf24; border: 1px solid rgba(251,191,36,.3); }
-.p-badge--owner   { background: rgba(34,197,94,.15);  color: #22c55e; border: 1px solid rgba(34,197,94,.25); }
+.p-badge--owner   { background: rgba(58,91,240,.15);  color: #4a68f5; border: 1px solid rgba(58,91,240,.25); }
 .p-badge--neutral { background: rgba(255,255,255,.08); color: #94a3b8; border: 1px solid rgba(255,255,255,.1); }
-.p-badge--ok      { background: #dcfce7; color: #15803d; }
+.p-badge--ok      { background: #e8ecff; color: #2c46cf; }
 .p-badge--country { background: rgba(255,255,255,.1);  color: #e2e8f0; border: 1px solid rgba(255,255,255,.15); }
-.p-badge--plan    { background: rgba(34,197,94,.15); color: #22c55e; border: 1px solid rgba(34,197,94,.2); }
+.p-badge--plan    { background: rgba(58,91,240,.15); color: #4a68f5; border: 1px solid rgba(58,91,240,.2); }
 
 /* Stats hero */
 .p-hero__stats {
@@ -891,7 +891,7 @@ const CSS = `
 }
 .p-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 16px; }
 .p-stat__num { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: white; }
-.p-stat__num--green { color: #22c55e; }
+.p-stat__num--green { color: #4a68f5; }
 .p-stat__lbl { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
 .p-stat__div { width: 1px; height: 36px; background: rgba(255,255,255,.1); }
 
@@ -910,8 +910,8 @@ const CSS = `
 }
 .p-navitem:last-child { border-bottom: none; }
 .p-navitem:hover { background: #f8fafc; color: #0f172a; }
-.p-navitem--active { background: #f0fdf4; color: #15803d; font-weight: 700; }
-.p-navitem__bar { position: absolute; left: 0; top: 20%; height: 60%; width: 3px; background: #22c55e; border-radius: 0 3px 3px 0; }
+.p-navitem--active { background: #f4f6fb; color: #2c46cf; font-weight: 700; }
+.p-navitem__bar { position: absolute; left: 0; top: 20%; height: 60%; width: 3px; background: #4a68f5; border-radius: 0 3px 3px 0; }
 
 /* ── Section ───────────────────────────────────────────────────────────────── */
 .p-section { background: white; border-radius: 16px; border: 1.5px solid #eaecf0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
@@ -935,7 +935,7 @@ const CSS = `
   color: #0f172a; background: white; outline: none; box-sizing: border-box;
   transition: border-color .15s, box-shadow .15s;
 }
-.p-input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.1); }
+.p-input:focus { border-color: #4a68f5; box-shadow: 0 0 0 3px rgba(58,91,240,.1); }
 .p-input--err  { border-color: #ef4444; }
 .p-input--err:focus { box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
 .p-input--disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
@@ -954,9 +954,9 @@ const CSS = `
 .p-currency-row { display: flex; align-items: center; gap: 8px; }
 .p-currency-badge {
   flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
-  background: #f0fdf4; border: 1.5px solid #bbf7d0;
+  background: #f4f6fb; border: 1.5px solid #dfe6ff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: #16a34a;
+  font-size: 14px; font-weight: 700; color: #3a5bf0;
 }
 
 /* Password */
@@ -967,12 +967,12 @@ const CSS = `
 .p-pw-bar   { height: 4px; flex: 1; border-radius: 999px; transition: background .3s; }
 .p-pw-checks { display: flex; gap: 10px; flex-wrap: wrap; }
 .p-pw-check { font-size: 10px; font-weight: 600; color: #cbd5e1; }
-.p-pw-check--ok { color: #16a34a; }
+.p-pw-check--ok { color: #3a5bf0; }
 .p-pw-label { font-size: 11px; font-weight: 700; }
 
 /* Callout */
 .p-callout { display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 13px; }
-.p-callout--info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.p-callout--info { background: #eef2ff; border: 1px solid #cdd8ff; color: #2c46cf; }
 .p-callout--warn { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
 .p-callout__title { font-weight: 700; margin: 0 0 3px; font-size: 13px; }
 .p-callout__text  { font-size: 12px; margin: 0; line-height: 1.5; }
@@ -996,10 +996,10 @@ const CSS = `
   font-family: inherit; font-size: 12px; font-weight: 600; color: #374151;
   cursor: pointer; transition: all .13s;
 }
-.p-quick-link:hover { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+.p-quick-link:hover { border-color: #4a68f5; background: #f4f6fb; color: #2c46cf; }
 .p-quick-link__icon  { font-size: 16px; }
 .p-quick-link__arrow { margin-left: auto; color: #94a3b8; font-size: 14px; }
-.p-quick-link:hover .p-quick-link__arrow { color: #16a34a; }
+.p-quick-link:hover .p-quick-link__arrow { color: #3a5bf0; }
 
 /* Danger zone */
 .p-danger-zone { background: #fff5f5; border: 1.5px solid #fecaca; border-radius: 14px; padding: 18px 20px; }
@@ -1012,8 +1012,8 @@ const CSS = `
   font-size: 13px; font-weight: 600; font-family: inherit;
   cursor: pointer; border: none; transition: all .14s; white-space: nowrap;
 }
-.p-btn--primary { background: #0f172a; color: white; }
-.p-btn--primary:hover:not(:disabled) { background: #1e293b; }
+.p-btn--primary { background:#3a5bf0; color: white; }
+.p-btn--primary:hover:not(:disabled) { background:#2c46cf; }
 .p-btn--primary:disabled { opacity: .5; cursor: not-allowed; }
 .p-btn--ghost   { background: transparent; color: #374151; border: 1.5px solid #e2e8f0; }
 .p-btn--ghost:hover { background: #f8fafc; }
@@ -1032,7 +1032,7 @@ const CSS = `
 
 /* Toast */
 .p-toast { position: fixed; bottom: 28px; right: 28px; z-index: 9999; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; box-shadow: 0 8px 32px rgba(0,0,0,.18); animation: pToastIn .2s ease; }
-.p-toast--ok  { background: #0f172a; color: white; }
+.p-toast--ok  { background:#3a5bf0; color: white; }
 .p-toast--err { background: #ef4444; color: white; }
 @keyframes pToastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 

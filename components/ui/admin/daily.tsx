@@ -52,20 +52,20 @@ const HOURS = [
   '20:00','21:00','22:00',
 ]
 
-const DEFAULT_FIELD_COLOR = '#3B82F6'
+const DEFAULT_FIELD_COLOR = '#4a68f5'
 
 // ─── Status config ─────────────────────────────────────────────────────────────
 export const STATUS_CFG: Record<BookingStatus, {
   label: string; dot: string; bg: string; border: string; text: string
 }> = {
-  confirmed: { label: 'Confirmada', dot: '#16a34a', bg: '#f0fdf4', border: '#86efac', text: '#15803d' },
+  confirmed: { label: 'Confirmada', dot: '#3a5bf0', bg: '#f4f6fb', border: '#e3f77d', text: '#2c46cf' },
   pending:   { label: 'Pendiente',  dot: '#d97706', bg: '#fffbeb', border: '#fde68a', text: '#92400e' },
   cancelled: { label: 'Cancelada',  dot: '#dc2626', bg: '#fef2f2', border: '#fca5a5', text: '#b91c1c' },
 
   active: { 
     label: 'Activa', 
-    dot: '#3b82f6', 
-    bg: '#dbeafe', 
+    dot: '#4a68f5', 
+    bg: '#dfe6ff', 
     border: '#93c5fd', 
     text: '#1e3a8a' 
   },
@@ -278,7 +278,7 @@ export default function DailyCalendar({ selectedDate, fieldFilter = 'all', field
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {[
-            { label: `${activeCount} confirmadas`, color: '#16a34a', bg: '#f0fdf4' },
+            { label: `${activeCount} confirmadas`, color: '#3a5bf0', bg: '#f4f6fb' },
             { label: `${pendingCount} pendientes`, color: '#d97706', bg: '#fffbeb' },
             ...(totalConflicts > 0 ? [{ label: `${totalConflicts} conflictos`, color: '#dc2626', bg: '#fef2f2' }] : []),
           ].map(({ label, color, bg }) => (

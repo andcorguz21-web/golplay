@@ -68,8 +68,8 @@ function getPasswordStrength(p: string): { score: number; label: string; color: 
   if (score <= 1) return { score: 1, label: 'Muy débil',  color: '#ef4444' }
   if (score === 2) return { score: 2, label: 'Débil',      color: '#f97316' }
   if (score === 3) return { score: 3, label: 'Regular',    color: '#eab308' }
-  if (score === 4) return { score: 4, label: 'Fuerte',     color: '#22c55e' }
-  return               { score: 5, label: 'Muy fuerte',  color: '#16a34a' }
+  if (score === 4) return { score: 4, label: 'Fuerte',     color: '#4a68f5' }
+  return               { score: 5, label: 'Muy fuerte',  color: '#3a5bf0' }
 }
 
 function validateEmail(v: string) {
@@ -235,7 +235,7 @@ export default function RegisterPage() {
               <div className="rg-left__logo">
                 <Logo dark height={150} link={false} />
               </div>
-              <h2 className="rg-left__title">El marketplace<br />deportivo<br />de LATAM</h2>
+              <h2 className="rg-left__title">El marketplace<br />deportivo<br />de <em>LATAM</em></h2>
               <p className="rg-left__sub">Conectamos jugadores con las mejores canchas de la región.</p>
             </div>
             <div className="rg-left__features">
@@ -259,10 +259,11 @@ export default function RegisterPage() {
 
               {/* Mobile logo */}
               <div className="rg-mobile-logo">
-                <Logo dark height={36} link={false} />
+                <Logo height={36} link={false} />
               </div>
 
-              <h1 className="rg-title">Crear cuenta</h1>
+              <span className="rg-eyebrow">Registro</span>
+              <h1 className="rg-title">Crear <em>cuenta</em></h1>
               <p className="rg-subtitle">
                 ¿Ya tenés cuenta?{' '}
                 <Link href="/login" className="rg-link">Iniciar sesión</Link>
@@ -436,39 +437,48 @@ const CSS = `
 .rg {
   min-height: 100vh;
   display: flex;
-  background: linear-gradient(160deg, var(--dark) 0%, var(--dark2) 100%);
+  background: var(--card);
 }
 
 /* — Left panel ───────────────────────────────────────────────── */
 .rg-left {
   display: none;
   flex: 0 0 400px;
-  background: linear-gradient(160deg, #052e16 0%, #14532d 60%, #166534 100%);
+  background: var(--blue);
   padding: 60px 48px;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   overflow: hidden;
 }
+.rg-left::before {
+  content:""; position:absolute; top:-10%; left:-8%; width:60%; height:130%;
+  background: rgba(255,255,255,.06); transform: skewX(-14deg); pointer-events:none;
+}
+.rg-left::after {
+  content:""; position:absolute; top:0; left:24%; width:26%; height:130%;
+  background: rgba(255,255,255,.05); transform: skewX(-14deg); pointer-events:none;
+}
 .rg-left__grid {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 .rg-left__top { position: relative; z-index: 1; }
 .rg-left__logo { margin-bottom: 64px; }
 .rg-left__title {
   font-family: var(--font-d);
-  font-size: 34px;
+  font-size: 40px;
   font-weight: 800;
   color: #fff;
-  line-height: 1.1;
+  line-height: 1.05;
   letter-spacing: -.04em;
   margin-bottom: 20px;
 }
+.rg-left__title em { font-style: italic; color: var(--lime); }
 .rg-left__sub {
   font-size: 15px;
   color: rgba(255,255,255,.6);
@@ -517,21 +527,28 @@ const CSS = `
   justify-content: center;
   margin-bottom: 32px;
 }
+.rg-eyebrow {
+  display: inline-block; font-family: var(--font-u);
+  font-size: 13px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--blue); margin-bottom: 10px;
+}
 .rg-title {
   font-family: var(--font-d);
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
-  color: #fff;
+  color: var(--ink);
   letter-spacing: -.03em;
+  line-height: 1.05;
   margin-bottom: 6px;
 }
+.rg-title em { font-style: italic; color: var(--blue); }
 .rg-subtitle {
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin-bottom: 28px;
 }
 .rg-link {
-  color: var(--g4);
+  color: var(--blue);
   font-weight: 600;
   text-decoration: none;
 }
@@ -542,14 +559,14 @@ const CSS = `
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(74,222,128,.1);
-  border: 1px solid rgba(74,222,128,.3);
+  background: rgba(58,91,240,.1);
+  border: 1px solid rgba(58,91,240,.3);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 20px;
 }
-.rg-success__title { font-size: 14px; color: var(--g4); font-weight: 700; }
-.rg-success__sub   { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
+.rg-success__title { font-size: 14px; color: var(--blue2); font-weight: 700; }
+.rg-success__sub   { font-size: 12px; color: var(--ink2); margin-top: 2px; }
 
 .rg-error {
   display: flex;
@@ -561,7 +578,7 @@ const CSS = `
   padding: 12px 16px;
   margin-bottom: 20px;
 }
-.rg-error span { font-size: 13px; color: #fca5a5; }
+.rg-error span { font-size: 13px; color: #dc2626; }
 
 /* — Account type ─────────────────────────────────────────────── */
 .rg-types {
@@ -574,17 +591,17 @@ const CSS = `
   padding: 14px 12px;
   border-radius: 14px;
   text-align: left;
-  border: 2px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
+  border: 2px solid var(--line);
+  background: var(--paper);
   position: relative;
   cursor: pointer;
   font-family: inherit;
   transition: all .2s;
 }
-.type-btn:hover { border-color: rgba(255,255,255,.25); }
+.type-btn:hover { border-color: var(--faint); }
 .type-btn--sel {
-  border-color: var(--g4);
-  background: rgba(74,222,128,.08);
+  border-color: var(--blue);
+  background: rgba(58,91,240,.06);
 }
 .type-btn__check {
   position: absolute;
@@ -593,14 +610,14 @@ const CSS = `
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--g6);
+  background: var(--blue);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .type-btn__icon { font-size: 22px; margin-bottom: 6px; }
-.type-btn__title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 2px; }
-.type-btn__desc  { font-size: 11px; color: rgba(255,255,255,.5); line-height: 1.4; }
+.type-btn__title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.type-btn__desc  { font-size: 11px; color: var(--muted); line-height: 1.4; }
 
 /* — Form ─────────────────────────────────────────────────────── */
 .rg-form {
@@ -612,49 +629,49 @@ const CSS = `
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,.85);
+  color: var(--ink2);
   margin-bottom: 6px;
 }
-.rg-field__err { font-size: 12px; color: #fca5a5; margin-top: 4px; }
+.rg-field__err { font-size: 12px; color: #dc2626; margin-top: 4px; }
 
 .rg-input {
   width: 100%;
-  padding: 11px 14px;
+  padding: 13px 16px;
   font-size: 14px;
-  border-radius: 11px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
   outline: none;
   font-family: inherit;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
-.rg-input::placeholder { color: rgba(255,255,255,.3); }
+.rg-input::placeholder { color: var(--faint); }
 .rg-input:focus {
-  border-color: var(--g4);
-  box-shadow: 0 0 0 3px rgba(74,222,128,.15);
-  background: rgba(255,255,255,.06);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(58,91,240,.14);
+  background: #fff;
 }
-.rg-input--err { border-color: #f87171; }
+.rg-input--err { border-color: #ef4444; }
 .rg-input--pass { padding-right: 44px; }
 
-/* Autofill (dark) */
+/* Autofill (light) */
 .rg-input:-webkit-autofill,
 .rg-input:-webkit-autofill:hover,
 .rg-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px rgba(8,14,10,.95) inset;
-  -webkit-text-fill-color: #fff;
-  caret-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
 }
 
 .rg-select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a1a1aa' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7385' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 36px;
 }
-.rg-select option { background: var(--dark2); color: #fff; }
+.rg-select option { background: #fff; color: var(--ink); }
 
 .rg-pass-wrap { position: relative; }
 .rg-eye {
@@ -672,13 +689,13 @@ const CSS = `
 
 .rg-divider {
   height: 1px;
-  background: rgba(255,255,255,.1);
+  background: var(--line);
   margin: 4px 0;
 }
 .rg-owner-label {
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   letter-spacing: .06em;
   text-transform: uppercase;
 }
@@ -687,25 +704,26 @@ const CSS = `
 .rg-submit {
   margin-top: 8px;
   width: 100%;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 15px;
+  border-radius: 99px;
   border: none;
   color: #fff;
   font-size: 15px;
   font-weight: 700;
-  font-family: var(--font-d);
-  background: linear-gradient(135deg, var(--g6), var(--g7));
-  box-shadow: 0 4px 16px rgba(34,197,94,.25);
+  font-family: var(--font-u);
+  background: var(--blue);
+  box-shadow: 0 8px 22px rgba(58,91,240,.28);
   cursor: pointer;
   transition: all .15s;
 }
 .rg-submit:hover:not(:disabled) {
+  background: var(--blue2);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(34,197,94,.35);
+  box-shadow: 0 12px 28px rgba(58,91,240,.35);
 }
 .rg-submit:disabled {
-  background: rgba(255,255,255,.1);
-  color: rgba(255,255,255,.4);
+  background: #e7ebf3;
+  color: var(--faint);
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -720,11 +738,11 @@ const CSS = `
 .rg-terms {
   text-align: center;
   font-size: 12px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   margin-top: 24px;
 }
 .rg-terms__link {
-  color: rgba(255,255,255,.6);
+  color: var(--ink2);
   text-decoration: underline;
 }
 

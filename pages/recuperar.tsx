@@ -36,7 +36,7 @@ export default function Recuperar() {
       <Head><title>Recuperar perfil — GolPlay</title></Head>
       <style>{CSS}</style>
 
-      <Navbar dark={true} />
+      <Navbar />
 
       <div className="rc">
         <div className="rc-content">
@@ -65,20 +65,20 @@ export default function Recuperar() {
 const CSS = `
 *,*::before,*::after{box-sizing:border-box}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.rc{min-height:100vh;padding-top:62px;background:#0C0D0B;font-family:var(--font-u),system-ui,sans-serif;color:#e2e8e0;-webkit-font-smoothing:antialiased}
+.rc{min-height:100vh;padding-top:62px;background:#121628;font-family:var(--font-u),system-ui,sans-serif;color:#e7ebf3;-webkit-font-smoothing:antialiased}
 .rc-content{max-width:420px;margin:0 auto;padding:60px 20px 80px;animation:fadeUp .35s ease both}
-.rc-title{font-family:var(--font-d),sans-serif;font-size:40px;color:#fff;font-weight:800;line-height:1.05;letter-spacing:-.02em;margin-bottom:8px}
+.rc-title{font-family:var(--font-d),sans-serif;font-size:40px;color:var(--ink);font-weight:800;line-height:1.05;letter-spacing:-.02em;margin-bottom:8px}
 .rc-subtitle{font-size:14px;color:#9ca3af;line-height:1.5;margin-bottom:32px}
-.rc-label{display:block;font-family:var(--font-d),sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7569;margin:20px 0 6px}
-.rc-input{width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:15px;font-family:inherit;outline:none;transition:border-color .15s}
-.rc-input::placeholder{color:rgba(255,255,255,.3)}
-.rc-input:focus{border-color:var(--g4)}
-.rc-input:-webkit-autofill,.rc-input:-webkit-autofill:hover,.rc-input:-webkit-autofill:focus{-webkit-text-fill-color:#fff;-webkit-box-shadow:0 0 0 1000px #141914 inset;caret-color:#fff}
+.rc-label{display:block;font-family:var(--font-d),sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7385;margin:20px 0 6px}
+.rc-input{width:100%;padding:12px 14px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--ink);font-size:15px;font-family:inherit;outline:none;transition:border-color .15s}
+.rc-input::placeholder{color:var(--faint)}
+.rc-input:focus{border-color:var(--blue)}
+.rc-input:-webkit-autofill,.rc-input:-webkit-autofill:hover,.rc-input:-webkit-autofill:focus{-webkit-text-fill-color:var(--ink);-webkit-box-shadow:0 0 0 1000px #141a33 inset;caret-color:var(--ink)}
 .rc-error{margin-top:18px;padding:11px 14px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;color:#fca5a5;font-size:13px}
-.rc-btn{width:100%;margin-top:28px;padding:15px;border-radius:12px;background:var(--g6);color:#fff;border:none;font-family:var(--font-d),sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;box-shadow:0 3px 16px rgba(22,163,74,.35);transition:all .15s}
+.rc-btn{width:100%;margin-top:28px;padding:15px;border-radius:12px;background:var(--g6);color:var(--ink);border:none;font-family:var(--font-d),sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;box-shadow:0 3px 16px rgba(58,91,240,.35);transition:all .15s}
 .rc-btn:hover{background:var(--g7)}
-.rc-btn--off{background:#3a4138;cursor:not-allowed;box-shadow:none}
-.rc-foot{margin-top:20px;text-align:center;font-size:13px;color:#6b7569}
-.rc-link{color:var(--g4);text-decoration:underline}
+.rc-btn--off{background:#3a4158;cursor:not-allowed;box-shadow:none}
+.rc-foot{margin-top:20px;text-align:center;font-size:13px;color:#6b7385}
+.rc-link{color:var(--blue);text-decoration:underline}
 @media(max-width:480px){.rc-title{font-size:34px}.rc-content{padding:40px 20px 80px}}
 `

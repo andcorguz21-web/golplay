@@ -35,9 +35,9 @@ type PendingRequest = {
 
 const CSS = `${GOLPLAY_BASE_CSS}
 .page { min-height: 100vh; background: var(--dark); padding-top: 62px; }
-.page .eyebrow { color: var(--g4); }
-.page .h2 { color: #fff; }
-.page .h2 em { color: var(--g4); }
+.page .eyebrow { color: var(--blue); }
+.page .h2 { color:var(--ink); }
+.page .h2 em { color: var(--blue); }
 .wrap { max-width: 880px; margin: 0 auto; padding: 32px clamp(16px,4vw,32px) 80px; }
 .back {
   display: inline-flex; align-items: center; gap: 6px;
@@ -45,42 +45,42 @@ const CSS = `${GOLPLAY_BASE_CSS}
   margin-bottom: 22px; font-weight: 500; padding: 5px 10px; border-radius: 8px;
   transition: all .15s;
 }
-.back:hover { color: #fff; background: rgba(255,255,255,.06); }
+.back:hover { color:var(--ink); background: var(--line); }
 .hero-card {
-  background: linear-gradient(150deg,#0d1f10 0%,#0a3018 60%,#062a12 100%);
-  border: 1px solid rgba(74,222,128,.14);
+  background: linear-gradient(150deg,#0d1f10 0%,#1e2a66 60%,#062a12 100%);
+  border: 1px solid rgba(58,91,240,.14);
   border-radius: var(--r-xl); padding: 44px 32px; position: relative;
   overflow: hidden; margin-bottom: 32px; animation: fadeUp .5s ease both;
 }
 .hero-card::before {
   content: ''; position: absolute; top: -40%; right: -20%;
   width: 280px; height: 280px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(22,163,74,.18) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(58,91,240,.18) 0%, transparent 70%);
   pointer-events: none;
 }
 .hero-content { position: relative; z-index: 1; text-align: center; }
 .team-logo-wrap {
   display: inline-flex; align-items: center; justify-content: center;
   width: 120px; height: 120px;
-  background: rgba(255,255,255,.05); border: 1.5px solid rgba(74,222,128,.2);
+  background: #fff; border: 1.5px solid rgba(58,91,240,.2);
   border-radius: 24px; margin-bottom: 22px; overflow: hidden;
 }
 .team-logo-img { width: 100%; height: 100%; object-fit: cover; }
 .team-logo-fallback {
   font-family: var(--font-d); font-size: 56px; font-weight: 800;
-  color: var(--g4); line-height: 1;
+  color: var(--blue); line-height: 1;
 }
 .team-name {
   font-family: var(--font-d); font-size: clamp(32px,6.5vw,48px);
   font-weight: 800; margin: 0 0 8px; letter-spacing: -.02em; line-height: 1;
 }
 .team-name-accent {
-  background: linear-gradient(110deg, var(--g4) 0%, #34d399 60%, #22d3ee 100%);
+  background: linear-gradient(110deg, var(--blue) 0%, #4a68f5 60%, #22d3ee 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .team-desc {
-  color: rgba(255,255,255,.55); font-size: 14px; line-height: 1.65;
+  color: var(--muted); font-size: 14px; line-height: 1.65;
   max-width: 480px; margin: 0 auto 18px;
 }
 .team-meta {
@@ -88,7 +88,7 @@ const CSS = `${GOLPLAY_BASE_CSS}
   font-size: 10px; color: rgba(255,255,255,.42);
   letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
 }
-.meta-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,.2); }
+.meta-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--faint); }
 
 .section { margin-bottom: 36px; }
 .section-head { margin-bottom: 18px; }
@@ -96,49 +96,49 @@ const CSS = `${GOLPLAY_BASE_CSS}
 /* Solicitudes pendientes (FASE 3) */
 .requests-list { display: flex; flex-direction: column; gap: 12px; }
 .request-card {
-  background: rgba(255,255,255,.04);
-  border: 1.5px solid rgba(255,255,255,.08); border-left: 4px solid var(--g6);
+  background: #fff;
+  border: 1.5px solid var(--line); border-left: 4px solid var(--g6);
   border-radius: var(--r-lg); padding: 20px;
   transition: all .22s; animation: fadeUp .4s ease both;
 }
-.request-card:hover { background: rgba(255,255,255,.06); }
+.request-card:hover { background: var(--line); }
 .rc-head {
   display: flex; gap: 14px; align-items: center;
-  padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.08);
+  padding-bottom: 14px; border-bottom: 1px solid var(--line);
   margin-bottom: 14px;
 }
 .rc-logo {
   width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
-  background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center;
+  background: #fff; display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
 .rc-logo img { width: 100%; height: 100%; object-fit: cover; }
 .rc-logo-fallback {
-  color: var(--g4); font-family: var(--font-d);
+  color: var(--blue); font-family: var(--font-d);
   font-size: 20px; font-weight: 800; line-height: 1;
 }
 .rc-info { flex: 1; min-width: 0; }
 .rc-team {
   font-family: var(--font-d); font-weight: 800; font-size: 16px;
-  color: #fff; margin: 0 0 3px; letter-spacing: -.01em;
+  color:var(--ink); margin: 0 0 3px; letter-spacing: -.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rc-captain {
   font-size: 11px; color: #9ca3af;
   display: flex; align-items: center; gap: 6px; font-weight: 600;
 }
-.rc-time-dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,.3); }
+.rc-time-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--faint); }
 .rc-message {
-  font-style: italic; color: rgba(255,255,255,.8);
-  background: rgba(255,255,255,.03); border-radius: var(--r-md);
+  font-style: italic; color: var(--ink);
+  background: #fff; border-radius: var(--r-md);
   padding: 11px 14px; font-size: 13.5px;
   line-height: 1.55; margin-bottom: 12px;
-  border-left: 2px solid var(--g4);
+  border-left: 2px solid var(--blue);
 }
 .rc-proposal {
   display: flex; align-items: center; gap: 8px;
-  background: rgba(34,197,94,.1); color: var(--g4);
-  border: 1px solid rgba(74,222,128,.2);
+  background: rgba(58,91,240,.1); color: var(--blue);
+  border: 1px solid rgba(58,91,240,.2);
   border-radius: var(--r-md); padding: 10px 14px;
   font-size: 13px; font-weight: 600; margin-bottom: 14px;
 }
@@ -151,13 +151,13 @@ const CSS = `${GOLPLAY_BASE_CSS}
 }
 .rc-btn:disabled { opacity: .55; cursor: not-allowed; }
 .rc-btn.decline {
-  background: rgba(255,255,255,.04); border-color: rgba(248,113,113,.3); color: #fca5a5;
+  background: #fff; border-color: rgba(248,113,113,.3); color: #fca5a5;
 }
 .rc-btn.decline:hover:not(:disabled) {
   background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.5);
 }
 .rc-btn.accept {
-  background: var(--g6); border-color: var(--g6); color: #fff;
+  background: var(--g6); border-color: var(--g6); color:var(--ink);
   font-family: var(--font-d); font-weight: 800;
 }
 .rc-btn.accept:hover:not(:disabled) {
@@ -166,31 +166,31 @@ const CSS = `${GOLPLAY_BASE_CSS}
 
 /* Invite */
 .invite-card {
-  background: rgba(255,255,255,.04); border: 1.5px solid rgba(74,222,128,.2);
+  background: #fff; border: 1.5px solid rgba(58,91,240,.2);
   border-radius: var(--r-lg); padding: 22px;
 }
 .invite-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .invite-icon {
   width: 32px; height: 32px; border-radius: 10px;
-  background: rgba(34,197,94,.14); display: flex;
+  background: rgba(58,91,240,.14); display: flex;
   align-items: center; justify-content: center; font-size: 16px;
 }
-.invite-title { font-family: var(--font-d); font-size: 15px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -.01em; }
+.invite-title { font-family: var(--font-d); font-size: 15px; font-weight: 800; color:var(--ink); margin: 0; letter-spacing: -.01em; }
 .invite-sub { font-size: 12px; color: #9ca3af; margin: 2px 0 0; }
 .invite-row { display: flex; gap: 8px; align-items: stretch; }
 .invite-input {
   flex: 1; padding: 11px 13px;
-  border: 1.5px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03);
+  border: 1.5px solid var(--line); background: #fff;
   font-family: ui-monospace, monospace; font-size: 11.5px;
   border-radius: var(--r-md); color: #9ca3af; min-width: 0; outline: none;
 }
-.invite-input:focus { border-color: var(--g4); }
+.invite-input:focus { border-color: var(--blue); }
 .copy-btn {
-  padding: 0 18px; background: var(--g6); color: #fff;
+  padding: 0 18px; background: var(--g6); color:var(--ink);
   border: none; font-family: var(--font-d); font-size: 13px;
   font-weight: 800; cursor: pointer; border-radius: var(--r-md);
   white-space: nowrap; letter-spacing: -.01em;
-  transition: all .15s; box-shadow: 0 2px 10px rgba(22,163,74,.25);
+  transition: all .15s; box-shadow: 0 2px 10px rgba(58,91,240,.25);
 }
 .copy-btn:hover { background: var(--g7); transform: translateY(-1px); }
 .copy-btn.copied { background: rgba(255,255,255,.14); }
@@ -203,62 +203,62 @@ const CSS = `${GOLPLAY_BASE_CSS}
 .member-wrap { position: relative; }
 .member-card {
   display: block; text-align: center; text-decoration: none; color: inherit;
-  background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08);
+  background: #fff; border: 1.5px solid var(--line);
   border-radius: var(--r-lg); padding: 18px 10px;
   transition: all .22s cubic-bezier(.16,1,.3,1);
 }
-.member-card:hover { border-color: var(--g4); transform: translateY(-4px); background: rgba(255,255,255,.06); box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+.member-card:hover { border-color: var(--blue); transform: translateY(-4px); background: var(--line); box-shadow: 0 12px 30px rgba(20,26,51,.12); }
 .member-photo {
   width: 72px; height: 72px; border-radius: 50%;
-  object-fit: cover; margin: 0 auto 10px; display: block; background: rgba(255,255,255,.08);
+  object-fit: cover; margin: 0 auto 10px; display: block; background: var(--line);
 }
 .member-photo-fallback {
   width: 72px; height: 72px; border-radius: 50%;
-  background: rgba(255,255,255,.05); color: var(--g4);
+  background: #fff; color: var(--blue);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-d); font-size: 26px; font-weight: 800; margin: 0 auto 10px;
 }
 .member-name {
-  font-weight: 600; font-size: 13px; color: #fff;
+  font-weight: 600; font-size: 13px; color:var(--ink);
   margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .captain-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--g4); font-weight: 700; background: rgba(34,197,94,.14);
-  padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(74,222,128,.25);
+  color: var(--blue); font-weight: 700; background: rgba(58,91,240,.14);
+  padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(58,91,240,.25);
 }
 .remove-btn {
   position: absolute; top: 8px; right: 8px; z-index: 2;
   width: 24px; height: 24px; border-radius: 50%;
-  background: #141914; border: 1.5px solid rgba(248,113,113,.4); color: #fca5a5;
+  background: #141a33; border: 1.5px solid rgba(248,113,113,.4); color: #fca5a5;
   font-size: 14px; line-height: 1; cursor: pointer; padding: 0; font-family: inherit;
   display: flex; align-items: center; justify-content: center; transition: all .15s;
 }
-.remove-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+.remove-btn:hover { background: #ef4444; color:var(--ink); border-color: #ef4444; }
 .add-card {
-  background: transparent; border: 1.5px dashed rgba(255,255,255,.12); border-radius: var(--r-lg);
+  background: transparent; border: 1.5px dashed var(--line); border-radius: var(--r-lg);
   padding: 18px 10px; cursor: pointer; font-family: inherit; text-align: center; transition: all .15s;
 }
-.add-card:hover { background: rgba(74,222,128,.06); border-color: var(--g4); }
+.add-card:hover { background: rgba(58,91,240,.06); border-color: var(--blue); }
 .add-icon {
-  width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,.03);
-  border: 1.5px dashed rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center;
+  width: 72px; height: 72px; border-radius: 50%; background: #fff;
+  border: 1.5px dashed var(--line); display: flex; align-items: center; justify-content: center;
   font-size: 32px; color: #9ca3af; margin: 0 auto 10px; transition: all .15s;
 }
-.add-card:hover .add-icon { color: var(--g4); border-color: var(--g4); background: rgba(74,222,128,.06); }
+.add-card:hover .add-icon { color: var(--blue); border-color: var(--blue); background: rgba(58,91,240,.06); }
 .add-label { font-size: 12px; color: #9ca3af; font-weight: 600; transition: all .15s; }
-.add-card:hover .add-label { color: var(--g4); }
+.add-card:hover .add-label { color: var(--blue); }
 
 /* Actions */
-.actions { display: flex; flex-direction: column; gap: 10px; margin-top: 32px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,.08); }
+.actions { display: flex; flex-direction: column; gap: 10px; margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--line); }
 .action-btn {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px; border: 1.5px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04);
+  padding: 14px 18px; border: 1.5px solid var(--line); background: #fff;
   font-family: inherit; font-size: 14px; cursor: pointer; border-radius: var(--r-md);
-  color: #fff; font-weight: 600; transition: all .15s;
+  color:var(--ink); font-weight: 600; transition: all .15s;
 }
-.action-btn:hover { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.06); }
+.action-btn:hover { border-color: var(--faint); background: var(--line); }
 .action-btn.danger { color: #fca5a5; border-color: rgba(248,113,113,.3); }
 .action-btn.danger:hover { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.5); }
 .action-btn-arrow { color: #9ca3af; }
@@ -270,41 +270,41 @@ const CSS = `${GOLPLAY_BASE_CSS}
   z-index: 9000; padding: 24px; animation: fadeIn .2s ease; backdrop-filter: blur(4px);
 }
 .modal {
-  background: var(--dark2); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r-xl); padding: 28px;
+  background:#fff; border: 1px solid var(--line); border-radius: var(--r-xl); padding: 28px;
   max-width: 440px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.6);
   animation: popIn .2s ease;
 }
 .modal-emoji { font-size: 36px; margin-bottom: 12px; }
 .modal-title {
   font-family: var(--font-d); font-size: 24px; font-weight: 800;
-  margin: 0 0 8px; line-height: 1.15; letter-spacing: -.02em; color: #fff;
+  margin: 0 0 8px; line-height: 1.15; letter-spacing: -.02em; color:var(--ink);
 }
 .modal-subtitle { color: #9ca3af; font-size: 14px; margin: 0 0 22px; line-height: 1.5; }
 .modal-input {
-  width: 100%; padding: 13px 14px; border: 1.5px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04);
+  width: 100%; padding: 13px 14px; border: 1.5px solid var(--line); background: #fff;
   font-family: inherit; font-size: 15px; border-radius: var(--r-md);
-  outline: none; margin-bottom: 14px; color: #fff;
+  outline: none; margin-bottom: 14px; color:var(--ink);
 }
-.modal-input::placeholder { color: rgba(255,255,255,.3); }
-.modal-input:focus { border-color: var(--g4); box-shadow: 0 0 0 4px rgba(74,222,128,.12); }
+.modal-input::placeholder { color: var(--faint); }
+.modal-input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(58,91,240,.12); }
 .modal-row { display: flex; gap: 10px; margin-top: 6px; }
 .modal-btn {
-  flex: 1; padding: 13px; border: 1.5px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04);
+  flex: 1; padding: 13px; border: 1.5px solid var(--line); background: #fff;
   font-family: inherit; font-size: 14px; cursor: pointer; border-radius: var(--r-md);
-  color: #fff; font-weight: 600; transition: all .15s;
+  color:var(--ink); font-weight: 600; transition: all .15s;
 }
-.modal-btn:hover { background: rgba(255,255,255,.06); }
-.modal-btn.primary { background: var(--g6); color: #fff; border-color: var(--g6); font-family: var(--font-d); font-weight: 800; }
+.modal-btn:hover { background: var(--line); }
+.modal-btn.primary { background: var(--g6); color:var(--ink); border-color: var(--g6); font-family: var(--font-d); font-weight: 800; }
 .modal-btn.primary:hover { background: var(--g7); border-color: var(--g7); }
 .modal-btn.primary:disabled { opacity: .55; cursor: not-allowed; }
-.modal-btn.danger { background: #ef4444; color: #fff; border-color: #ef4444; font-family: var(--font-d); font-weight: 800; }
+.modal-btn.danger { background: #ef4444; color:var(--ink); border-color: #ef4444; font-family: var(--font-d); font-weight: 800; }
 .modal-btn.danger:hover { background: #dc2626; border-color: #dc2626; }
 .modal-error {
   padding: 11px 13px; background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3);
   color: #fca5a5; border-radius: var(--r-md); font-size: 13px; margin-bottom: 14px; font-weight: 500;
 }
 .error-card {
-  background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08); border-radius: var(--r-xl);
+  background: #fff; border: 1.5px solid var(--line); border-radius: var(--r-xl);
   padding: 40px 28px; text-align: center; margin: 12px 0;
 }
 .loading-state { text-align: center; padding: 80px 24px; color: #9ca3af; }
@@ -572,7 +572,7 @@ export default function TeamPage() {
     return (
       <>
         <style>{CSS}</style>
-        <Navbar dark={true} />
+        <Navbar />
         <div className="page">
           <div className="loading-state">Cargando equipo…</div>
         </div>
@@ -585,7 +585,7 @@ export default function TeamPage() {
       <>
         <Head><title>Equipo · GolPlay</title></Head>
         <style>{CSS}</style>
-        <Navbar dark={true} />
+        <Navbar />
         <div className="page">
           <div className="wrap">
             <Link href="/equipos" className="back">← Mis equipos</Link>
@@ -608,7 +608,7 @@ export default function TeamPage() {
     <>
       <Head><title>{team.name} · GolPlay</title></Head>
       <style>{CSS}</style>
-      <Navbar dark={true} />
+      <Navbar />
 
       <div className="page">
         <div className="wrap">

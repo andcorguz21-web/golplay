@@ -48,8 +48,8 @@ const MapEmbed = dynamic(() => import('./MapEmbed'), { ssr: false })
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SPORTS_META: Record<string, { label: string; color: string; bg: string; emoji: string }> = {
-  futbol5:  { label: 'Fútbol 5',  color: '#16a34a', bg: '#dcfce7',  emoji: '⚽' },
-  futbol7:  { label: 'Fútbol 7',  color: '#15803d', bg: '#bbf7d0',  emoji: '⚽' },
+  futbol5:  { label: 'Fútbol 5',  color: '#3a5bf0', bg: '#e8ecff',  emoji: '⚽' },
+  futbol7:  { label: 'Fútbol 7',  color: '#2c46cf', bg: '#dfe6ff',  emoji: '⚽' },
   padel:    { label: 'Pádel',     color: '#0e7490', bg: '#cffafe',  emoji: '🎾' },
   tenis:    { label: 'Tenis',     color: '#92400e', bg: '#fef3c7',  emoji: '🎾' },
   multiuso: { label: 'Multiuso',  color: '#5b21b6', bg: '#ede9fe',  emoji: '🏟️' },
@@ -129,29 +129,29 @@ function formatCedula(raw: string, type: 'fisica' | 'juridica'): string {
 
 const CSS = `
   :root {
-    --g900: #052e16;
-    --g800: #0B4D2C;
-    --g700: #15803d;
-    --g500: #16a34a;
-    --g400: #4ade80;
-    --g100: rgba(34,197,94,.14);
-    --bone: #080e0a;
-    --charcoal: #0C0D0B;
-    --ink: #f0f4f0;
-    --muted: #8a9488;
-    --border: rgba(255,255,255,.10);
-    --white: #101810;
+    --g900: #141a33;
+    --g800: #26379e;
+    --g700: #2c46cf;
+    --g500: #3a5bf0;
+    --g400: #3a5bf0;
+    --g100: rgba(58,91,240,.10);
+    --bone: #f4f6fb;
+    --charcoal: #f4f6fb;
+    --ink: #141a33;
+    --muted: #6b7385;
+    --border: #e7ebf3;
+    --white: #ffffff;
     --r-xl: 24px;
     --r-lg: 16px;
     --r-md: 12px;
-    --sh-sm: 0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.35);
-    --sh-md: 0 4px 16px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.4);
-    --sh-lg: 0 8px 32px rgba(0,0,0,.5),0 24px 64px rgba(0,0,0,.45);
+    --sh-sm: 0 1px 3px rgba(20,26,51,.05),0 4px 12px rgba(20,26,51,.06);
+    --sh-md: 0 4px 16px rgba(20,26,51,.08),0 12px 32px rgba(20,26,51,.08);
+    --sh-lg: 0 8px 32px rgba(20,26,51,.12),0 24px 64px rgba(20,26,51,.12);
     --font-h: var(--font-d);
     --font-b: var(--font-u);
   }
 
-  ::selection { background: var(--g400); color: var(--g900); }
+  ::selection { background: var(--g400); color: #fff; }
 
   @keyframes fadeUp {
     from { opacity:0; transform:translateY(24px); }
@@ -171,8 +171,8 @@ const CSS = `
     to   { opacity:1; transform:scale(1) translateY(0); }
   }
   @keyframes pulseDot {
-    0%,100% { box-shadow:0 0 0 0 rgba(74,222,128,.5); }
-    50%     { box-shadow:0 0 0 6px rgba(74,222,128,0); }
+    0%,100% { box-shadow:0 0 0 0 rgba(58,91,240,.5); }
+    50%     { box-shadow:0 0 0 6px rgba(58,91,240,0); }
   }
   @keyframes spinRing {
     to { transform:rotate(360deg); }
@@ -181,7 +181,7 @@ const CSS = `
   /* ── Hero ────────────────────────────────────────────────── */
   .hero {
     position:relative; overflow:hidden;
-    background:#0C0D0B;
+    background:#121628;
     height:clamp(380px, 52vh, 560px);
     margin-top:62px;
   }
@@ -256,7 +256,7 @@ const CSS = `
   }
   .sec-title em {
     font-style:normal;
-    background:linear-gradient(135deg, var(--g400), #22c55e);
+    background:linear-gradient(135deg, var(--g400), #4a68f5);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
   }
 
@@ -277,9 +277,9 @@ const CSS = `
   .feature-pill {
     display:inline-flex; align-items:center; gap:6px;
     padding:7px 14px; border-radius:999px;
-    background:rgba(34,197,94,.1); color:var(--g400);
+    background:rgba(58,91,240,.1); color:var(--g400);
     font-size:12.5px; font-weight:600; font-family:var(--font-b);
-    border:1px solid rgba(74,222,128,.2);
+    border:1px solid rgba(58,91,240,.2);
   }
 
   /* ── Calendar ────────────────────────────────────────────── */
@@ -306,8 +306,8 @@ const CSS = `
   .cal-day:hover:not(:disabled) { background:var(--g100); color:var(--g400); font-weight:700; }
   .cal-day.today  { font-weight:800; color:var(--g400); }
   .cal-day.sel    { background:var(--g500)!important; color:#fff!important; font-weight:700; border-radius:10px; }
-  .cal-day.out    { color:rgba(255,255,255,.25); }
-  .cal-day:disabled { color:rgba(255,255,255,.2); cursor:default; }
+  .cal-day.out    { color:#d7dce8; }
+  .cal-day:disabled { color:#d7dce8; cursor:default; }
   .cal-day.closed { color:#ef4444!important; text-decoration:line-through; cursor:not-allowed; opacity:.5; }
 
   /* ── Hour buttons ────────────────────────────────────────── */
@@ -321,11 +321,11 @@ const CSS = `
   }
   .hour-btn:hover:not(:disabled) {
     border-color:var(--g500); background:var(--g100); color:var(--g400);
-    transform:translateY(-2px); box-shadow:0 4px 14px rgba(22,163,74,.18);
+    transform:translateY(-2px); box-shadow:0 4px 14px rgba(58,91,240,.18);
   }
   .hour-btn.sel {
     background:var(--g500); border-color:var(--g500); color:#fff;
-    box-shadow:0 4px 20px rgba(22,163,74,.40); transform:translateY(-2px);
+    box-shadow:0 4px 20px rgba(58,91,240,.40); transform:translateY(-2px);
   }
   .hour-btn.night-sel {
     background:linear-gradient(135deg,#4c1d95,#7c3aed);
@@ -333,8 +333,8 @@ const CSS = `
     box-shadow:0 4px 20px rgba(124,58,237,.35); transform:translateY(-2px);
   }
   .hour-btn:disabled {
-    background:rgba(255,255,255,.02); color:rgba(255,255,255,.25);
-    cursor:not-allowed; border-color:rgba(255,255,255,.05);
+    background:#f4f6fb; color:#d7dce8;
+    cursor:not-allowed; border-color:#f4f6fb;
     transform:none; box-shadow:none;
   }
   .hour-tag {
@@ -346,18 +346,18 @@ const CSS = `
   .booking-card {
     background:var(--white); border-radius:var(--r-xl);
     border:1.5px solid var(--border);
-    box-shadow:0 4px 6px rgba(0,0,0,.3),0 20px 48px rgba(0,0,0,.5);
+    box-shadow:0 4px 6px rgba(20,26,51,.10),0 20px 48px rgba(0,0,0,.5);
     position:sticky; top:82px;
     overflow:hidden;
   }
   .booking-card__header {
     padding:22px 24px 16px;
-    background:linear-gradient(140deg,#052e16 0%,#0B4D2C 100%);
+    background:linear-gradient(140deg,#141a33 0%,#26379e 100%);
     position:relative; overflow:hidden;
   }
   .booking-card__header::before {
     content:''; position:absolute; inset:0;
-    background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);
+    background-image:linear-gradient(#f4f6fb 1px,transparent 1px),linear-gradient(90deg,#f4f6fb 1px,transparent 1px);
     background-size:28px 28px;
   }
   .booking-card__body { padding:20px 24px 24px; }
@@ -369,23 +369,23 @@ const CSS = `
     color:#fff; font-weight:800; font-size:14px;
     font-family:var(--font-h); letter-spacing:.04em; text-transform:uppercase;
     border:none; cursor:pointer;
-    box-shadow:0 4px 20px rgba(22,163,74,.32);
+    box-shadow:0 4px 20px rgba(58,91,240,.32);
     transition:all .2s cubic-bezier(.16,1,.3,1);
     display:flex; align-items:center; justify-content:center; gap:8px;
     margin-top:16px;
   }
   .reserve-btn:hover:not(:disabled) {
     transform:translateY(-2px);
-    box-shadow:0 8px 32px rgba(22,163,74,.45);
+    box-shadow:0 8px 32px rgba(58,91,240,.45);
   }
   .reserve-btn:disabled {
-    background:rgba(255,255,255,.07); color:rgba(255,255,255,.3);
+    background:var(--border); color:var(--muted);
     box-shadow:none; cursor:not-allowed; transform:none;
   }
 
   /* ── Skeleton ────────────────────────────────────────────── */
   .skel {
-    background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);
+    background:linear-gradient(90deg,#f4f6fb 25%,var(--border) 50%,#f4f6fb 75%);
     background-size:400% 100%;
     animation:shimmer 1.6s infinite;
     border-radius:10px;
@@ -439,13 +439,13 @@ const CSS = `
   .modal-input {
     width:100%; padding:13px 16px; border-radius:12px;
     border:1.5px solid var(--border); font-size:14px;
-    font-family:var(--font-b); outline:none; background:rgba(255,255,255,.04);
+    font-family:var(--font-b); outline:none; background:#f4f6fb;
     color:var(--ink); transition:border-color .15s,box-shadow .15s;
   }
-  .modal-input::placeholder { color:rgba(255,255,255,.3); }
+  .modal-input::placeholder { color:var(--muted); }
   .modal-input:focus {
-    border-color:var(--g500); background:rgba(255,255,255,.06);
-    box-shadow:0 0 0 3px rgba(74,222,128,.15);
+    border-color:var(--g500); background:var(--border);
+    box-shadow:0 0 0 3px rgba(58,91,240,.15);
   }
   .modal-input.err { border-color:#ef4444; background:rgba(239,68,68,.08); }
   .modal-input.err:focus { box-shadow:0 0 0 3px rgba(239,68,68,.15); }
@@ -453,7 +453,7 @@ const CSS = `
   .modal-input:-webkit-autofill:hover,
   .modal-input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--ink);
-    -webkit-box-shadow: 0 0 0 1000px #141914 inset;
+    -webkit-box-shadow: 0 0 0 1000px #141a33 inset;
     caret-color: var(--ink);
   }
 
@@ -508,7 +508,7 @@ function Spinner() {
   return (
     <span style={{
       display: 'inline-block', width: 18, height: 18,
-      border: '2.5px solid rgba(255,255,255,.3)',
+      border: '2.5px solid var(--muted)',
       borderTopColor: '#fff', borderRadius: '50%',
       animation: 'spinRing .7s linear infinite',
       flexShrink: 0,
@@ -558,10 +558,10 @@ function DatePicker({ value, onChange, closedDates }: { value: string; onChange:
 
 function SkeletonPage() {
   return (
-    <div className="theme-dark">
+    <div className="theme-light">
       <Navbar dark={true} />
-      <div style={{ height: 'clamp(380px,52vh,560px)', marginTop: 62, background: '#0c0d0b' }}/>
-      <div style={{ background: '#0c0d0b', height: 88 }}/>
+      <div style={{ height: 'clamp(380px,52vh,560px)', marginTop: 62, background: '#121628' }}/>
+      <div style={{ background: '#121628', height: 88 }}/>
       <div className="page-body">
         <div className="page-grid">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -915,8 +915,8 @@ export default function ReserveField() {
     return (
       <>
         <style>{CSS}</style>
-        <div className="theme-dark">
-          <Navbar dark={true} />
+        <div className="theme-light">
+          <Navbar />
           <main style={{ minHeight: '100vh', background: 'var(--bone)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, marginTop: 62 }}>
             <div style={{ fontSize: 52, marginBottom: 8 }}>⚠️</div>
             <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>Cancha no encontrada</h2>
@@ -941,7 +941,7 @@ export default function ReserveField() {
 
       <style>{CSS}</style>
 
-      <div className="theme-dark">
+      <div className="theme-light">
         <Navbar dark={true} />
 
         {/* ── HERO ─────────────────────────────────────────────────────────── */}
@@ -1062,18 +1062,18 @@ export default function ReserveField() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                     <div style={{
                       padding: '20px 22px', borderRadius: 16,
-                      background: 'linear-gradient(135deg,rgba(34,197,94,.12),rgba(22,163,74,.06))',
-                      border: '1.5px solid rgba(74,222,128,.25)',
+                      background: 'linear-gradient(135deg,rgba(58,91,240,.12),rgba(58,91,240,.06))',
+                      border: '1.5px solid rgba(58,91,240,.25)',
                       position: 'relative', overflow: 'hidden',
                     }}>
-                      <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(34,197,94,.15)' }}/>
+                      <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(58,91,240,.15)' }}/>
                       <p style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: 'var(--g400)', textTransform: 'uppercase', marginBottom: 10 }}>
                         🌞 Tarifa diurna
                       </p>
                       <p style={{ fontFamily: 'var(--font-h)', fontSize: 28, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 6 }}>
                         {fmt(field.price_day)}
                       </p>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', fontWeight: 500 }}>06:00 – {String(field.night_from_hour - 1).padStart(2,'0')}:59 h</p>
+                      <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>06:00 – {String(field.night_from_hour - 1).padStart(2,'0')}:59 h</p>
                     </div>
                     <div style={{
                       padding: '20px 22px', borderRadius: 16,
@@ -1091,7 +1091,7 @@ export default function ReserveField() {
                       <p style={{ fontSize: 12, color: 'rgba(196,181,253,.7)', fontWeight: 500 }}>{String(field.night_from_hour).padStart(2,'0')}:00 – 22:00 h</p>
                     </div>
                   </div>
-                  <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderRadius: 12, background: 'rgba(34,197,94,.1)', border: '1px solid rgba(74,222,128,.2)' }}>
+                  <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderRadius: 12, background: 'rgba(58,91,240,.1)', border: '1px solid rgba(58,91,240,.2)' }}>
                     <span style={{ fontSize: 18, flexShrink: 0 }}>✅</span>
                     <p style={{ fontSize: 13, color: 'var(--g400)', fontWeight: 600 }}>
                       GolPlay no cobra adelantos. Pagás directamente en el complejo.
@@ -1108,7 +1108,7 @@ export default function ReserveField() {
                 </div>
                 <div className="info-card__body" style={{ paddingTop: 0 }}>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: '1.5px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '12px 16px', borderRadius: 12, background: '#f4f6fb', border: '1.5px solid var(--border)' }}>
                     <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--g100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g400)" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </div>
@@ -1116,7 +1116,7 @@ export default function ReserveField() {
                     {field.latitude && field.longitude && (
                       <a href={`https://www.google.com/maps/search/?api=1&query=${field.latitude},${field.longitude}`}
                         target="_blank" rel="noopener noreferrer"
-                        style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: 'var(--g400)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, padding: '6px 12px', borderRadius: 8, background: 'var(--g100)', border: '1px solid rgba(74,222,128,.2)', fontFamily: 'var(--font-h)', letterSpacing: '.03em' }}
+                        style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: 'var(--g400)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, padding: '6px 12px', borderRadius: 8, background: 'var(--g100)', border: '1px solid rgba(58,91,240,.2)', fontFamily: 'var(--font-h)', letterSpacing: '.03em' }}
                       >
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
                         Abrir en Maps
@@ -1135,7 +1135,7 @@ export default function ReserveField() {
                         price={fmt(field.price_day)}
                       />
                     ) : (
-                      <div style={{ height: '100%', background: 'linear-gradient(135deg,rgba(34,197,94,.08),rgba(22,163,74,.04))', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                      <div style={{ height: '100%', background: 'linear-gradient(135deg,rgba(58,91,240,.08),rgba(58,91,240,.04))', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                         <div style={{ fontSize: 40 }}>📍</div>
                         <p style={{ fontFamily: 'var(--font-h)', fontSize: 14, fontWeight: 700, color: 'var(--g400)' }}>Mapa no disponible</p>
                         <p style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', maxWidth: 240 }}>
@@ -1156,11 +1156,11 @@ export default function ReserveField() {
               <div className="booking-card">
 
                 <div className="booking-card__header">
-                  <div aria-hidden style={{ position:'absolute',top:'-30%',right:'-20%',width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(74,222,128,.10) 0%,transparent 65%)' }}/>
+                  <div aria-hidden style={{ position:'absolute',top:'-30%',right:'-20%',width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(58,91,240,.10) 0%,transparent 65%)' }}/>
                   <div style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--g400)', animation: 'pulseDot 2s infinite', flexShrink: 0 }}/>
-                      <span style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: '#86efac', textTransform: 'uppercase' }}>
+                      <span style={{ fontFamily: 'var(--font-h)', fontSize: 10, fontWeight: 700, letterSpacing: '.10em', color: '#e3f77d', textTransform: 'uppercase' }}>
                         Disponible para reservar
                       </span>
                     </div>
@@ -1168,10 +1168,10 @@ export default function ReserveField() {
                       ¿Cuándo<br/>querés jugar?
                     </h2>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.6)', fontFamily: 'var(--font-h)', background: 'rgba(255,255,255,.08)', padding: '4px 10px', borderRadius: 999 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', fontFamily: 'var(--font-h)', background: 'var(--border)', padding: '4px 10px', borderRadius: 999 }}>
                         🌞 {fmt(field.price_day)}
                       </span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.6)', fontFamily: 'var(--font-h)', background: 'rgba(255,255,255,.08)', padding: '4px 10px', borderRadius: 999 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', fontFamily: 'var(--font-h)', background: 'var(--border)', padding: '4px 10px', borderRadius: 999 }}>
                         🌙 {fmt(field.price_night)}
                       </span>
                     </div>
@@ -1207,7 +1207,7 @@ export default function ReserveField() {
                             Libre
                           </span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,.2)', display: 'inline-block' }}/>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d7dce8', display: 'inline-block' }}/>
                             Ocupado
                           </span>
                         </div>
@@ -1239,7 +1239,7 @@ export default function ReserveField() {
                               >
                                 <span style={{ fontSize: 13 }}>{slot.label}</span>
                                 <span className="hour-tag" style={{
-                                  color: selected ? 'rgba(255,255,255,.75)' : blocked ? 'rgba(255,255,255,.25)' : night ? '#a78bfa' : 'var(--g400)'
+                                  color: selected ? 'var(--ink)' : blocked ? '#d7dce8' : night ? '#a78bfa' : 'var(--g400)'
                                 }}>
                                   {blocked ? 'Ocupado' : night ? 'Noche' : 'Día'}
                                 </span>
@@ -1301,8 +1301,8 @@ export default function ReserveField() {
                       marginTop: 16, padding: '14px 16px', borderRadius: 14,
                       background: isNight
                         ? 'rgba(124,58,237,.15)'
-                        : 'rgba(34,197,94,.12)',
-                      border: `1.5px solid ${isNight ? 'rgba(167,139,250,.3)' : 'rgba(74,222,128,.25)'}`,
+                        : 'rgba(58,91,240,.12)',
+                      border: `1.5px solid ${isNight ? 'rgba(167,139,250,.3)' : 'rgba(58,91,240,.25)'}`,
                       animation: 'expandIn .2s ease',
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
@@ -1382,13 +1382,13 @@ export default function ReserveField() {
                         <p style={{ fontSize: 13, color: 'var(--muted)' }}>{field.name}</p>
                       </div>
                       <button onClick={() => setShowModal(false)} aria-label="Cerrar" disabled={status === 'sending'}
-                        style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', flexShrink: 0 }}>
+                        style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--border)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', flexShrink: 0 }}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                       </button>
                     </div>
                   </div>
 
-                  <div style={{ margin: '16px 24px', padding: '16px 18px', borderRadius: 16, background: 'rgba(34,197,94,.12)', border: '1.5px solid rgba(74,222,128,.25)' }}>
+                  <div style={{ margin: '16px 24px', padding: '16px 18px', borderRadius: 16, background: 'rgba(58,91,240,.12)', border: '1.5px solid rgba(58,91,240,.25)' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                       {[
                         { l: 'Fecha',  v: dateDisplay },
@@ -1506,7 +1506,7 @@ export default function ReserveField() {
                         fontWeight: 800, fontSize: 14, border: 'none',
                         fontFamily: 'var(--font-h)', letterSpacing: '.04em', textTransform: 'uppercase',
                         cursor: status === 'sending' ? 'not-allowed' : 'pointer',
-                        boxShadow: status === 'sending' ? 'none' : '0 4px 20px rgba(22,163,74,.32)',
+                        boxShadow: status === 'sending' ? 'none' : '0 4px 20px rgba(58,91,240,.32)',
                         transition: 'all .2s',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       }}

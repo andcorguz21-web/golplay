@@ -11,21 +11,21 @@ type TeamInfo = { id: string; name: string; slug: string; logo_url: string | nul
 const CSS = `${GOLPLAY_BASE_CSS}
 .page {
   min-height: 100vh;
-  background: linear-gradient(155deg, #030c06 0%, #0a3018 55%, #0e4820 100%);
+  background: linear-gradient(155deg, #030c06 0%, #1e2a66 55%, #0e4820 100%);
   padding-top: 62px; position: relative; overflow: hidden;
 }
 .page::before {
   content: ''; position: absolute; top: 30%; left: 50%;
   transform: translate(-50%,-50%);
   width: 600px; height: 400px; border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(22,163,74,.12) 0%, transparent 65%);
+  background: radial-gradient(ellipse, rgba(58,91,240,.12) 0%, transparent 65%);
   pointer-events: none;
 }
 .page::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background-image:
-    repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(255,255,255,.02) 59px,rgba(255,255,255,.02) 60px),
-    repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(255,255,255,.02) 59px,rgba(255,255,255,.02) 60px);
+    repeating-linear-gradient(0deg,transparent,transparent 59px,#fff 59px,#fff 60px),
+    repeating-linear-gradient(90deg,transparent,transparent 59px,#fff 59px,#fff 60px);
 }
 .wrap {
   position: relative; z-index: 1; max-width: 500px; margin: 0 auto;
@@ -34,62 +34,62 @@ const CSS = `${GOLPLAY_BASE_CSS}
 .team-logo-wrap {
   display: inline-flex; align-items: center; justify-content: center;
   width: 130px; height: 130px;
-  background: rgba(255,255,255,.05); border: 1.5px solid rgba(74,222,128,.25);
+  background: #fff; border: 1.5px solid rgba(58,91,240,.25);
   border-radius: 28px; margin-bottom: 28px; overflow: hidden;
 }
 .team-logo-img { width: 100%; height: 100%; object-fit: cover; }
 .team-logo-fallback {
   font-family: var(--font-d); font-size: 60px; font-weight: 800;
-  color: var(--g4); line-height: 1;
+  color: var(--blue); line-height: 1;
 }
 .badge {
   display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.22);
+  background: rgba(58,91,240,.1); border: 1px solid rgba(58,91,240,.22);
   border-radius: 999px; padding: 5px 12px; margin-bottom: 20px;
 }
 .badge-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--g4);
+  width: 6px; height: 6px; border-radius: 50%; background: var(--blue);
   animation: pulseDot 2s infinite;
 }
 .badge-text {
-  font-size: 10px; font-weight: 700; color: rgba(74,222,128,.88);
+  font-size: 10px; font-weight: 700; color: rgba(58,91,240,.88);
   letter-spacing: .08em; text-transform: uppercase;
 }
 .title {
   font-family: var(--font-d); font-size: clamp(36px,8vw,52px);
   font-weight: 800; line-height: 1; letter-spacing: -.03em;
-  color: #fff; margin: 0 0 8px;
+  color:var(--ink); margin: 0 0 8px;
 }
 .title-accent {
-  background: linear-gradient(110deg, var(--g4) 0%, #34d399 60%, #22d3ee 100%);
+  background: linear-gradient(110deg, var(--blue) 0%, #4a68f5 60%, #22d3ee 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .subtitle {
-  font-size: 15px; color: rgba(255,255,255,.55);
+  font-size: 15px; color: var(--muted);
   margin: 0 auto 32px; line-height: 1.6; max-width: 400px;
 }
 .cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .cta {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 14px 28px; border-radius: 13px;
-  background: var(--g4); color: var(--dark);
+  background: var(--blue); color: var(--dark);
   border: none; text-decoration: none;
   font-family: var(--font-d); font-size: 14px; font-weight: 800;
-  cursor: pointer; box-shadow: 0 4px 22px rgba(74,222,128,.38);
+  cursor: pointer; box-shadow: 0 4px 22px rgba(58,91,240,.38);
   transition: all .15s ease;
 }
-.cta:hover { background: #34d399; transform: translateY(-1px); }
+.cta:hover { background: #4a68f5; transform: translateY(-1px); }
 .cta-ghost {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 14px 24px; border-radius: 13px;
-  background: rgba(255,255,255,.07); color: rgba(255,255,255,.65);
+  background: var(--line); color: var(--ink2);
   border: 1px solid rgba(255,255,255,.13);
   font-family: var(--font-d); font-size: 13px; font-weight: 700; text-decoration: none;
   transition: all .15s ease;
 }
-.cta-ghost:hover { background: rgba(255,255,255,.12); color: #fff; }
-.loading-text { color: rgba(255,255,255,.5); padding: 80px; }
+.cta-ghost:hover { background: var(--line); color:var(--ink); }
+.loading-text { color: var(--muted); padding: 80px; }
 .error-text {
   background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3);
   color: #fca5a5; padding: 16px 20px; border-radius: var(--r-md);
@@ -143,7 +143,7 @@ export default function UnirseEquipo() {
     <>
       <Head><title>Unirse al equipo · GolPlay</title></Head>
       <style>{CSS}</style>
-      <Navbar dark={true} />
+      <Navbar />
       <div className="page">
         <div className="wrap">
           {state === "loading" && <div className="loading-text">Cargando invitación…</div>}

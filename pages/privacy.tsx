@@ -6,7 +6,7 @@
  *   - :root local + @import fonts + reset eliminados (vienen de golplay-tokens.css).
  *   - Nav propia (.priv-nav) → Navbar global (variante dark, transparent sobre el hero dark).
  *   - var(--ink2) → var(--ink); --faint (sin uso) eliminado.
- *   - var(--g0) del underline → rgba(74,222,128,.2) (predecible sobre bone).
+ *   - var(--g0) del underline → rgba(58,91,240,.2) (predecible sobre bone).
  *
  * Sin cambios: contenido legal (sections), TOC, trust pills, footer.
  */
@@ -177,8 +177,8 @@ export default function PrivacyPage() {
 
       <style>{CSS}</style>
 
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         {/* Hero */}
         <section className="priv-hero">
@@ -253,7 +253,7 @@ export default function PrivacyPage() {
 
 const CSS = `
 .priv-hero{
-  background:linear-gradient(155deg,var(--dark) 0%,#0a3018 60%,#0e4820 100%);
+  background:var(--paper);
   padding:clamp(74px,10vw,110px) clamp(16px,4vw,40px) clamp(44px,6vw,72px);
   position:relative; overflow:hidden;
 }
@@ -266,21 +266,21 @@ const CSS = `
 .priv-hero__inner{max-width:680px;margin:0 auto;position:relative;z-index:1;}
 .priv-badge{
   display:inline-flex;align-items:center;gap:6px;
-  background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);
+  background:rgba(58,91,240,.1);border:1px solid rgba(58,91,240,.2);
   border-radius:999px;padding:5px 12px;margin-bottom:20px;
 }
-.priv-badge__dot{width:5px;height:5px;border-radius:50%;background:var(--g4);}
-.priv-badge__text{font-size:10px;font-weight:700;color:rgba(74,222,128,.88);letter-spacing:.08em;text-transform:uppercase;}
+.priv-badge__dot{width:5px;height:5px;border-radius:50%;background:var(--blue);}
+.priv-badge__text{font-size:10px;font-weight:700;color:rgba(58,91,240,.88);letter-spacing:.08em;text-transform:uppercase;}
 .priv-hero h1{
   font-family:var(--font-d);font-size:clamp(30px,7vw,48px);font-weight:800;
-  color:#fff;line-height:1.05;letter-spacing:-.02em;margin-bottom:14px;
+  color:var(--ink);line-height:1.05;letter-spacing:-.02em;margin-bottom:14px;
 }
 .priv-hero h1 span{
-  background:linear-gradient(110deg,var(--g4) 0%,#34d399 60%,#22d3ee 100%);
+  background:linear-gradient(110deg,var(--blue) 0%,#4a68f5 60%,#22d3ee 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-.priv-hero p{font-size:14px;color:rgba(255,255,255,.45);line-height:1.7;margin-bottom:8px;}
-.priv-updated{font-size:12px;color:rgba(255,255,255,.25);margin-top:16px;}
+.priv-hero p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:8px;}
+.priv-updated{font-size:12px;color:var(--faint);margin-top:16px;}
 
 .priv-body{max-width:760px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,40px);}
 
@@ -309,7 +309,7 @@ const CSS = `
 .priv-section h2{
   font-family:var(--font-d);font-size:clamp(16px,3vw,20px);font-weight:800;
   color:var(--ink);letter-spacing:-.01em;margin-bottom:14px;
-  padding-bottom:10px;border-bottom:2px solid rgba(74,222,128,.2);
+  padding-bottom:10px;border-bottom:2px solid rgba(58,91,240,.2);
 }
 .priv-section__body{
   font-size:14px;color:var(--ink);opacity:.85;line-height:1.8;white-space:pre-line;
@@ -321,7 +321,7 @@ const CSS = `
   text-align:center;padding:32px clamp(16px,4vw,40px);
   font-size:12px;line-height:1.7;
 }
-.priv-footer__link{color:rgba(255,255,255,.45);text-decoration:none;}
+.priv-footer__link{color:var(--muted);text-decoration:none;}
 .priv-footer__link:hover{text-decoration:underline;}
 
 @media(max-width:640px){

@@ -375,11 +375,11 @@ const CSS = `
 @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.page { min-height: 100vh; padding-top: 62px; background: #0C0D0B; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #e2e8e0; }
+.page { min-height: 100vh; padding-top: 62px; background: #121628; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #e7ebf3; }
 .content { max-width: 400px; margin: 0 auto; padding: 40px 20px 80px; animation: fadeUp .4s ease both; }
 .not-found { max-width: 400px; margin: 0 auto; padding: 80px 20px; text-align: center; }
 .not-found h2 { font-size: 28px; color: #fff; margin-bottom: 16px; font-weight: 600; }
-.link-back { color: #4ade80; text-decoration: underline; font-size: 14px; }
+.link-back { color: #d4f24d; text-decoration: underline; font-size: 14px; }
 
 /* ============ CARD WRAPPER ============ */
 .card-wrap {

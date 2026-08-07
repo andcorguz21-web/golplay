@@ -1,777 +1,475 @@
 /**
- * GolPlay — pages/index.tsx  v7.0 "Social-first"
+ * GolPlay — pages/index.tsx  v8.0 "Playtomic-style"
  *
- * La plataforma del fútbol amateur: carta de jugador, equipos, retos — y la cancha.
- * Home 100% dark. Navbar compartido. Tokens globales + GOLPLAY_BASE_CSS.
- * La búsqueda redirige a /reserve (filtrado fino vive allá).
+ * Home claro y consumer: hero azul + acento lima, buscador, canchas reales,
+ * pilares (carta/retos/equipos), carta de jugador, torneos y CTA.
+ * Datos en vivo desde Supabase (fields + field_images + tournaments).
+ * Reusa <Navbar dark /> y <Logo /> para mantener sesión y marca consistentes.
  */
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Navigation } from 'swiper/modules'
 import Navbar from '@/components/ui/Navbar'
-import { GOLPLAY_BASE_CSS } from '@/lib/styles/golplay'
-import 'swiper/css'
-import 'swiper/css/navigation'
+import Logo from '@/components/ui/Logo'
 
 // ─── Types ──────────────────────────────────────────────────────
-type Complex = {
+type Cancha = {
   id: number
   name: string
-  slug: string
+  slug: string | null
   city: string | null
-  country: string | null
+  location: string | null
+  price: number | null
+  sport: string | null
   image: string | null
-  field_count: number
-  sports: string[]
 }
 
-// ─── Constants ──────────────────────────────────────────────────
-const SPORTS = [
-  { value: '',         emoji: '🏟️', label: 'Todos'    },
-  { value: 'futbol5',  emoji: '⚽',  label: 'Fútbol 5' },
-  { value: 'futbol7',  emoji: '⚽',  label: 'Fútbol 7' },
-  { value: 'padel',    emoji: '🎾',  label: 'Pádel'    },
-  { value: 'tenis',    emoji: '🎾',  label: 'Tenis'    },
-  { value: 'multiuso', emoji: '🏟️',  label: 'Multiuso' },
-  { value: 'basquet',  emoji: '🏀',  label: 'Básquet'  },
+type Torneo = {
+  id: number
+  slug: string | null
+  name: string
+  venue_city: string | null
+  status: string | null
+  max_teams: number | null
+  start_date: string | null
+  cover_image_url: string | null
+  sport_type: string | null
+}
+
+// ─── Helpers ────────────────────────────────────────────────────
+const SPORT_LABEL: Record<string, string> = {
+  futbol5: 'Fútbol 5', futbol7: 'Fútbol 7', futbol11: 'Fútbol 11',
+  padel: 'Pádel', tenis: 'Tenis', basquet: 'Básquet', multiuso: 'Multiuso',
+}
+const sportLabel = (s: string | null) => (s && SPORT_LABEL[s]) || 'Cancha'
+const money = (n: number | null) =>
+  n == null ? '' : '₡' + Number(n).toLocaleString('es-CR')
+const fmtDate = (d: string | null) => {
+  if (!d) return ''
+  try {
+    return new Date(d).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })
+  } catch { return '' }
+}
+
+const CHIPS = [
+  { value: 'futbol5', label: 'Fútbol 5' },
+  { value: 'futbol7', label: 'Fútbol 7' },
+  { value: 'padel', label: 'Pádel' },
 ]
 
-const PILLARS = [
-  {
-    href: '/jugadores/crear',
-    emoji: '🃏',
-    title: 'Tu carta de jugador',
-    desc: 'Creá tu perfil estilo FIFA, con rating y stats. Compartila y que todos vean tu nivel.',
-    cta: 'Crear mi carta',
-  },
-  {
-    href: '/retos',
-    emoji: '⚔️',
-    title: 'Retos',
-    desc: 'Desafiá a otros equipos. Coordinás cancha, fecha y hora. El que gana, sube.',
-    cta: 'Ver retos',
-  },
-  {
-    href: '/equipos',
-    emoji: '🛡️',
-    title: 'Equipos',
-    desc: 'Armá tu plantilla, invitá por cédula o link, y jugá en serio con tu banda.',
-    cta: 'Armar equipo',
-  },
-]
-
-const STEPS = [
-  { n: '01', e: '🃏', t: 'Creá tu carta',       d: 'Tu perfil de jugador con foto, rating y stats. Gratis, sin contraseñas.' },
-  { n: '02', e: '🛡️', t: 'Armá tu equipo',      d: 'Invitá a tu banda por link o cédula. Vos sos el capitán.' },
-  { n: '03', e: '⚔️', t: 'Retá o reservá',      d: 'Desafiá a otro equipo o reservá la cancha directo, sin llamadas.' },
-  { n: '04', e: '⚽', t: '¡A jugar!',            d: 'Confirmación al instante por correo. Llegás y jugás.' },
-]
-
-// ─── Global CSS ─────────────────────────────────────────────────
-const CSS = `${GOLPLAY_BASE_CSS}
-
-.home { background: var(--dark); color: #fff; overflow-x: hidden; }
-.home .h2 { color: #fff; }
-.home .h2 em { font-style: italic; color: var(--g4); }
-.home .eyebrow { color: var(--g4); }
-
-.sp-sec { padding: clamp(52px,7vw,88px) clamp(16px,4vw,40px); }
-.sec-inner { max-width: 1100px; margin: 0 auto; }
-
-/* ── Buttons ─────────────────────────────────────────────────── */
-.btn-primary {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 14px 26px; border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--g5), var(--g6));
-  color: #fff; border: none; cursor: pointer; text-decoration: none;
-  font-family: var(--font-d); font-size: 15px; font-weight: 800; letter-spacing: -.01em;
-  box-shadow: 0 4px 22px rgba(34,197,94,.32); transition: all .16s;
+// ─── Styles (scoped under .pt-home) ─────────────────────────────
+const CSS = `
+.pt-home{
+  --blue:#3a5bf0;--blue2:#2c46cf;--ink:#141a33;--ink2:#4b5468;
+  --lime:#d4f24d;--lime2:#c7ea38;--limeink:#1c2a0a;
+  --paper:#f4f6fb;--card:#fff;--line:#e7ebf3;
+  --d:'Poppins',system-ui,sans-serif;--u:'Inter',system-ui,sans-serif;
+  font-family:var(--u);color:var(--ink);background:var(--card);line-height:1.55;
 }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(34,197,94,.45); }
-.btn-ghost {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 14px 24px; border-radius: var(--r-md);
-  background: rgba(255,255,255,.06); color: rgba(255,255,255,.78);
-  border: 1px solid rgba(255,255,255,.14); cursor: pointer; text-decoration: none;
-  font-family: var(--font-d); font-size: 14px; font-weight: 700;
-  transition: all .16s;
-}
-.btn-ghost:hover { background: rgba(255,255,255,.1); color: #fff; }
-
-/* ── Hero ────────────────────────────────────────────────────── */
-.hero {
-  min-height: 100svh; background: var(--dark);
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 62px 20px 32px;
-}
-.hero__grid-lines {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image:
-    repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(255,255,255,.04) 59px,rgba(255,255,255,.04) 60px),
-    repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(255,255,255,.04) 59px,rgba(255,255,255,.04) 60px);
-}
-.hero__glow {
-  position: absolute; top: 24%; left: 50%; transform: translate(-50%,-50%);
-  width: 760px; height: 480px; border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(22,163,74,.12) 0%, transparent 70%);
-  pointer-events: none;
-}
-.hero__content {
-  position: relative; z-index: 2; width: 100%; max-width: 1100px; margin: 0 auto;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 28px;
-}
-.hero__left { width: 100%; max-width: 600px; }
-.hero__right { width: 100%; display: flex; justify-content: center; }
-
-.live-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.22);
-  border-radius: 999px; padding: 5px 12px; margin-bottom: 22px;
-  animation: fadeIn .5s ease both;
-}
-.live-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--g4); animation: pulseDot 2s infinite; flex-shrink: 0; }
-.live-badge__text { font-size: 10px; font-weight: 700; color: rgba(74,222,128,.88); letter-spacing: .08em; text-transform: uppercase; }
-
-.hero__h1 {
-  font-family: var(--font-d); font-size: clamp(40px,10vw,72px);
-  font-weight: 800; line-height: .92; letter-spacing: -.03em; color: #fff; margin-bottom: 16px;
-}
-.hero__h1-accent {
-  display: block;
-  background: linear-gradient(110deg, var(--g4) 0%, #34d399 60%, #22d3ee 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.hero__sub { font-size: clamp(14px,3.6vw,17px); color: rgba(255,255,255,.5); line-height: 1.6; margin-bottom: 28px; max-width: 440px; }
-.hero__sub strong { color: rgba(255,255,255,.78); font-weight: 600; }
-.hero__ctas { display: flex; gap: 12px; flex-wrap: wrap; }
-
-/* Hero card mock */
-.hero-mock {
-  width: 210px; aspect-ratio: 5/7; border-radius: 20px; padding: 16px;
-  background: radial-gradient(ellipse at 20% 0%, rgba(255,255,255,.4) 0%, transparent 50%),
-              linear-gradient(160deg,#FFE07A 0%,#C68F1F 24%,#FFEC9C 48%,#8C6517 78%,#E6BD51 100%);
-  color: #3a1f00; position: relative; overflow: hidden;
-  box-shadow: 0 24px 50px rgba(196,140,30,.4), 0 8px 18px rgba(0,0,0,.5);
-  animation: floatY 5s ease-in-out infinite; transform: rotate(-4deg);
-}
-.hero-mock__rating { font-family: var(--font-d); font-size: 44px; font-weight: 800; line-height: .9; }
-.hero-mock__pos { font-size: 12px; font-weight: 800; letter-spacing: .04em; opacity: .85; margin-bottom: 14px; }
-.hero-mock__ph {
-  width: 78px; height: 78px; border-radius: 12px; margin: 0 auto 12px;
-  background: rgba(0,0,0,.16); display: flex; align-items: center; justify-content: center; font-size: 34px;
-}
-.hero-mock__name { text-align: center; font-family: var(--font-d); font-weight: 800; font-size: 17px; letter-spacing: -.01em; margin-bottom: 10px; }
-.hero-mock__divider { height: 1.5px; background: linear-gradient(90deg,transparent,currentColor 30%,currentColor 70%,transparent); opacity: .4; margin-bottom: 10px; }
-.hero-mock__stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; text-align: center; }
-.hero-mock__stat b { font-family: var(--font-d); font-size: 15px; display: block; }
-.hero-mock__stat span { font-size: 8px; font-weight: 700; letter-spacing: .06em; opacity: .8; }
-
-/* ── Pillars ─────────────────────────────────────────────────── */
-.pillars { display: grid; grid-template-columns: 1fr; gap: 12px; }
-.pillar {
-  display: block; text-decoration: none; color: inherit;
-  background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08);
-  border-radius: var(--r-xl); padding: 26px 24px;
-  transition: all .22s cubic-bezier(.16,1,.3,1); position: relative; overflow: hidden;
-}
-.pillar:hover { transform: translateY(-4px); border-color: var(--g4); background: rgba(255,255,255,.06); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
-.pillar__emoji {
-  width: 48px; height: 48px; border-radius: 13px; margin-bottom: 16px;
-  background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.18);
-  display: flex; align-items: center; justify-content: center; font-size: 24px;
-}
-.pillar__title { font-family: var(--font-d); font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 8px; letter-spacing: -.01em; }
-.pillar__desc { font-size: 13.5px; color: rgba(255,255,255,.5); line-height: 1.6; margin-bottom: 16px; }
-.pillar__cta { font-family: var(--font-d); font-size: 13px; font-weight: 800; color: var(--g4); display: inline-flex; align-items: center; gap: 5px; }
-
-/* ── Search card ─────────────────────────────────────────────── */
-.search-card {
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
-  border-radius: var(--r-xl); padding: 16px; backdrop-filter: blur(20px); max-width: 620px;
-}
-.search-card__sports { display: flex; gap: 5px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
-.search-card__sports::-webkit-scrollbar { display: none; }
-.sc-chip {
-  display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px;
-  white-space: nowrap; flex-shrink: 0; border: 1.5px solid rgba(255,255,255,.1); background: transparent;
-  font-family: var(--font-u); font-size: 12px; font-weight: 600; color: rgba(255,255,255,.5); cursor: pointer; transition: all .14s;
-}
-.sc-chip:hover, .sc-chip.on { border-color: var(--g5); background: rgba(34,197,94,.12); color: var(--g4); }
-.search-row { display: flex; gap: 8px; }
-.sf {
-  flex: 1; display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.1);
-  border-radius: var(--r-md); padding: 12px 14px; transition: all .14s;
-}
-.sf:focus-within { border-color: rgba(74,222,128,.4); background: rgba(74,222,128,.06); }
-.sf svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .5; }
-.sf input { background: transparent; border: none; outline: none; font-family: var(--font-u); font-size: 14px; font-weight: 500; color: #fff; width: 100%; }
-.sf input::placeholder { color: rgba(255,255,255,.32); }
-.search-cta {
-  padding: 0 22px; border: none; border-radius: var(--r-md);
-  background: linear-gradient(135deg,var(--g5),var(--g6)); color: #fff; cursor: pointer;
-  font-family: var(--font-d); font-size: 14px; font-weight: 800; white-space: nowrap;
-  display: flex; align-items: center; gap: 7px; transition: all .16s; box-shadow: 0 4px 20px rgba(34,197,94,.3);
-}
-.search-cta:hover { transform: translateY(-1px); }
-
-/* ── Complex card ────────────────────────────────────────────── */
-.gp-card {
-  width: 260px; background: rgba(255,255,255,.04); border-radius: var(--r-xl);
-  overflow: hidden; cursor: pointer; border: 1.5px solid rgba(255,255,255,.08);
-  transition: transform .22s cubic-bezier(.16,1,.3,1), box-shadow .22s, border-color .22s;
-  display: block; outline: none; text-decoration: none; scroll-snap-align: start; flex-shrink: 0;
-}
-.gp-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,.45); border-color: var(--g4); }
-.gp-card:focus-visible { outline: 2px solid var(--g4); outline-offset: 3px; }
-
-.cards-row {
-  display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none;
-  scroll-snap-type: x mandatory; padding-bottom: 4px;
-  margin: 0 calc(-1*clamp(16px,4vw,40px)); padding-left: clamp(16px,4vw,40px); padding-right: clamp(16px,4vw,40px);
-}
-.cards-row::-webkit-scrollbar { display: none; }
-
-.gp-swiper { overflow: visible!important; }
-.gp-swiper .swiper-slide { width: auto!important; }
-.gp-swiper .swiper-button-next, .gp-swiper .swiper-button-prev {
-  color: #fff!important; background: rgba(255,255,255,.1); backdrop-filter: blur(12px);
-  width: 36px!important; height: 36px!important; border-radius: 50%;
-  border: 1px solid rgba(255,255,255,.12)!important; top: 42%!important; transition: all .2s ease;
-}
-.gp-swiper .swiper-button-next:hover, .gp-swiper .swiper-button-prev:hover { background: rgba(255,255,255,.18)!important; transform: scale(1.06); }
-.gp-swiper .swiper-button-next::after, .gp-swiper .swiper-button-prev::after { font-size: 12px!important; font-weight: 900!important; }
-.gp-swiper .swiper-button-next { right: -4px!important; }
-.gp-swiper .swiper-button-prev { left: -4px!important; }
-.gp-swiper .swiper-button-disabled { opacity: 0!important; pointer-events: none; }
-
-/* ── Step ────────────────────────────────────────────────────── */
-.steps-grid { display: grid; grid-template-columns: 1fr; gap: 11px; }
-.step {
-  background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.08);
-  border-radius: var(--r-xl); padding: 24px 20px; transition: all .2s ease;
-  display: flex; gap: 16px; align-items: flex-start;
-}
-.step:hover { border-color: var(--g4); background: rgba(255,255,255,.06); transform: translateX(4px); }
-.step__num {
-  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
-  background: rgba(34,197,94,.14); border: 1.5px solid rgba(74,222,128,.22);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-d); font-size: 15px; font-weight: 800; color: var(--g4);
-}
-.step__title { font-family: var(--font-d); font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 5px; }
-.step__desc { font-size: 13px; color: rgba(255,255,255,.5); line-height: 1.65; }
-
-/* ── Owner card ──────────────────────────────────────────────── */
-.owner-card {
-  background: linear-gradient(150deg,#0d1f10 0%,#0a3018 60%,#062a12 100%);
-  border: 1px solid rgba(74,222,128,.14); border-radius: var(--r-xl);
-  padding: 36px 28px; position: relative; overflow: hidden;
-}
-.owner-card::before {
-  content: ''; position: absolute; top: -40%; right: -20%; width: 280px; height: 280px;
-  border-radius: 50%; background: radial-gradient(circle,rgba(22,163,74,.16) 0%,transparent 70%); pointer-events: none;
-}
-.owner-feat { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,.62); font-weight: 500; }
-.owner-feat__icon {
-  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-  background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.15);
-  display: flex; align-items: center; justify-content: center; font-size: 13px;
-}
-.owner-cta {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 13px;
-  background: var(--g5); color: var(--dark); border: none; border-radius: var(--r-md);
-  font-family: var(--font-d); font-size: 14px; font-weight: 800; cursor: pointer; text-decoration: none;
-  box-shadow: 0 4px 20px rgba(34,197,94,.25); letter-spacing: -.01em; transition: all .15s;
-}
-.owner-cta:hover { background: var(--g4); transform: translateY(-1px); }
-
-/* ── WhatsApp FAB + toast ────────────────────────────────────── */
-.wa-fab {
-  position: fixed; bottom: clamp(18px,5vw,28px); right: clamp(14px,4vw,24px);
-  width: 54px; height: 54px; border-radius: 50%; z-index: 8900;
-  background: linear-gradient(135deg,#25d366,#128c7e);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 22px rgba(37,211,102,.45); animation: waPulse 3s ease infinite;
-  cursor: pointer; border: none; text-decoration: none; transition: transform .18s ease;
-}
-.wa-fab:hover { transform: scale(1.1) translateY(-2px); }
-.toast {
-  position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
-  background: var(--dark2); color: #fff; padding: 12px 20px; border-radius: 13px;
-  font-weight: 700; font-size: 13px; box-shadow: 0 8px 28px rgba(0,0,0,.4);
-  z-index: 9999; display: flex; align-items: center; gap: 9px; white-space: nowrap;
-  animation: toastIn .3s ease; border: 1px solid rgba(255,255,255,.1);
-}
-
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (min-width: 769px) {
-  .hero__content { flex-direction: row; align-items: center; gap: 56px; }
-  .hero__left { flex: 1; }
-  .hero__right { width: auto; flex-shrink: 0; }
-  .hero-mock { width: 240px; }
-  .pillars { grid-template-columns: repeat(3,1fr); }
-  .steps-grid { grid-template-columns: repeat(4,1fr); }
-}
-@media (max-width: 400px) {
-  .hero__h1 { font-size: 38px; }
-  .hero-mock { width: 180px; }
+.pt-home *{box-sizing:border-box}
+.pt-home .wrap{max-width:1240px;margin:0 auto;padding:0 40px}
+.pt-home .ic{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.pt-home h2{font-family:var(--d);font-weight:700;font-size:clamp(28px,3.6vw,42px);letter-spacing:-.02em;line-height:1.08}
+.pt-home h2 em{font-style:italic;color:var(--blue)}
+.pt-home .eyebrow{font-family:var(--u);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue)}
+.pt-home .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--u);font-weight:600;font-size:15px;padding:13px 24px;border-radius:99px;cursor:pointer;border:2px solid transparent;transition:.15s;text-decoration:none}
+.pt-home .btn .ic{width:16px;height:16px}
+.pt-home .btn-lime{background:var(--lime);color:var(--limeink)}
+.pt-home .btn-lime:hover{background:var(--lime2)}
+.pt-home .btn-out{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.pt-home .btn-out:hover{border-color:#fff;background:rgba(255,255,255,.1)}
+.pt-home .link{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:15px;color:var(--blue);text-decoration:none}
+.pt-home .link:hover{gap:9px}
+/* hero */
+.pt-home .hero{background:var(--blue);position:relative;overflow:hidden;padding:120px 0 92px}
+.pt-home .hero::before{content:"";position:absolute;top:-10%;left:-8%;width:60%;height:130%;background:rgba(255,255,255,.05);transform:skewX(-14deg);pointer-events:none}
+.pt-home .hero::after{content:"";position:absolute;top:0;left:22%;width:28%;height:130%;background:rgba(255,255,255,.045);transform:skewX(-14deg);pointer-events:none}
+.pt-home .hero-in{position:relative;z-index:2;display:grid;grid-template-columns:1fr .92fr;gap:44px;align-items:center}
+.pt-home .hero h1{font-family:var(--d);font-weight:800;color:#fff;font-size:clamp(42px,5.4vw,66px);line-height:1.03;letter-spacing:-.03em}
+.pt-home .hero h1 em{font-style:italic;color:var(--lime)}
+.pt-home .hero .sub{margin:22px 0 28px;color:rgba(255,255,255,.9);font-size:19px;font-weight:500;max-width:440px;line-height:1.4}
+.pt-home .search{display:flex;align-items:center;gap:10px;background:#fff;border-radius:99px;padding:8px 8px 8px 22px;max-width:540px;box-shadow:0 20px 50px rgba(20,26,51,.22)}
+.pt-home .search .ic{width:22px;height:22px;stroke:var(--blue)}
+.pt-home .search input{flex:1;border:0;outline:0;font-family:var(--u);font-size:16px;color:var(--ink);background:transparent;min-width:0}
+.pt-home .search input::placeholder{color:#9aa2b4}
+.pt-home .search .go{background:var(--ink);color:#fff;border-radius:99px;padding:13px 24px;font-weight:600;font-size:15px;border:0;cursor:pointer;font-family:var(--u)}
+.pt-home .chips{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}
+.pt-home .chips button{background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600;padding:7px 15px;border-radius:99px;border:1px solid rgba(255,255,255,.24);cursor:pointer;font-family:var(--u);transition:.14s}
+.pt-home .chips button:hover,.pt-home .chips button.on{background:var(--lime);color:var(--limeink);border-color:var(--lime)}
+.pt-home .hero-photo{position:relative;height:470px;border-radius:220px 220px 32px 32px;overflow:hidden;background:#26379e}
+.pt-home .hero-photo img{width:100%;height:100%;object-fit:cover}
+.pt-home .hero-badge{position:absolute;left:-16px;bottom:40px;z-index:3;background:#fff;border-radius:18px;padding:13px 17px;box-shadow:0 14px 34px rgba(20,26,51,.2);display:flex;align-items:center;gap:11px}
+.pt-home .hero-badge b{font-family:var(--d);font-weight:700;font-size:17px;display:block;line-height:1.1;color:var(--ink)}
+.pt-home .hero-badge small{color:var(--ink2);font-size:12.5px}
+.pt-home .hero-badge .fi{width:40px;height:40px;border-radius:12px;background:var(--blue);display:grid;place-items:center;color:#fff}
+/* about */
+.pt-home .about{padding:88px 0}
+.pt-home .about-in{display:grid;grid-template-columns:.85fr 1fr;gap:60px;align-items:center}
+.pt-home .about-photo{border-radius:28px;overflow:hidden;height:410px;background:var(--paper)}
+.pt-home .about-photo img{width:100%;height:100%;object-fit:cover}
+.pt-home .about h2{margin:14px 0 18px}
+.pt-home .about p{color:var(--ink2);font-size:17px;margin-bottom:14px}
+.pt-home .mark{background:var(--lime);color:var(--limeink);padding:1px 6px;border-radius:5px;font-weight:600;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.pt-home .about .pills{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.pt-home .about .pill{display:flex;align-items:center;gap:9px;background:var(--paper);border-radius:14px;padding:12px 16px;font-weight:600;font-size:14.5px}
+.pt-home .about .pill .ic{stroke:var(--blue)}
+/* sections */
+.pt-home .sec{padding:78px 0}
+.pt-home .sec.paper{background:var(--paper)}
+.pt-home .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:32px}
+.pt-home .rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:22px}
+/* cancha card */
+.pt-home .fc{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;transition:.16s;cursor:pointer;text-decoration:none;color:inherit;display:block}
+.pt-home .fc:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(20,26,51,.1)}
+.pt-home .fc .img{height:184px;background-size:cover;background-position:center;position:relative;background-color:var(--blue)}
+.pt-home .fc .price{position:absolute;top:12px;right:12px;background:#fff;border-radius:99px;padding:6px 13px;font-family:var(--d);font-weight:700;font-size:14px;box-shadow:0 4px 12px rgba(20,26,51,.15)}
+.pt-home .fc-b{padding:16px 18px 18px}
+.pt-home .fc-b h3{font-family:var(--d);font-weight:700;font-size:18px}
+.pt-home .fc-b .loc{display:flex;align-items:center;gap:6px;color:var(--ink2);font-size:13.5px;margin-top:5px}
+.pt-home .fc-b .loc .ic{width:15px;height:15px;stroke:var(--blue)}
+.pt-home .fc-b .foot{display:flex;align-items:center;justify-content:space-between;margin-top:15px}
+.pt-home .fc-b .type{background:var(--paper);color:var(--ink2);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:99px}
+.pt-home .fc-b .cta{display:inline-flex;align-items:center;gap:5px;color:var(--blue);font-weight:600;font-size:13.5px}
+/* feature cards */
+.pt-home .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.pt-home .feat-c{border-radius:24px;padding:30px;min-height:220px;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none}
+.pt-home .feat-c.blue{background:var(--blue);color:#fff}
+.pt-home .feat-c.dark{background:var(--ink);color:#fff}
+.pt-home .feat-c.lime{background:var(--lime);color:var(--limeink)}
+.pt-home .feat-c .fi{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.16)}
+.pt-home .feat-c.lime .fi{background:rgba(28,42,10,.12)}
+.pt-home .feat-c .fi .ic{width:24px;height:24px}
+.pt-home .feat-c h3{font-family:var(--d);font-weight:700;font-size:23px;margin:18px 0 8px}
+.pt-home .feat-c p{font-size:14.5px;opacity:.86;line-height:1.5}
+.pt-home .feat-c .go{margin-top:16px;display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:14.5px}
+/* carta band */
+.pt-home .carta-band{background:var(--ink);color:#fff;border-radius:32px;overflow:hidden;display:grid;grid-template-columns:1fr .7fr;gap:40px;align-items:center;padding:52px 56px}
+.pt-home .carta-band .eyebrow{color:var(--lime)}
+.pt-home .carta-band h2{color:#fff;margin:12px 0 16px}
+.pt-home .carta-band h2 em{color:var(--lime)}
+.pt-home .carta-band p{color:rgba(255,255,255,.72);font-size:16px;max-width:420px;margin-bottom:24px}
+.pt-home .pcard{background:linear-gradient(180deg,#20294a,#161d38);border:1px solid rgba(255,255,255,.12);border-radius:22px;overflow:hidden;max-width:320px;margin:0 auto;width:100%}
+.pt-home .pcard .pt-top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px}
+.pt-home .pcard .ov{width:52px;height:52px;border-radius:50%;background:var(--lime);color:var(--limeink);display:grid;place-items:center;font-family:var(--d);font-weight:800;font-size:22px}
+.pt-home .pcard .pos{font-weight:600;font-size:13px;color:rgba(255,255,255,.6);text-align:right;line-height:1.3}
+.pt-home .pcard .ph{height:150px;background:linear-gradient(160deg,#2b3a6e,#161d38);display:grid;place-items:center;color:rgba(255,255,255,.18)}
+.pt-home .pcard .ph .ic{width:64px;height:64px}
+.pt-home .pcard .nm{padding:14px 18px 2px;font-family:var(--d);font-weight:700;font-size:20px;text-align:center;color:#fff}
+.pt-home .pcard .team{text-align:center;color:rgba(255,255,255,.55);font-size:13px;margin-bottom:12px}
+.pt-home .pcard .st{padding:0 18px 18px;display:grid;grid-template-columns:1fr 1fr;gap:9px 22px}
+.pt-home .pcard .st .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.pt-home .pcard .st .top span{color:rgba(255,255,255,.55)}
+.pt-home .pcard .st .top b{color:var(--lime)}
+.pt-home .pcard .st .bar{height:4px;border-radius:99px;background:rgba(255,255,255,.12)}
+.pt-home .pcard .st .bar i{display:block;height:100%;border-radius:99px;background:var(--lime)}
+/* cta */
+.pt-home .cta{background:var(--blue);border-radius:32px;text-align:center;padding:62px 40px;color:#fff;position:relative;overflow:hidden;margin:0 0 90px}
+.pt-home .cta::before{content:"";position:absolute;top:-40%;left:10%;width:40%;height:180%;background:rgba(255,255,255,.06);transform:skewX(-14deg)}
+.pt-home .cta h2{color:#fff;position:relative}
+.pt-home .cta p{color:rgba(255,255,255,.88);font-size:18px;margin:14px auto 26px;max-width:460px;position:relative}
+.pt-home .cta .btns{display:flex;gap:12px;justify-content:center;position:relative;flex-wrap:wrap}
+/* footer */
+.pt-home .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;border-top:1px solid var(--line);padding:30px 0 46px}
+.pt-home .foot .c{color:var(--ink2);font-size:14px}
+/* fab */
+.pt-home .fab{position:fixed;left:26px;bottom:26px;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;box-shadow:0 12px 30px rgba(37,211,102,.45);z-index:40}
+.pt-home .fab .ic{width:26px;height:26px}
+.pt-home .skel{background:linear-gradient(90deg,var(--paper),#eef1f8,var(--paper));background-size:200% 100%;animation:ptsh 1.3s infinite;border-radius:22px;height:280px}
+@keyframes ptsh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media(max-width:900px){
+  .pt-home .hero-in,.pt-home .about-in,.pt-home .carta-band{grid-template-columns:1fr}
+  .pt-home .feat{grid-template-columns:1fr}
+  .pt-home .hero-photo{height:320px;border-radius:150px 150px 28px 28px;order:-1}
+  .pt-home .about-photo{height:300px}
+  .pt-home .wrap{padding:0 22px}
 }
 `
-
-// ─── FadeIn ─────────────────────────────────────────────────────
-function FadeIn({ children, delay = 0, style = {} }: {
-  children: React.ReactNode; delay?: number; style?: React.CSSProperties
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [vis, setVis] = useState(false)
-  useEffect(() => {
-    const el = ref.current; if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect() } },
-      { threshold: .05 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-  return (
-    <div ref={ref} style={{
-      opacity: vis ? 1 : 0,
-      transform: vis ? 'none' : 'translateY(16px)',
-      transition: `opacity .6s ease ${delay}ms, transform .6s ease ${delay}ms`,
-      ...style,
-    }}>
-      {children}
-    </div>
-  )
-}
-
-// ─── ComplexCard ────────────────────────────────────────────────
-function ComplexCard({ complex }: { complex: Complex }) {
-  const router = useRouter()
-  return (
-    <article className="gp-card" role="button" tabIndex={0}
-      onClick={() => router.push(`/complexes/${complex.slug}`)}
-      onKeyDown={e => e.key === 'Enter' && router.push(`/complexes/${complex.slug}`)}
-      aria-label={`Ver ${complex.name}`}
-    >
-      <div style={{position:'relative', height:160, background:'linear-gradient(135deg,#0e3d1a,#0a2e15)', overflow:'hidden'}}>
-        {complex.image
-          ? <Image src={complex.image} alt={complex.name} fill sizes="260px" style={{objectFit:'cover'}} loading="lazy"/>
-          : <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:44, opacity:.22}}>🏟️</div>
-        }
-        <div style={{position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 50%)'}}/>
-        <span style={{position:'absolute', top:8, right:8, background:'rgba(0,0,0,.45)', backdropFilter:'blur(8px)', color:'#fff', fontSize:9, fontWeight:800, padding:'3px 8px', borderRadius:999, letterSpacing:'.05em', border:'1px solid rgba(255,255,255,.1)'}}>
-          {complex.field_count} cancha{complex.field_count !== 1 ? 's' : ''}
-        </span>
-        <div style={{position:'absolute', bottom:8, left:10, right:10}}>
-          <span style={{fontSize:14, fontWeight:700, color:'#fff', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-            {complex.name}
-          </span>
-        </div>
-      </div>
-      <div style={{padding:'10px 12px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:8}}>
-        <div style={{display:'flex', alignItems:'center', gap:4, minWidth:0}}>
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth="2.5">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-          </svg>
-          <p style={{fontSize:11, color:'rgba(255,255,255,.5)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-            {complex.city || 'Sin ubicación'}
-          </p>
-        </div>
-        <span style={{fontSize:12, fontWeight:700, color:'var(--g4)', whiteSpace:'nowrap', flexShrink:0}}>Ver canchas →</span>
-      </div>
-    </article>
-  )
-}
-
-function FieldSkeleton() {
-  return (
-    <div style={{width:260, borderRadius:20, overflow:'hidden', background:'rgba(255,255,255,.04)', border:'1.5px solid rgba(255,255,255,.08)', flexShrink:0}}>
-      <div className="sk" style={{height:160}}/>
-      <div style={{padding:'10px 12px 12px', display:'flex', flexDirection:'column', gap:6}}>
-        <div className="sk" style={{height:12, width:'55%'}}/>
-        <div className="sk" style={{height:10, width:'34%'}}/>
-      </div>
-    </div>
-  )
-}
 
 // ─── PAGE ───────────────────────────────────────────────────────
 export default function Home() {
   const router = useRouter()
-
-  const [complexes, setComplexes] = useState<Complex[]>([])
+  const [canchas, setCanchas] = useState<Cancha[]>([])
+  const [torneos, setTorneos] = useState<Torneo[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState(false)
-  const [showToast, setShowToast] = useState(false)
-  const [liveBookingCount, setLiveBookingCount] = useState<number | null>(null)
+  const [bookingCount, setBookingCount] = useState<number | null>(null)
+  const [text, setText] = useState('')
+  const [sport, setSport] = useState('')
 
-  const [localText, setLocalText] = useState('')
-  const [localSport, setLocalSport] = useState('')
-
-  // Live booking count
+  // Contador de reservas (badge)
   useEffect(() => {
     ;(async () => {
       const { count } = await supabase
         .from('bookings')
         .select('id', { count: 'exact', head: true })
         .in('status', ['confirmed', 'pending'])
-      setLiveBookingCount(count ?? 0)
+      setBookingCount(count ?? 0)
     })()
   }, [])
 
-  // Toast (?reserva=ok)
-  useEffect(() => {
-    if (router.query.reserva !== 'ok') return
-    setShowToast(true)
-    const t = setTimeout(() => setShowToast(false), 4500)
-    router.replace('/', undefined, { shallow: true })
-    return () => clearTimeout(t)
-  }, [router.query.reserva])
-
-  // Data fetch — complejos reales (teaser)
+  // Canchas reales + imagen principal
   useEffect(() => {
     ;(async () => {
-      setLoading(true); setLoadError(false)
+      setLoading(true)
       try {
-        const { data: cxs, error } = await supabase
-          .from('complexes')
-          .select('id, name, slug, city, country')
+        const { data: fields } = await supabase
+          .from('fields')
+          .select('id, name, slug, price, sport, city, location, complex_id')
           .eq('active', true)
-          .order('name')
+          .order('total_reservations', { ascending: false })
+          .limit(8)
 
-        if (error || !cxs) throw error
-
-        const ids = cxs.map(c => c.id)
-        if (ids.length === 0) { setComplexes([]); setLoading(false); return }
-
-        const [{ data: activeFields }, { data: allFields }, { data: images }] = await Promise.all([
-          supabase.from('fields').select('id, complex_id, sport').in('complex_id', ids).eq('active', true),
-          supabase.from('fields').select('id, complex_id').in('complex_id', ids),
-          supabase.from('field_images').select('field_id, url, is_main'),
-        ])
-
-        const activeList = activeFields ?? []
-        const allList = allFields ?? []
-        const fieldCountMap: Record<number, number> = {}
-        const sportsMap: Record<number, Set<string>> = {}
-
-        activeList.forEach(f => {
-          fieldCountMap[f.complex_id] = (fieldCountMap[f.complex_id] || 0) + 1
-          if (f.sport) {
-            if (!sportsMap[f.complex_id]) sportsMap[f.complex_id] = new Set()
-            sportsMap[f.complex_id].add(f.sport)
-          }
-        })
-
-        const fieldToComplex: Record<number, number> = {}
-        allList.forEach(f => { fieldToComplex[f.id] = f.complex_id })
-
-        const imageMap: Record<number, string> = {}
-        const seenComplex = new Set<number>()
-        const sortedImgs = [...(images ?? [])].sort((a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0))
-        sortedImgs.forEach(img => {
-          const cxId = fieldToComplex[img.field_id]
-          if (cxId && !seenComplex.has(cxId) && img.url) {
-            imageMap[cxId] = img.url
-            seenComplex.add(cxId)
-          }
-        })
-
-        setComplexes(cxs.map(c => ({
-          id: c.id, name: c.name, slug: c.slug, city: c.city, country: c.country,
-          image: imageMap[c.id] || null,
-          field_count: fieldCountMap[c.id] || 0,
-          sports: [...(sportsMap[c.id] || [])],
+        const list = fields ?? []
+        const ids = list.map(f => f.id)
+        const imgMap: Record<number, string> = {}
+        if (ids.length) {
+          const { data: imgs } = await supabase
+            .from('field_images')
+            .select('field_id, url, is_main')
+            .in('field_id', ids)
+          const sorted = [...(imgs ?? [])].sort((a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0))
+          sorted.forEach(im => {
+            if (im.url && imgMap[im.field_id] == null) imgMap[im.field_id] = im.url
+          })
+        }
+        setCanchas(list.map(f => ({
+          id: f.id, name: f.name, slug: f.slug, city: f.city, location: f.location,
+          price: f.price, sport: f.sport, image: imgMap[f.id] ?? null,
         })))
-      } catch { setLoadError(true) }
+      } catch { setCanchas([]) }
       finally { setLoading(false) }
+    })()
+  }, [])
+
+  // Torneos (si RLS permite y existen)
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('tournaments')
+          .select('id, slug, name, venue_city, status, max_teams, start_date, cover_image_url, sport_type')
+          .order('start_date', { ascending: true })
+          .limit(3)
+        setTorneos(data ?? [])
+      } catch { setTorneos([]) }
     })()
   }, [])
 
   const handleSearch = useCallback((e?: React.FormEvent) => {
     e?.preventDefault()
     const q: Record<string, string> = {}
-    if (localText.trim()) q.q = localText.trim()
-    if (localSport) q.sport = localSport
+    if (text.trim()) q.q = text.trim()
+    if (sport) q.sport = sport
     router.push({ pathname: '/reserve', query: q })
-  }, [localText, localSport, router])
+  }, [text, sport, router])
 
   return (
     <>
       <Head>
-        <title>GolPlay — La plataforma del fútbol amateur</title>
-        <meta name="description" content="Creá tu carta de jugador, armá tu equipo, retá a otros y reservá canchas en Costa Rica. El fútbol amateur, en serio."/>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+        <title>GolPlay — Encontrá cancha y rivales cerca tuyo</title>
+        <meta name="description" content="Reservá cancha, armá tu equipo, retá rivales y llevá tu carta de jugador. El fútbol amateur de Costa Rica en un solo lugar." />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
 
       <style>{CSS}</style>
       <Navbar dark={true} />
 
-      <div className="home">
+      {/* Sprite de íconos */}
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true"><defs>
+        <symbol id="pi-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7l4.7 3.4-1.8 5.5H9.1L7.3 10.4 12 7z" /></symbol>
+        <symbol id="pi-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z" /><circle cx="12" cy="10" r="3" /></symbol>
+        <symbol id="pi-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></symbol>
+        <symbol id="pi-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M5 21a7 7 0 0114 0" /></symbol>
+        <symbol id="pi-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5" /><path d="M3 20a6 6 0 0112 0M16 5a3.5 3.5 0 010 7M21 20a6 6 0 00-4-5.6" /></symbol>
+        <symbol id="pi-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></symbol>
+        <symbol id="pi-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3" /></symbol>
+        <symbol id="pi-swords" viewBox="0 0 24 24"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M5 14l6 6M8 17l-5 5" /></symbol>
+        <symbol id="pi-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" /></symbol>
+        <symbol id="pi-wa" viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-6.4A8 8 0 1121 12z" /></symbol>
+      </defs></svg>
+
+      <div className="pt-home">
         {/* ══ HERO ══ */}
-        <section className="hero">
-          <div className="hero__grid-lines" aria-hidden/>
-          <div className="hero__glow" aria-hidden/>
-
-          <div className="hero__content" style={{animation:'fadeUp .5s ease both'}}>
-            <div className="hero__left">
-              <div className="live-badge">
-                <span className="live-badge__dot"/>
-                <span className="live-badge__text">
-                  {liveBookingCount !== null ? `+${liveBookingCount.toLocaleString()} reservas` : 'Fútbol amateur'} · Costa Rica
-                </span>
-              </div>
-
-              <h1 className="hero__h1">
-                Creá tu carta.<br/>Armá tu equipo.
-                <span className="hero__h1-accent">Retá. Jugá.</span>
-              </h1>
-              <p className="hero__sub">
-                La plataforma del fútbol amateur. Tu perfil estilo FIFA, tus retos, tu equipo —{' '}
-                <strong>y la cancha lista en segundos.</strong>
-              </p>
-
-              <div className="hero__ctas">
-                <Link href="/jugadores/crear" className="btn-primary">Creá tu carta gratis →</Link>
-                <Link href="/reserve" className="btn-ghost">Reservar una cancha</Link>
-              </div>
+        <header className="hero"><div className="wrap hero-in">
+          <div>
+            <h1>Encontrá <em>cancha</em><br />y <em>rivales</em> cerca<br />tuyo</h1>
+            <p className="sub">Reservá, armá tu equipo y jugá. En cualquier momento, en cualquier cancha.</p>
+            <form className="search" onSubmit={handleSearch}>
+              <svg className="ic"><use href="#pi-search" /></svg>
+              <input
+                value={text}
+                onChange={e => setText(e.target.value)}
+                placeholder="Barrio, cantón o complejo..."
+                aria-label="Buscar cancha"
+              />
+              <button className="go" type="submit">Buscar</button>
+            </form>
+            <div className="chips">
+              {CHIPS.map(c => (
+                <button
+                  key={c.value}
+                  className={sport === c.value ? 'on' : ''}
+                  onClick={() => setSport(sport === c.value ? '' : c.value)}
+                  type="button"
+                >{c.label}</button>
+              ))}
             </div>
-
-            <div className="hero__right">
-              <div className="hero-mock" aria-hidden>
-                <div className="hero-mock__rating">87</div>
-                <div className="hero-mock__pos">MC · CAM</div>
-                <div className="hero-mock__ph">⚽</div>
-                <div className="hero-mock__name">TU NOMBRE</div>
-                <div className="hero-mock__divider"/>
-                <div className="hero-mock__stats">
-                  <div className="hero-mock__stat"><b>85</b><span>RIT</span></div>
-                  <div className="hero-mock__stat"><b>88</b><span>TIR</span></div>
-                  <div className="hero-mock__stat"><b>90</b><span>PAS</span></div>
-                  <div className="hero-mock__stat"><b>84</b><span>REG</span></div>
-                  <div className="hero-mock__stat"><b>79</b><span>DEF</span></div>
-                  <div className="hero-mock__stat"><b>86</b><span>FÍS</span></div>
+          </div>
+          <div>
+            <div className="hero-photo">
+              <img src="/join-golplay.jpg" alt="Jugadores de fútbol en GolPlay" />
+              <div className="hero-badge">
+                <div className="fi"><svg className="ic"><use href="#pi-ball" /></svg></div>
+                <div>
+                  <b>{bookingCount != null ? '+' + bookingCount.toLocaleString('es-CR') : '+4.000'}</b>
+                  <small>mejengas jugadas</small>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </div></header>
+
+        {/* ══ ¿QUÉ ES? ══ */}
+        <section className="about wrap"><div className="about-in">
+          <div className="about-photo"><img src="/about-golplay.jpg" alt="Fútbol amateur en Costa Rica" /></div>
+          <div>
+            <span className="eyebrow">¿Qué es GolPlay?</span>
+            <h2>La app del <em>fútbol amateur</em> en Costa Rica</h2>
+            <p>GolPlay es la <span className="mark">plataforma para jugadores y complejos deportivos</span>. Te ayuda a encontrar cancha, conectar con otros equipos y concentrarte en lo que importa: jugar.</p>
+            <p>Reservá en segundos, llevá tu carta de jugador con rating y stats, desafiá rivales y competí en torneos. Todo sin llamadas ni grupos de WhatsApp caóticos.</p>
+            <div className="pills">
+              <div className="pill"><svg className="ic"><use href="#pi-ball" /></svg>Reservá al instante</div>
+              <div className="pill"><svg className="ic"><use href="#pi-users" /></svg>Armá tu equipo</div>
+              <div className="pill"><svg className="ic"><use href="#pi-trophy" /></svg>Competí en torneos</div>
+            </div>
+          </div>
+        </div></section>
+
+        {/* ══ CANCHAS ══ */}
+        <section className="sec paper"><div className="wrap">
+          <div className="sec-head">
+            <div><span className="eyebrow">Canchas cerca tuyo</span><h2 style={{ marginTop: 10 }}>Elegí dónde jugar</h2></div>
+            <Link href="/reserve" className="link">Ver todas<svg className="ic"><use href="#pi-arrow" /></svg></Link>
+          </div>
+          <div className="rail">
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skel" />)
+              : canchas.map(c => (
+                <Link key={c.id} href={`/reserve/${c.id}`} className="fc">
+                  <div className="img" style={c.image ? { backgroundImage: `url('${c.image}')` } : undefined}>
+                    {c.price != null && <span className="price">{money(c.price)}</span>}
+                  </div>
+                  <div className="fc-b">
+                    <h3>{c.name}</h3>
+                    <div className="loc"><svg className="ic"><use href="#pi-pin" /></svg>{c.city || c.location || 'Costa Rica'}</div>
+                    <div className="foot">
+                      <span className="type">{sportLabel(c.sport)}</span>
+                      <span className="cta">Reservar<svg className="ic"><use href="#pi-arrow" /></svg></span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            {!loading && canchas.length === 0 && (
+              <p style={{ color: 'var(--ink2)' }}>Pronto vas a ver canchas disponibles acá.</p>
+            )}
+          </div>
+        </div></section>
 
         {/* ══ PILARES ══ */}
-        <section className="sp-sec">
-          <div className="sec-inner">
-            <FadeIn>
-              <div style={{marginBottom:32}}>
-                <p className="eyebrow">Más que reservar</p>
-                <h2 className="h2">Tu fútbol, <em>en serio.</em></h2>
+        <section className="sec"><div className="wrap">
+          <div className="sec-head"><div><span className="eyebrow">Mucho más que reservar</span><h2 style={{ marginTop: 10 }}>Viví el fútbol completo</h2></div></div>
+          <div className="feat">
+            <Link href="/jugadores/crear" className="feat-c blue">
+              <div><div className="fi"><svg className="ic"><use href="#pi-user" /></svg></div><h3>Tu carta de jugador</h3><p>Perfil con rating y estadísticas. Compartila y que todos vean tu nivel.</p></div>
+              <span className="go">Crear mi carta<svg className="ic"><use href="#pi-arrow" /></svg></span>
+            </Link>
+            <Link href="/retos" className="feat-c lime">
+              <div><div className="fi"><svg className="ic"><use href="#pi-swords" /></svg></div><h3>Retos</h3><p>Desafiá a otros equipos. Coordinás cancha, fecha y hora. El que gana, sube.</p></div>
+              <span className="go">Ver retos<svg className="ic"><use href="#pi-arrow" /></svg></span>
+            </Link>
+            <Link href="/equipos" className="feat-c dark">
+              <div><div className="fi"><svg className="ic"><use href="#pi-shield" /></svg></div><h3>Equipos</h3><p>Armá tu plantilla, invitá por cédula o link y jugá en serio con tu banda.</p></div>
+              <span className="go">Armar equipo<svg className="ic"><use href="#pi-arrow" /></svg></span>
+            </Link>
+          </div>
+        </div></section>
+
+        {/* ══ CARTA ══ */}
+        <section className="sec paper"><div className="wrap">
+          <div className="carta-band">
+            <div>
+              <span className="eyebrow">Tu carta de jugador</span>
+              <h2>Cada mejenga <em>suma</em></h2>
+              <p>Tu carta refleja tu rating, posición y estadísticas. Sin contraseñas: te identificás por cédula y construís tu reputación partido a partido.</p>
+              <Link href="/jugadores/crear" className="btn btn-lime">Crear mi carta gratis</Link>
+            </div>
+            <div className="pcard">
+              <div className="pt-top"><div className="ov">87</div><div className="pos">DEL<br />CRC</div></div>
+              <div className="ph"><svg className="ic"><use href="#pi-user" /></svg></div>
+              <div className="nm">Tu nombre</div>
+              <div className="team">Tu equipo</div>
+              <div className="st">
+                <div><div className="top"><span>RIT</span><b>89</b></div><div className="bar"><i style={{ width: '89%' }} /></div></div>
+                <div><div className="top"><span>TIR</span><b>85</b></div><div className="bar"><i style={{ width: '85%' }} /></div></div>
+                <div><div className="top"><span>PAS</span><b>82</b></div><div className="bar"><i style={{ width: '82%' }} /></div></div>
+                <div><div className="top"><span>REG</span><b>88</b></div><div className="bar"><i style={{ width: '88%' }} /></div></div>
               </div>
-            </FadeIn>
-            <div className="pillars">
-              {PILLARS.map((p, i) => (
-                <FadeIn key={p.href} delay={i * 70}>
-                  <Link href={p.href} className="pillar">
-                    <div className="pillar__emoji">{p.emoji}</div>
-                    <div className="pillar__title">{p.title}</div>
-                    <div className="pillar__desc">{p.desc}</div>
-                    <span className="pillar__cta">{p.cta} →</span>
-                  </Link>
-                </FadeIn>
-              ))}
             </div>
           </div>
-        </section>
+        </div></section>
 
-        {/* ══ RESERVÁ ══ */}
-        <section className="sp-sec" style={{borderTop:'1px solid rgba(255,255,255,.06)'}}>
-          <div className="sec-inner">
-            <FadeIn>
-              <div style={{display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:28, flexWrap:'wrap', gap:14}}>
-                <div>
-                  <p className="eyebrow">Reservá</p>
-                  <h2 className="h2">Y la cancha, <em>en segundos.</em></h2>
-                </div>
-                <Link href="/reserve" style={{fontSize:12, fontWeight:700, color:'var(--g4)', textDecoration:'none', display:'flex', alignItems:'center', gap:4}}>
-                  Ver todos →
+        {/* ══ TORNEOS ══ */}
+        {torneos.length > 0 && (
+          <section className="sec"><div className="wrap">
+            <div className="sec-head"><div><span className="eyebrow">Torneos</span><h2 style={{ marginTop: 10 }}>Competí por la <em>gloria</em></h2></div>
+              <Link href="/torneos" className="link">Ver todos<svg className="ic"><use href="#pi-arrow" /></svg></Link></div>
+            <div className="rail" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))' }}>
+              {torneos.map(t => (
+                <Link key={t.id} href={t.slug ? `/torneos/${t.slug}` : '/torneos'} className="fc">
+                  <div className="img" style={t.cover_image_url ? { backgroundImage: `url('${t.cover_image_url}')` } : undefined}>
+                    {t.max_teams != null && <span className="price">{t.max_teams} equipos</span>}
+                  </div>
+                  <div className="fc-b">
+                    <h3>{t.name}</h3>
+                    <div className="loc"><svg className="ic"><use href="#pi-pin" /></svg>{t.venue_city || 'Costa Rica'}{t.start_date ? ` · ${fmtDate(t.start_date)}` : ''}</div>
+                    <div className="foot">
+                      <span className="type">{t.status || 'Torneo'}</span>
+                      <span className="cta">Ver más<svg className="ic"><use href="#pi-arrow" /></svg></span>
+                    </div>
+                  </div>
                 </Link>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={60}>
-              <form onSubmit={handleSearch} style={{marginBottom:32}}>
-                <div className="search-card">
-                  <div className="search-card__sports">
-                    {SPORTS.map(s => (
-                      <button key={s.value} type="button"
-                        className={`sc-chip${localSport === s.value ? ' on' : ''}`}
-                        onClick={() => setLocalSport(s.value === localSport ? '' : s.value)}
-                      >{s.emoji} {s.label}</button>
-                    ))}
-                  </div>
-                  <div className="search-row">
-                    <div className="sf">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                      </svg>
-                      <input type="text" value={localText} onChange={e => setLocalText(e.target.value)} placeholder="Escazú, Heredia, nombre del complejo..."/>
-                    </div>
-                    <button className="search-cta" type="submit">Buscar</button>
-                  </div>
-                </div>
-              </form>
-            </FadeIn>
-
-            {loading && (
-              <div className="cards-row">
-                {[1,2,3].map(j => <FieldSkeleton key={j}/>)}
-              </div>
-            )}
-
-            {!loading && loadError && (
-              <div style={{textAlign:'center', padding:'40px 20px', color:'rgba(255,255,255,.5)'}}>
-                <div style={{fontSize:32, marginBottom:10}}>⚠️</div>
-                <p style={{fontSize:15, fontWeight:700, color:'#fff', marginBottom:4}}>No pudimos cargar los complejos</p>
-                <p style={{fontSize:13}}>Intentá refrescar la página.</p>
-              </div>
-            )}
-
-            {!loading && !loadError && complexes.length === 0 && (
-              <div style={{textAlign:'center', padding:'40px 20px', color:'rgba(255,255,255,.5)'}}>
-                <div style={{fontSize:40, marginBottom:10}}>🏟️</div>
-                <p style={{fontSize:15, fontWeight:700, color:'#fff'}}>Aún no hay complejos disponibles</p>
-              </div>
-            )}
-
-            {!loading && !loadError && complexes.length > 0 && (
-              <Swiper className="gp-swiper" modules={[Navigation]} spaceBetween={14} slidesPerView="auto" navigation>
-                {complexes.map(c => (
-                  <SwiperSlide key={c.id}><ComplexCard complex={c}/></SwiperSlide>
-                ))}
-              </Swiper>
-            )}
-          </div>
-        </section>
-
-        {/* ══ CÓMO FUNCIONA ══ */}
-        <section className="sp-sec" style={{borderTop:'1px solid rgba(255,255,255,.06)'}}>
-          <div className="sec-inner">
-            <FadeIn>
-              <div style={{marginBottom:32}}>
-                <p className="eyebrow">Simple y rápido</p>
-                <h2 className="h2">Del celular a la cancha<br/><em>en 4 pasos.</em></h2>
-              </div>
-            </FadeIn>
-            <div className="steps-grid">
-              {STEPS.map((s, i) => (
-                <FadeIn key={s.n} delay={i * 70}>
-                  <div className="step">
-                    <div className="step__num">{s.n}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:24, marginBottom:6}}>{s.e}</div>
-                      <div className="step__title">{s.t}</div>
-                      <div className="step__desc">{s.d}</div>
-                    </div>
-                  </div>
-                </FadeIn>
               ))}
             </div>
-          </div>
-        </section>
+          </div></section>
+        )}
 
-        {/* ══ DUEÑOS ══ */}
-        <section className="sp-sec" style={{borderTop:'1px solid rgba(255,255,255,.06)'}}>
-          <div className="sec-inner">
-            <FadeIn>
-              <div className="owner-card">
-                <p style={{fontSize:9, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'rgba(74,222,128,.55)', marginBottom:12}}>
-                  Para dueños de complejos
-                </p>
-                <h2 style={{fontFamily:'var(--font-d)', fontSize:'clamp(22px,5vw,34px)', fontWeight:800, color:'#fff', lineHeight:1.0, letterSpacing:'-.02em', marginBottom:12}}>
-                  Llená tus turnos.<br/><span style={{color:'var(--g4)'}}>Automatizá todo.</span>
-                </h2>
-                <p style={{fontSize:13, color:'rgba(255,255,255,.42)', lineHeight:1.75, marginBottom:20, maxWidth:340}}>
-                  Miles de jugadores buscan canchas. Recibí reservas automáticas 24/7 sin el caos del WhatsApp. <strong style={{color:'rgba(255,255,255,.65)'}}>Plan fijo mensual</strong> — 30 días gratis para empezar.
-                </p>
-                <div style={{display:'flex', flexDirection:'column', gap:9, marginBottom:24}}>
-                  {[
-                    { icon:'📅', text:'Agenda digital y reservas automáticas' },
-                    { icon:'💳', text:'Cobros en línea sin fricción ni llamadas' },
-                    { icon:'📊', text:'Dashboard con métricas de tu complejo' },
-                    { icon:'🌎', text:'Visibilidad ante toda la comunidad GolPlay' },
-                  ].map(f => (
-                    <div key={f.text} className="owner-feat">
-                      <div className="owner-feat__icon">{f.icon}</div>
-                      {f.text}
-                    </div>
-                  ))}
-                </div>
-                <Link href="/register?type=owner" className="owner-cta">
-                  Sumar mi complejo — es gratis →
-                </Link>
-              </div>
-            </FadeIn>
+        {/* ══ CTA ══ */}
+        <section className="wrap" style={{ paddingTop: 20 }}>
+          <div className="cta">
+            <h2>¿Listo para jugar?</h2>
+            <p>Sumate a la comunidad del fútbol amateur más grande de Costa Rica.</p>
+            <div className="btns">
+              <Link href="/reserve" className="btn btn-lime">Reservar cancha</Link>
+              <Link href="/jugadores/crear" className="btn btn-out">Crear mi carta</Link>
+            </div>
           </div>
         </section>
 
         {/* ══ FOOTER ══ */}
-        <footer style={{background:'#050a06', padding:'clamp(40px,5vw,60px) clamp(16px,4vw,40px) 26px', borderTop:'1px solid rgba(255,255,255,.06)'}}>
-          <div style={{maxWidth:1100, margin:'0 auto', display:'grid', gridTemplateColumns:'1.8fr 1fr 1fr', gap:40, paddingBottom:28, borderBottom:'1px solid rgba(255,255,255,.06)', marginBottom:18}}>
-            <div>
-              <img src="/logo-golplay.svg" alt="GolPlay" style={{height:36, display:'block', marginBottom:12, opacity:.75, filter:'brightness(0) invert(1)'}}/>
-              <p style={{fontSize:13, color:'rgba(255,255,255,.25)', lineHeight:1.8, maxWidth:260}}>
-                La plataforma del fútbol amateur. Tu carta, tu equipo, tus retos — y la cancha.
-              </p>
-            </div>
-            <nav aria-label="Info">
-              <p style={{fontSize:10, fontWeight:800, letterSpacing:'.1em', color:'rgba(255,255,255,.18)', textTransform:'uppercase', marginBottom:13}}>Producto</p>
-              {[
-                {href:'/jugadores/crear', l:'Crear carta'},
-                {href:'/equipos',         l:'Equipos'},
-                {href:'/retos',           l:'Retos'},
-                {href:'/reserve',         l:'Reservar cancha'},
-              ].map(({href,l}) => (
-                <Link key={href} href={href} style={{display:'block', fontSize:13, color:'rgba(255,255,255,.32)', textDecoration:'none', marginBottom:9}}>{l}</Link>
-              ))}
-            </nav>
-            <div>
-              <p style={{fontSize:10, fontWeight:800, letterSpacing:'.1em', color:'rgba(255,255,255,.18)', textTransform:'uppercase', marginBottom:13}}>Info</p>
-              {[
-                {href:'/terms',   l:'Términos de uso'},
-                {href:'/privacy', l:'Privacidad'},
-                {href:'/login',   l:'Iniciar sesión'},
-                {href:'/register?type=owner', l:'Soy dueño'},
-              ].map(({href,l}) => (
-                <Link key={href} href={href} style={{display:'block', fontSize:13, color:'rgba(255,255,255,.32)', textDecoration:'none', marginBottom:9}}>{l}</Link>
-              ))}
-            </div>
-          </div>
-          <p style={{textAlign:'center', fontSize:12, color:'rgba(255,255,255,.15)'}}>
-            © {new Date().getFullYear()} GolPlay · Hecho en Costa Rica 🇨🇷
-          </p>
-        </footer>
+        <footer className="wrap"><div className="foot">
+          <Logo height={64} />
+          <div className="c">La app del fútbol amateur · Costa Rica</div>
+        </div></footer>
+
+        <a className="fab" href="https://wa.me/message/KVBP5AVNH45JL1" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">
+          <svg className="ic"><use href="#pi-wa" /></svg>
+        </a>
       </div>
-
-      {/* WhatsApp FAB */}
-      <a className="wa-fab" href="https://wa.me/message/KVBP5AVNH45JL1" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp" title="Contactar por WhatsApp">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-        </svg>
-      </a>
-
-      {/* Toast */}
-      {showToast && (
-        <div role="status" aria-live="polite" className="toast">
-          🎉 ¡Reserva confirmada! Revisá tu correo.
-        </div>
-      )}
     </>
   )
 }

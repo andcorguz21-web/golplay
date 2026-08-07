@@ -3,10 +3,10 @@
  * Perfil del usuario: datos, historial de reservas, favoritos.
  *
  * Migrado al DS oficial:
- *   - Theme: dark (envuelto en <div className="theme-dark">).
- *   - Navbar: <Navbar dark={true} /> reemplaza el header inline.
+ *   - Theme: dark (envuelto en <div className="theme-light">).
+ *   - Navbar: <Navbar /> reemplaza el header inline.
  *   - Tipografía: Syne (var(--font-d)) + DM Sans (body default).
- *   - Tokens CSS: var(--g4), var(--g6), var(--g7), var(--r-lg).
+ *   - Tokens CSS: var(--blue), var(--g6), var(--g7), var(--r-lg).
  *   - Animaciones globales: fadeUp, fadeIn (de golplay-tokens.css).
  *   - Logout y favoritos eliminados del body — ahora viven en el Navbar dropdown.
  */
@@ -62,7 +62,7 @@ const SPORT_META: Record<string, { label: string; emoji: string }> = {
 }
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  confirmed: { label: 'Confirmada', color: '#4ade80', bg: 'rgba(74,222,128,.12)' },
+  confirmed: { label: 'Confirmada', color: '#d4f24d', bg: 'rgba(58,91,240,.12)' },
   pending:   { label: 'Pendiente',  color: '#fbbf24', bg: 'rgba(251,191,36,.12)' },
   cancelled: { label: 'Cancelada',  color: '#6b7280', bg: 'rgba(107,114,128,.12)' },
   completed: { label: 'Completada', color: '#60a5fa', bg: 'rgba(96,165,250,.12)' },
@@ -219,8 +219,8 @@ export default function ProfilePage() {
     <>
       <Head><title>Mi perfil — GolPlay</title></Head>
       <style>{CSS}</style>
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
         <div className="pf-loading">
           <div className="pf-spinner" />
           <p>Cargando perfil...</p>
@@ -239,8 +239,8 @@ export default function ProfilePage() {
       <style>{CSS}</style>
       {toast && <div className="pf-toast">{toast}</div>}
 
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         <div className="pf-content">
           {/* Hero card */}
@@ -438,30 +438,30 @@ const CSS = `
 .pf-spinner {
   width: 36px; height: 36px;
   border-radius: 50%;
-  border: 3px solid rgba(255,255,255,.1);
-  border-top-color: var(--g4);
+  border: 3px solid var(--line);
+  border-top-color: var(--blue);
   animation: spin .7s linear infinite;
 }
 .pf-loading p {
   font-family: var(--font-d);
   font-size: 13px;
-  color: rgba(255,255,255,.45);
+  color: var(--muted);
 }
 
 .pf-toast {
   position: fixed; bottom: 24px; right: 24px;
   z-index: 9999;
-  background: var(--g6); color: #fff;
+  background: var(--g6); color:#fff;
   padding: 12px 20px; border-radius: 12px;
   font-size: 13px; font-weight: 600;
   font-family: var(--font-d);
-  box-shadow: 0 8px 32px rgba(22,163,74,.4);
+  box-shadow: 0 8px 32px rgba(58,91,240,.4);
   animation: fadeIn .2s ease;
 }
 
 .pf-card {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: 28px;
   animation: fadeUp .4s ease both;
@@ -474,34 +474,34 @@ const CSS = `
 .pf-avatar {
   width: 64px; height: 64px;
   border-radius: 16px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--g6), #0B4D2C);
-  color: #fff;
+  background: linear-gradient(135deg, var(--g6), #26379e);
+  color:#fff;
   font-family: var(--font-d);
   font-size: 26px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 20px rgba(22,163,74,.35);
+  box-shadow: 0 4px 20px rgba(58,91,240,.35);
 }
 .pf-info { flex: 1; min-width: 0; }
 .pf-name {
   font-family: var(--font-d);
   font-size: 24px; font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   letter-spacing: -.02em;
   margin-bottom: 2px;
 }
 .pf-role {
-  font-size: 13px; color: var(--g4);
+  font-size: 13px; color: var(--blue);
   font-weight: 500; margin-bottom: 10px;
 }
 .pf-details { display: flex; flex-direction: column; gap: 3px; }
-.pf-details span { font-size: 12px; color: rgba(255,255,255,.45); }
+.pf-details span { font-size: 12px; color: var(--muted); }
 
 .pf-edit-trigger {
   margin-top: 14px;
   padding: 7px 16px; border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.85);
+  border: 1px solid var(--line);
+  background: var(--line);
+  color: var(--ink);
   font-size: 12px; font-weight: 600;
   cursor: pointer;
   font-family: var(--font-d);
@@ -509,33 +509,33 @@ const CSS = `
   transition: all .15s;
 }
 .pf-edit-trigger:hover {
-  background: rgba(255,255,255,.1);
-  border-color: var(--g4); color: var(--g4);
+  background: var(--line);
+  border-color: var(--blue); color: var(--blue);
 }
 
 .pf-edit-title {
   font-family: var(--font-d);
   font-size: 16px; font-weight: 700;
-  color: #fff; margin-bottom: 14px;
+  color:var(--ink); margin-bottom: 14px;
 }
 
 .pf-form { display: flex; flex-direction: column; gap: 12px; }
 .pf-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .pf-form-label {
   display: block; font-size: 11px; font-weight: 600;
-  color: rgba(255,255,255,.45); margin-bottom: 4px;
+  color: var(--muted); margin-bottom: 4px;
   text-transform: uppercase; letter-spacing: .06em;
 }
 .pf-form-input {
   width: 100%; padding: 10px 14px;
   border-radius: 10px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
-  color: #fff; font-size: 14px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  color:var(--ink); font-size: 14px;
   font-family: inherit; outline: none;
   transition: border-color .15s;
 }
-.pf-form-input:focus { border-color: var(--g4); }
+.pf-form-input:focus { border-color: var(--blue); }
 .pf-form-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 .pf-btn {
@@ -548,17 +548,17 @@ const CSS = `
   transition: all .15s;
 }
 .pf-btn--green {
-  background: var(--g6); color: #fff;
-  box-shadow: 0 3px 14px rgba(22,163,74,.35);
+  background: var(--g6); color:#fff;
+  box-shadow: 0 3px 14px rgba(58,91,240,.35);
 }
 .pf-btn--green:hover { background: var(--g7); }
 .pf-btn--green:disabled { opacity: .5; cursor: not-allowed; }
 .pf-btn--ghost {
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.85);
-  border: 1px solid rgba(255,255,255,.1);
+  background: var(--line);
+  color: var(--ink);
+  border: 1px solid var(--line);
 }
-.pf-btn--ghost:hover { background: rgba(255,255,255,.1); }
+.pf-btn--ghost:hover { background: var(--line); }
 
 .pf-stats {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
@@ -566,8 +566,8 @@ const CSS = `
   animation: fadeUp .45s ease both;
 }
 .pf-stat {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 16px;
   padding: 18px; text-align: center;
 }
@@ -575,10 +575,10 @@ const CSS = `
   display: block;
   font-family: var(--font-d);
   font-size: 24px; font-weight: 800;
-  color: var(--g4); margin-bottom: 2px;
+  color: var(--blue); margin-bottom: 2px;
 }
 .pf-stat-lbl {
-  font-size: 10px; color: rgba(255,255,255,.45);
+  font-size: 10px; color: var(--muted);
   font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
 }
 
@@ -591,19 +591,19 @@ const CSS = `
   padding: 10px 18px; border-radius: 12px;
   font-size: 13px; font-weight: 600;
   font-family: var(--font-d);
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
-  color: rgba(255,255,255,.45);
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
   cursor: pointer;
   transition: all .15s;
   letter-spacing: .02em;
 }
 .pf-tab:hover {
-  background: rgba(255,255,255,.08);
-  color: rgba(255,255,255,.85);
+  background: var(--line);
+  color: var(--ink);
 }
 .pf-tab--on {
-  background: var(--g6); color: #fff;
+  background: var(--g6); color:#fff;
   border-color: var(--g6);
 }
 .pf-tab-ct {
@@ -613,8 +613,8 @@ const CSS = `
 }
 
 .pf-empty {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: 60px 24px;
   text-align: center;
@@ -626,16 +626,16 @@ const CSS = `
 .pf-empty h3 {
   font-family: var(--font-d);
   font-size: 20px; font-weight: 800;
-  color: #fff; margin-bottom: 8px;
+  color:var(--ink); margin-bottom: 8px;
 }
 .pf-empty p {
-  font-size: 14px; color: rgba(255,255,255,.45);
+  font-size: 14px; color: var(--muted);
   margin-bottom: 24px; line-height: 1.6;
 }
 
 .pf-list {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
   overflow: hidden;
   animation: fadeUp .5s ease both;
@@ -643,22 +643,22 @@ const CSS = `
 .pf-bk {
   display: flex; align-items: center; gap: 12px;
   padding: 14px 20px;
-  border-bottom: 1px solid rgba(255,255,255,.05);
+  border-bottom: 1px solid #fff;
   transition: background .1s;
 }
 .pf-bk:last-child { border-bottom: none; }
-.pf-bk:hover { background: rgba(255,255,255,.03); }
+.pf-bk:hover { background: #fff; }
 .pf-bk--past { opacity: .45; }
 .pf-bk-emoji { font-size: 20px; flex-shrink: 0; }
 .pf-bk-body { flex: 1; min-width: 0; }
 .pf-bk-field {
   font-family: var(--font-d);
   font-size: 14px; font-weight: 600;
-  color: #fff;
+  color:var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .pf-bk-date {
-  font-size: 12px; color: rgba(255,255,255,.45);
+  font-size: 12px; color: var(--muted);
   margin-top: 1px;
 }
 .pf-bk-end {
@@ -669,7 +669,7 @@ const CSS = `
 .pf-bk-price {
   font-family: var(--font-d);
   font-size: 14px; font-weight: 700;
-  color: var(--g4);
+  color: var(--blue);
 }
 .pf-bk-status {
   font-size: 10px; font-weight: 700;
@@ -684,8 +684,8 @@ const CSS = `
   animation: fadeUp .5s ease both;
 }
 .pf-fav {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
@@ -694,21 +694,21 @@ const CSS = `
 }
 .pf-fav:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0,0,0,.3);
-  border-color: rgba(74,222,128,.3);
+  box-shadow: 0 8px 32px rgba(20,26,51,.12);
+  border-color: rgba(58,91,240,.3);
 }
 .pf-fav-img {
   height: 120px;
   background-size: cover;
   background-position: center;
-  background-color: rgba(22,163,74,.15);
+  background-color: rgba(58,91,240,.15);
   position: relative;
 }
 .pf-fav-sport {
   position: absolute; top: 8px; left: 8px;
   background: rgba(0,0,0,.6);
   backdrop-filter: blur(8px);
-  color: #fff;
+  color:var(--ink);
   font-size: 10px; font-weight: 700;
   padding: 3px 9px; border-radius: 999px;
   font-family: var(--font-d);
@@ -718,9 +718,9 @@ const CSS = `
   position: absolute; top: 8px; right: 8px;
   width: 26px; height: 26px;
   border-radius: 8px;
-  background: rgba(0,0,0,.5);
+  background: rgba(20,26,51,.14);
   backdrop-filter: blur(4px);
-  color: #fff;
+  color:var(--ink);
   border: none; cursor: pointer;
   font-size: 12px;
   display: flex; align-items: center; justify-content: center;
@@ -734,10 +734,10 @@ const CSS = `
 .pf-fav-name {
   font-family: var(--font-d);
   font-size: 14px; font-weight: 600;
-  color: #fff; margin-bottom: 2px;
+  color:var(--ink); margin-bottom: 2px;
 }
 .pf-fav-loc {
-  font-size: 11px; color: rgba(255,255,255,.45);
+  font-size: 11px; color: var(--muted);
 }
 
 @media (max-width: 640px) {

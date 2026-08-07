@@ -60,10 +60,10 @@ const relativeDate = (d: string) => {
 }
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  confirmed: { label: 'Confirmada', color: '#15803d', bg: '#f0fdf4', dot: '#22c55e' },
+  confirmed: { label: 'Confirmada', color: '#2c46cf', bg: '#f4f6fb', dot: '#4a68f5' },
   pending:   { label: 'Pendiente',  color: '#92400e', bg: '#fffbeb', dot: '#f59e0b' },
   cancelled: { label: 'Cancelada',  color: '#991b1b', bg: '#fef2f2', dot: '#ef4444' },
-  completed: { label: 'Completada', color: '#1e40af', bg: '#eff6ff', dot: '#3b82f6' },
+  completed: { label: 'Completada', color: '#2c46cf', bg: '#eef2ff', dot: '#4a68f5' },
   no_show:   { label: 'No Show',    color: '#6b7280', bg: '#f9fafb', dot: '#9ca3af' },
 }
 
@@ -330,7 +330,7 @@ export default function AdminCustomers() {
         </div>
 
         <div className="cx-kpis">
-          {[{ value: String(stats.total), label: 'Total clientes', accent: '#6366f1' }, { value: String(stats.active), label: 'Con reservas', accent: '#16a34a' }, { value: fmtShort(stats.revenue), label: 'Ingresos totales', accent: '#0891b2' }, { value: fmtShort(stats.avgSpend), label: 'Gasto promedio', accent: '#f59e0b' }].map((k, i) => (
+          {[{ value: String(stats.total), label: 'Total clientes', accent: '#6366f1' }, { value: String(stats.active), label: 'Con reservas', accent: '#3a5bf0' }, { value: fmtShort(stats.revenue), label: 'Ingresos totales', accent: '#0891b2' }, { value: fmtShort(stats.avgSpend), label: 'Gasto promedio', accent: '#f59e0b' }].map((k, i) => (
             <div key={i} className="cx-kpi" style={{ animationDelay: `${i * 60}ms` }}>
               <div className="cx-kpi__accent" style={{ background: k.accent }} />
               <span className="cx-kpi__value">{loading ? '—' : k.value}</span>
@@ -481,7 +481,7 @@ export default function AdminCustomers() {
                             onChange={e => setEditPricingAmount(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') updatePricing(p.id); if (e.key === 'Escape') setEditPricingId(null) }}
                             autoFocus
-                            style={{ width: 80, padding: '4px 8px', borderRadius: 6, border: '2px solid #16a34a', fontSize: 13, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
+                            style={{ width: 80, padding: '4px 8px', borderRadius: 6, border: '2px solid #3a5bf0', fontSize: 13, fontWeight: 700, outline: 'none', fontFamily: 'inherit' }}
                             min={0}
                           />
                           <button className="cx-btn cx-btn--primary cx-btn--sm" onClick={() => updatePricing(p.id)} style={{ padding: '4px 8px' }}>✓</button>
@@ -492,7 +492,7 @@ export default function AdminCustomers() {
                           <span
                             className="cx-pitem__price"
                             onClick={() => { setEditPricingId(p.id); setEditPricingAmount(String(p.price)) }}
-                            style={{ cursor: 'pointer', borderBottom: '1px dashed #bbf7d0' }}
+                            style={{ cursor: 'pointer', borderBottom: '1px dashed #dfe6ff' }}
                             title="Click para editar precio"
                           >
                             {fmt(p.price)}
@@ -540,25 +540,25 @@ const CSS = `
 .cx-kpi__label{display:block;font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
 .cx-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .cx-search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e2e8f0;border-radius:11px;padding:0 12px;height:38px;flex:1;min-width:220px;max-width:400px;transition:border-color .15s}
-.cx-search:focus-within{border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.08)}
+.cx-search:focus-within{border-color:#3a5bf0;box-shadow:0 0 0 3px rgba(58,91,240,.08)}
 .cx-search__input{border:none;outline:none;font-size:13px;flex:1;background:transparent;color:#0f172a;font-family:inherit}
 .cx-search__input::placeholder{color:#94a3b8}.cx-search__x{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;line-height:1}
 .cx-sort-chips{display:flex;gap:4px}
 .cx-sort-chip{padding:5px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .12s;display:flex;align-items:center;gap:4px}
 .cx-sort-chip:hover{border-color:#cbd5e1;color:#0f172a}
-.cx-sort-chip--active{border-color:#0f172a;background:#0f172a;color:#fff}
+.cx-sort-chip--active{border-color:#3a5bf0;background:#3a5bf0;color:#fff}
 .cx-result-count{font-size:11px;color:#94a3b8;font-weight:600;margin-left:auto;white-space:nowrap}
 .cx-table-wrap{background:#fff;border-radius:16px;border:1px solid #f1f5f9;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.03)}
 .cx-table{width:100%;border-collapse:collapse}
 .cx-table thead th{padding:12px 16px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;text-align:left;border-bottom:1px solid #f1f5f9;background:#fafbfc}
 .cx-th--right{text-align:right!important}
 .cx-table tbody tr{cursor:pointer;transition:background .1s;animation:cxUp .3s ease both}
-.cx-table tbody tr:hover{background:#f8fafc}.cx-tr--sel{background:#f0fdf4!important}
+.cx-table tbody tr:hover{background:#f8fafc}.cx-tr--sel{background:#f4f6fb!important}
 .cx-table td{padding:12px 16px;font-size:13px;border-bottom:1px solid #f8fafc;vertical-align:middle}
 .cx-td--right{text-align:right}.cx-td--mono{font-variant-numeric:tabular-nums}.cx-td--bold{font-weight:700}
 .cx-cell-client{display:flex;align-items:center;gap:10px}
 .cx-avatar{width:34px;height:34px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#475569}
-.cx-tr--sel .cx-avatar{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff}
+.cx-tr--sel .cx-avatar{background:linear-gradient(135deg,#3a5bf0,#2c46cf);color:#fff}
 .cx-cell-name{display:block;font-weight:600;color:#0f172a;font-size:13px}
 .cx-cell-meta{display:block;font-size:11px;color:#94a3b8;margin-top:1px}
 .cx-date-pill{font-size:11px;font-weight:600;color:#64748b;background:#f1f5f9;padding:3px 10px;border-radius:999px}
@@ -568,7 +568,7 @@ const CSS = `
 .cx-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(4px);z-index:200;animation:cxFade .2s ease}
 .cx-panel{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:100vw;background:#fff;z-index:300;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.15);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .cx-panel--open{transform:translateX(0)}
-.cx-panel__head{padding:24px 24px 20px;position:relative;background:linear-gradient(160deg,#052e16 0%,#0B4D2C 100%);color:#fff}
+.cx-panel__head{padding:24px 24px 20px;position:relative;background:linear-gradient(160deg,#141a33 0%,#26379e 100%);color:#fff}
 .cx-panel__close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);cursor:pointer;color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;transition:all .12s}
 .cx-panel__close:hover{background:rgba(255,255,255,.15);color:#fff}
 .cx-panel__avatar{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin-bottom:12px}
@@ -581,7 +581,7 @@ const CSS = `
 .cx-pk__l{display:block;font-size:9px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
 .cx-ptabs{display:flex;gap:1px;padding:0 24px;border-bottom:1px solid #f1f5f9}
 .cx-ptab{padding:11px 14px;border:none;background:transparent;font-size:12px;font-weight:600;color:#94a3b8;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s}
-.cx-ptab:hover{color:#0f172a}.cx-ptab--on{color:#16a34a;border-bottom-color:#16a34a}
+.cx-ptab:hover{color:#0f172a}.cx-ptab--on{color:#3a5bf0;border-bottom-color:#3a5bf0}
 .cx-panel__body{flex:1;overflow-y:auto;padding:20px 24px}
 .cx-panel-loading,.cx-panel-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px}
 .cx-info{display:flex;flex-direction:column}
@@ -596,7 +596,7 @@ const CSS = `
 .cx-edit__field--full{grid-column:1/-1}
 .cx-edit__field label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
 .cx-edit__field input,.cx-edit__field textarea{padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;color:#0f172a;outline:none;transition:border-color .12s;width:100%;box-sizing:border-box}
-.cx-edit__field input:focus,.cx-edit__field textarea:focus{border-color:#16a34a}
+.cx-edit__field input:focus,.cx-edit__field textarea:focus{border-color:#3a5bf0}
 .cx-edit__field textarea{resize:vertical}
 .cx-edit__actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
 .cx-hist{display:flex;flex-direction:column}
@@ -614,16 +614,16 @@ const CSS = `
 .cx-pitem__name{font-size:13px;font-weight:600;color:#0f172a}
 .cx-pitem__note{display:block;font-size:11px;color:#94a3b8;margin-top:1px}
 .cx-pitem__right{display:flex;align-items:center;gap:8px}
-.cx-pitem__price{font-size:15px;font-weight:800;color:#16a34a}
+.cx-pitem__price{font-size:15px;font-weight:800;color:#3a5bf0}
 .cx-pitem__del{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;line-height:1}
 .cx-pitem__del:hover{color:#ef4444}
 .cx-padd{background:#f8fafc;border-radius:12px;padding:14px;border:1px solid #f1f5f9}
 .cx-padd__title{font-size:12px;font-weight:700;color:#374151;margin:0 0 8px}
 .cx-padd__form{display:flex;gap:6px;flex-wrap:wrap}
 .cx-padd__form select,.cx-padd__form input{padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:12px;font-family:inherit;outline:none;flex:1;min-width:100px}
-.cx-padd__form select:focus,.cx-padd__form input:focus{border-color:#16a34a}
+.cx-padd__form select:focus,.cx-padd__form input:focus{border-color:#3a5bf0}
 .cx-btn{padding:9px 16px;border-radius:10px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .14s;display:inline-flex;align-items:center;gap:6px}
-.cx-btn--primary{background:#0f172a;color:#fff}.cx-btn--primary:hover:not(:disabled){background:#1e293b}.cx-btn--primary:disabled{opacity:.5;cursor:not-allowed}
+.cx-btn--primary{background:#3a5bf0;color:#fff}.cx-btn--primary:hover:not(:disabled){background:#2c46cf}.cx-btn--primary:disabled{opacity:.5;cursor:not-allowed}
 .cx-btn--ghost{background:transparent;color:#64748b;border:1.5px solid #e2e8f0}.cx-btn--ghost:hover{background:#f8fafc}
 .cx-btn--outline{background:#fff;color:#374151;border:1.5px solid #e2e8f0}.cx-btn--outline:hover{background:#f8fafc;border-color:#cbd5e1}
 .cx-btn--sm{padding:6px 12px;font-size:11px}
@@ -631,7 +631,7 @@ const CSS = `
 .cx-sk-rows{padding:12px;display:flex;flex-direction:column;gap:8px}
 .cx-sk-row{height:52px;border-radius:10px;background:linear-gradient(90deg,#f1f5f9 25%,#e8ecf2 50%,#f1f5f9 75%);background-size:200% 100%;animation:cxShim 1.6s infinite}
 .cx-toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.18);animation:cxUp .2s ease}
-.cx-toast--ok{background:#0f172a;color:#fff}.cx-toast--err{background:#ef4444;color:#fff}
+.cx-toast--ok{background:#3a5bf0;color:#fff}.cx-toast--err{background:#ef4444;color:#fff}
 @keyframes cxUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes cxFade{from{opacity:0}to{opacity:1}}
 @keyframes cxShim{to{background-position:-200% 0}}

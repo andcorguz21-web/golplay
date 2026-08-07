@@ -260,8 +260,8 @@ const REC_CSS = `
 .rc-sub{margin:2px 0 0;font-size:11px;color:#94a3b8}
 
 .rc-btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .12s}
-.rc-btn--green{background:#16a34a;color:#fff;box-shadow:0 2px 6px rgba(22,163,74,.25)}
-.rc-btn--green:hover{background:#15803d}
+.rc-btn--green{background:#3a5bf0;color:#fff;box-shadow:0 2px 6px rgba(58,91,240,.25)}
+.rc-btn--green:hover{background:#2c46cf}
 .rc-btn--green:disabled{opacity:.5;cursor:not-allowed}
 .rc-btn--ghost{background:#f1f5f9;color:#374151}
 .rc-btn--ghost:hover{background:#e2e8f0}
@@ -271,7 +271,7 @@ const REC_CSS = `
 .rc-form-group{}
 .rc-label{display:block;font-size:11px;font-weight:600;color:#374151;margin-bottom:4px}
 .rc-input{width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;color:#0f172a;outline:none;background:#fff}
-.rc-input:focus{border-color:#16a34a}
+.rc-input:focus{border-color:#3a5bf0}
 .rc-form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
 .rc-error{padding:8px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;font-size:12px;color:#b91c1c}
 
@@ -283,7 +283,7 @@ const REC_CSS = `
 .rc-item:hover{border-color:#e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .rc-item--inactive{opacity:.45}
 .rc-item-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
-.rc-day-badge{width:36px;height:36px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#15803d;flex-shrink:0}
+.rc-day-badge{width:36px;height:36px;border-radius:8px;background:#f4f6fb;border:1px solid #dfe6ff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#2c46cf;flex-shrink:0}
 .rc-item-name{margin:0;font-size:13px;font-weight:600;color:#0f172a}
 .rc-item-meta{margin:1px 0 0;font-size:11px;color:#94a3b8}
 .rc-item-actions{display:flex;gap:4px;flex-shrink:0}

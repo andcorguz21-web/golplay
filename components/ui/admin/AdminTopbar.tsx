@@ -47,8 +47,8 @@ const ROUTE_LABELS: Record<string, string> = {
 }
 
 const ROLE_LABELS: Record<Role, { label: string; color: string; bg: string }> = {
-  admin: { label: 'Administrador', color: '#1d4ed8', bg: '#eff6ff' },
-  owner: { label: 'Propietario',   color: '#15803d', bg: '#f0fdf4' },
+  admin: { label: 'Administrador', color: '#2c46cf', bg: '#eef2ff' },
+  owner: { label: 'Propietario',   color: '#2c46cf', bg: '#f4f6fb' },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -300,7 +300,7 @@ const S: Record<string, React.CSSProperties> = {
     width: 30,
     height: 30,
     borderRadius: 8,
-    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+    background: 'linear-gradient(135deg, #3a5bf0, #2c46cf)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

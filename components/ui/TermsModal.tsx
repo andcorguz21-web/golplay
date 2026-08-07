@@ -309,7 +309,7 @@ const CSS = `
 }
 .tm-btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(22,163,74,.3);
+  box-shadow: 0 6px 20px rgba(58,91,240,.3);
 }
 .tm-btn--primary:disabled {
   opacity: .45; cursor: not-allowed;

@@ -43,11 +43,11 @@ const MapEmbedClient = dynamic(
     loading: () => (
       <div style={{
         height: '100%', width: '100%',
-        background: '#f0fdf4',
+        background: '#f4f6fb',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: 'inherit',
       }}>
-        <div style={{ textAlign: 'center', color: '#16a34a' }}>
+        <div style={{ textAlign: 'center', color: '#3a5bf0' }}>
           <div style={{ fontSize: 28, marginBottom: 8 }}>🗺️</div>
           <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Cargando mapa…</p>
         </div>

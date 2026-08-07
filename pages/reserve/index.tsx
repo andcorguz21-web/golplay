@@ -58,8 +58,8 @@ const SPORTS = [
 ]
 
 const SPORT_META: Record<string, { label: string; color: string; bg: string }> = {
-  futbol5:  { label: 'Fútbol 5',  color: '#4ade80', bg: 'rgba(22,163,74,.18)'  },
-  futbol7:  { label: 'Fútbol 7',  color: '#86efac', bg: 'rgba(21,128,61,.18)'  },
+  futbol5:  { label: 'Fútbol 5',  color: '#d4f24d', bg: 'rgba(58,91,240,.18)'  },
+  futbol7:  { label: 'Fútbol 7',  color: '#e3f77d', bg: 'rgba(44,70,207,.18)'  },
   padel:    { label: 'Pádel',     color: '#67e8f9', bg: 'rgba(14,116,144,.18)' },
   tenis:    { label: 'Tenis',     color: '#fcd34d', bg: 'rgba(146,64,14,.20)'  },
   multiuso: { label: 'Multiuso',  color: '#c4b5fd', bg: 'rgba(91,33,182,.18)'  },
@@ -106,31 +106,31 @@ const todayStr = () => dateToStr(new Date())
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
   :root {
-    --bg:         #0C0D0B;
-    --surface:    #141614;
-    --surface2:   #1a1d19;
-    --surface3:   #1f2320;
-    --bd:         rgba(255,255,255,.07);
-    --bd2:        rgba(255,255,255,.12);
-    --bd3:        rgba(255,255,255,.16);
-    --g5:         #22c55e;
-    --g4:         #4ade80;
-    --g7:         #15803d;
-    --g8:         #0B4D2C;
-    --glow:       rgba(34,197,94,.18);
-    --text:       #f0f4f0;
-    --muted:      #8a9488;
-    --muted2:     #5e6660;
+    --bg:         #f4f6fb;
+    --surface:    #ffffff;
+    --surface2:   #ffffff;
+    --surface3:   #f4f6fb;
+    --bd:         #e7ebf3;
+    --bd2:        #e7ebf3;
+    --bd3:        #dfe3ee;
+    --g5:         #3a5bf0;
+    --g4:         #3a5bf0;
+    --g7:         #2c46cf;
+    --g8:         #26379e;
+    --glow:       rgba(58,91,240,.10);
+    --text:       #141a33;
+    --muted:      #6b7385;
+    --muted2:     #aab2c4;
     --r-xl:       22px;
     --r-lg:       16px;
     --r-md:       12px;
-    --sh-card:    0 2px 12px rgba(0,0,0,.4), 0 8px 28px rgba(0,0,0,.35);
-    --sh-lg:      0 8px 40px rgba(0,0,0,.55), 0 24px 56px rgba(0,0,0,.4);
+    --sh-card:    0 2px 12px rgba(20,26,51,.06), 0 10px 26px rgba(20,26,51,.06);
+    --sh-lg:      0 12px 40px rgba(20,26,51,.14), 0 24px 56px rgba(20,26,51,.10);
     --font-h:     var(--font-d);
     --font-b:     var(--font-u);
   }
 
-  ::selection { background: var(--g5); color: #0a1a10; }
+  ::selection { background: var(--g5); color: #fff; }
 
   .rsv-wrap { padding-top: 62px; min-height: 100vh; }
 
@@ -144,7 +144,7 @@ const CSS = `
   /* Filter bar */
   .filter-bar {
     position:sticky; top:62px; z-index:70;
-    background:rgba(12,13,11,.96); backdrop-filter:blur(20px);
+    background:rgba(244,246,251,.92); backdrop-filter:blur(20px);
     border-bottom:1px solid var(--bd); padding:14px 32px;
   }
   .filter-inner {
@@ -161,7 +161,7 @@ const CSS = `
     font-family:var(--font-b); cursor:pointer; transition:all .15s; white-space:nowrap;
   }
   .fpill:hover  { border-color:var(--g5); background:var(--glow); color:var(--g4); }
-  .fpill.active { border-color:var(--g5); background:var(--g5); color:#0a1a10; box-shadow:0 2px 12px rgba(34,197,94,.3); }
+  .fpill.active { border-color:var(--g5); background:var(--g5); color:#fff; box-shadow:0 2px 12px rgba(58,91,240,.3); }
 
   /* Sort */
   .sort-select {
@@ -174,7 +174,7 @@ const CSS = `
     background-repeat:no-repeat; background-position:right 12px center; transition:border-color .15s;
   }
   .sort-select:hover, .sort-select:focus { border-color:var(--g5); }
-  .sort-select option { background:#1a1d19; }
+  .sort-select option { background:#eef1f8; }
 
   /* Popover */
   .popover {
@@ -206,7 +206,7 @@ const CSS = `
   }
   .cal-day:hover:not(:disabled) { background:var(--glow); color:var(--g4); font-weight:600; }
   .cal-day.today  { font-weight:800; color:var(--g5); }
-  .cal-day.sel    { background:var(--g5)!important; color:#0a1a10!important; font-weight:700; }
+  .cal-day.sel    { background:var(--g5)!important; color:#fff!important; font-weight:700; }
   .cal-day.out    { color:var(--muted2); }
   .cal-day:disabled { color:var(--muted2); cursor:default; opacity:.4; }
 
@@ -221,7 +221,7 @@ const CSS = `
     font-size:12px; font-weight:600; color:var(--muted); transition:all .12s; text-align:center;
   }
   .hour-chip:hover { border-color:var(--g5); background:var(--glow); color:var(--g4); }
-  .hour-chip.sel   { border-color:var(--g5); background:var(--g5); color:#0a1a10; }
+  .hour-chip.sel   { border-color:var(--g5); background:var(--g5); color:#fff; }
 
   /* Field card */
   .field-card {
@@ -231,22 +231,22 @@ const CSS = `
     display:flex; flex-direction:column;
     animation:fadeUp .4s ease both; box-shadow:var(--sh-card);
   }
-  .field-card:hover { transform:translateY(-5px); box-shadow:var(--sh-lg); border-color:rgba(74,222,128,.25); }
+  .field-card:hover { transform:translateY(-5px); box-shadow:var(--sh-lg); border-color:rgba(58,91,240,.25); }
   .field-card:focus-visible { outline:2px solid var(--g5); outline-offset:3px; }
 
   /* Avail chip */
   .avail-chip {
     display:inline-flex; align-items:center;
     padding:4px 9px; border-radius:999px;
-    border:1px solid rgba(74,222,128,.2); background:rgba(34,197,94,.08); color:var(--g4);
+    border:1px solid rgba(58,91,240,.2); background:rgba(58,91,240,.08); color:var(--g4);
     font-size:11px; font-weight:700; font-family:var(--font-h); letter-spacing:.03em;
     white-space:nowrap; flex-shrink:0; transition:all .12s; cursor:pointer;
   }
-  .avail-chip:hover { background:var(--g5); color:#0a1a10; border-color:var(--g5); }
+  .avail-chip:hover { background:var(--g5); color:#fff; border-color:var(--g5); }
 
   /* Skeleton */
   .skel {
-    background:linear-gradient(90deg,#1a1d19 25%,#232622 50%,#1a1d19 75%);
+    background:linear-gradient(90deg,#eef1f8 25%,#ffffff 50%,#eef1f8 75%);
     background-size:400% 100%; animation:shimmer 1.5s infinite; border-radius:8px;
   }
 
@@ -258,17 +258,17 @@ const CSS = `
 
   /* Drawer */
   .drawer-overlay {
-    position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.72);
+    position:fixed; inset:0; z-index:200; background:rgba(20,26,51,.45);
     backdrop-filter:blur(6px); animation:overlayIn .2s ease;
   }
   .drawer {
     position:fixed; bottom:0; left:0; right:0; z-index:201;
     background:var(--surface2); border-radius:24px 24px 0 0; padding:0 0 32px;
-    box-shadow:0 -12px 50px rgba(0,0,0,.6);
+    box-shadow:0 -12px 50px rgba(20,26,51,.18);
     animation:slideUp .3s cubic-bezier(.16,1,.3,1);
     max-height:88vh; overflow-y:auto; border-top:1px solid var(--bd2);
   }
-  .drawer-handle { width:36px; height:4px; background:rgba(255,255,255,.15); border-radius:2px; margin:12px auto 0; }
+  .drawer-handle { width:36px; height:4px; background:#d7dce8; border-radius:2px; margin:12px auto 0; }
   .backdrop { position:fixed; inset:0; z-index:100; }
 
   /* Filter tags */
@@ -414,7 +414,7 @@ function FieldCard({ field, availableHours, queryHour, queryDate, index }: {
       aria-label={`Ver cancha ${field.name}`}
     >
       {/* Image */}
-      <div style={{ position: 'relative', height: 220, background: 'linear-gradient(135deg,#0a1a10,#071210)', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ position: 'relative', height: 220, background: 'linear-gradient(135deg,#141a33,#071210)', overflow: 'hidden', flexShrink: 0 }}>
         {field.image
           ? <Image src={field.image} alt={field.name} fill sizes="400px"
               style={{ objectFit: 'cover', transition: 'transform .5s ease', opacity: .9 }} loading="lazy" />
@@ -436,15 +436,15 @@ function FieldCard({ field, availableHours, queryHour, queryDate, index }: {
 
         <span style={{
           position: 'absolute', top: 12, right: 12,
-          background: isAvail ? 'rgba(34,197,94,.22)' : 'rgba(239,68,68,.18)',
+          background: isAvail ? 'rgba(58,91,240,.22)' : 'rgba(239,68,68,.18)',
           backdropFilter: 'blur(10px)',
-          color: isAvail ? '#4ade80' : '#fca5a5',
-          border: `1px solid ${isAvail ? 'rgba(74,222,128,.3)' : 'rgba(239,68,68,.3)'}`,
+          color: isAvail ? '#d4f24d' : '#fca5a5',
+          border: `1px solid ${isAvail ? 'rgba(58,91,240,.3)' : 'rgba(239,68,68,.3)'}`,
           fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 999,
           fontFamily: 'var(--font-h)', letterSpacing: '.06em', textTransform: 'uppercase',
           display: 'flex', alignItems: 'center', gap: 4,
         }}>
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: isAvail ? '#4ade80' : '#f87171', display: 'inline-block', animation: isAvail ? 'pulse 1.4s infinite' : 'none' }} />
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: isAvail ? '#d4f24d' : '#f87171', display: 'inline-block', animation: isAvail ? 'pulse 1.4s infinite' : 'none' }} />
           {isAvail ? 'Disponible' : 'Ocupada'}
         </span>
 
@@ -513,7 +513,7 @@ function FieldCard({ field, availableHours, queryHour, queryDate, index }: {
           {isAvail && (
             <button
               onClick={e => { e.stopPropagation(); goToReserve(displayHours[0] || queryHour) }}
-              style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--g5)', color: '#0a1a10', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-h)', fontSize: 13, fontWeight: 800, letterSpacing: '.03em', transition: 'all .15s', whiteSpace: 'nowrap', boxShadow: '0 2px 14px rgba(34,197,94,.35)' }}
+              style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--g5)', color: '#141a33', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-h)', fontSize: 13, fontWeight: 800, letterSpacing: '.03em', transition: 'all .15s', whiteSpace: 'nowrap', boxShadow: '0 2px 14px rgba(58,91,240,.35)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--g4)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--g5)' }}
             >
@@ -554,7 +554,7 @@ function FilterPanel({ filterSport, setFilterSport, filterDate, setFilterDate, f
     padding: '7px 13px', borderRadius: 999,
     border: `1.5px solid ${active ? 'var(--g5)' : 'var(--bd2)'}`,
     background: active ? 'var(--g5)' : 'var(--surface3)',
-    color: active ? '#0a1a10' : 'var(--muted)',
+    color: active ? '#141a33' : 'var(--muted)',
     fontSize: 12, fontWeight: 600, cursor: 'pointer',
     fontFamily: 'var(--font-b)' as const, transition: 'all .12s',
   })
@@ -637,7 +637,7 @@ function FilterPanel({ filterSport, setFilterSport, filterDate, setFilterDate, f
       </div>
 
       {onApply && (
-        <button type="button" onClick={onApply} style={{ padding: '13px', borderRadius: 14, background: 'var(--g5)', color: '#0a1a10', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-h)', fontSize: 14, fontWeight: 800, letterSpacing: '.04em', boxShadow: '0 3px 20px rgba(34,197,94,.35)' }}>
+        <button type="button" onClick={onApply} style={{ padding: '13px', borderRadius: 14, background: 'var(--g5)', color: '#141a33', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-h)', fontSize: 14, fontWeight: 800, letterSpacing: '.04em', boxShadow: '0 3px 20px rgba(58,91,240,.35)' }}>
           Aplicar filtros
         </button>
       )}
@@ -795,8 +795,8 @@ export default function ReserveIndex() {
         <meta name="description" content="Encontrá y reservá canchas deportivas cerca de vos." />
       </Head>
 
-      <div className="theme-dark rsv-wrap">
-        <Navbar dark={true} />
+      <div className="theme-light rsv-wrap">
+        <Navbar />
 
         {/* Filter bar */}
         <div className="filter-bar">
@@ -929,7 +929,7 @@ export default function ReserveIndex() {
               </svg>
               Filtros
               {activeCount > 0 && (
-                <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: 'var(--g5)', color: '#0a1a10', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: 'var(--g5)', color: '#141a33', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {activeCount}
                 </span>
               )}
@@ -976,7 +976,7 @@ export default function ReserveIndex() {
               )}
             </div>
             {loadingAvail && filterDate && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--glow)', borderRadius: 999, border: '1px solid rgba(74,222,128,.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--glow)', borderRadius: 999, border: '1px solid rgba(58,91,240,.2)' }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--g5)', animation: 'pulse 1s infinite' }} />
                 <p style={{ fontSize: 12, color: 'var(--g4)', fontWeight: 700 }}>Actualizando disponibilidad…</p>
               </div>
@@ -993,7 +993,7 @@ export default function ReserveIndex() {
               <h2 style={{ fontFamily: 'var(--font-h)', fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>No pudimos cargar las canchas</h2>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24 }}>Verificá tu conexión e intentá de nuevo.</p>
               <button onClick={() => window.location.reload()}
-                style={{ padding: '11px 28px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 13 }}>
+                style={{ padding: '11px 28px', background: 'var(--g5)', color: '#141a33', border: 'none', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 13 }}>
                 Reintentar
               </button>
             </div>
@@ -1010,7 +1010,7 @@ export default function ReserveIndex() {
               </p>
               {activeCount > 0 && (
                 <button onClick={clearAll}
-                  style={{ padding: '13px 32px', background: 'var(--g5)', color: '#0a1a10', border: 'none', borderRadius: 14, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 14, letterSpacing: '.03em', boxShadow: '0 3px 20px rgba(34,197,94,.3)', transition: 'all .15s' }}>
+                  style={{ padding: '13px 32px', background: 'var(--g5)', color: '#141a33', border: 'none', borderRadius: 14, cursor: 'pointer', fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: 14, letterSpacing: '.03em', boxShadow: '0 3px 20px rgba(58,91,240,.3)', transition: 'all .15s' }}>
                   Limpiar filtros
                 </button>
               )}

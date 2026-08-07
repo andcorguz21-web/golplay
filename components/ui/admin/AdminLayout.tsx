@@ -285,19 +285,19 @@ const FAB_CSS = `
   height: 56px;
   border-radius: 16px;
   border: none;
-  background: linear-gradient(135deg, #16a34a, #15803d);
+  background: linear-gradient(135deg, #3a5bf0, #2c46cf);
   color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(22,163,74,.4), 0 2px 8px rgba(0,0,0,.1);
+  box-shadow: 0 4px 20px rgba(58,91,240,.4), 0 2px 8px rgba(0,0,0,.1);
   transition: all .2s cubic-bezier(.4,0,.2,1);
   animation: gpFabIn .3s ease both .5s;
 }
 .gp-fab:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 32px rgba(22,163,74,.5), 0 4px 12px rgba(0,0,0,.15);
+  box-shadow: 0 8px 32px rgba(58,91,240,.5), 0 4px 12px rgba(0,0,0,.15);
 }
 .gp-fab:active {
   transform: scale(.95);
@@ -522,7 +522,7 @@ const ONBOARDING_CSS = `
 
 .ob-header {
   padding: 40px 32px 24px; text-align: center;
-  background: linear-gradient(160deg, #052e16 0%, #0B4D2C 100%);
+  background: linear-gradient(160deg, #141a33 0%, #26379e 100%);
   color: #fff;
 }
 .ob-icon { font-size: 40px; margin-bottom: 12px; }
@@ -545,7 +545,7 @@ const ONBOARDING_CSS = `
   transition: all .2s;
 }
 .ob-step--active .ob-step__dot {
-  background: #16a34a; color: #fff;
+  background: #3a5bf0; color: #fff;
 }
 .ob-step__label { font-size: 12px; font-weight: 600; color: #94a3b8; }
 .ob-step--active .ob-step__label { color: #0f172a; }
@@ -562,10 +562,10 @@ const ONBOARDING_CSS = `
   transition: border-color .15s, box-shadow .15s;
   box-sizing: border-box;
 }
-.ob-input:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
+.ob-input:focus { border-color: #3a5bf0; box-shadow: 0 0 0 3px rgba(58,91,240,.1); }
 .ob-input::placeholder { color: #94a3b8; }
 .ob-hint { font-size: 11px; color: #94a3b8; margin: 0; font-weight: 500; }
-.ob-hint strong { color: #16a34a; }
+.ob-hint strong { color: #3a5bf0; }
 .ob-error { font-size: 12px; color: #ef4444; font-weight: 600; margin: 0; }
 
 .ob-btn {
@@ -575,10 +575,10 @@ const ONBOARDING_CSS = `
   transition: all .15s;
 }
 .ob-btn--primary {
-  background: linear-gradient(135deg, #16a34a, #15803d); color: #fff;
-  box-shadow: 0 2px 12px rgba(22,163,74,.3);
+  background: linear-gradient(135deg, #3a5bf0, #2c46cf); color: #fff;
+  box-shadow: 0 2px 12px rgba(58,91,240,.3);
 }
-.ob-btn--primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(22,163,74,.4); }
+.ob-btn--primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(58,91,240,.4); }
 .ob-btn--primary:disabled { opacity: .6; cursor: not-allowed; }
 .ob-btn--ghost { background: transparent; color: #64748b; border: 1.5px solid #e2e8f0; }
 .ob-btn--ghost:hover { background: #f8fafc; }

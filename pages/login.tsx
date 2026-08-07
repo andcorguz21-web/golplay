@@ -112,7 +112,7 @@ export default function LoginPage() {
               <Logo dark height={150} link={false} />
             </div>
             <h2 className="auth-left-title">
-              Bienvenido<br />de vuelta
+              Bienvenido<br />de <em>vuelta</em>
             </h2>
             <p className="auth-left-sub">
               Gestioná tus canchas, revisá tus reservas y hacé crecer tu negocio desde el panel.
@@ -138,10 +138,11 @@ export default function LoginPage() {
           <div className="auth-form-wrap">
 
             <div className="mobile-logo">
-              <Logo dark height={36} link={false} />
+              <Logo height={36} link={false} />
             </div>
 
-            <h1 className="auth-h1">Iniciá sesión</h1>
+            <span className="auth-eyebrow">Acceso</span>
+            <h1 className="auth-h1">Iniciá <em>sesión</em></h1>
             <p className="auth-tagline">
               ¿No tenés cuenta?{' '}
               <Link href="/register" className="auth-link-green">
@@ -249,7 +250,7 @@ const CSS = `
 .auth-main {
   min-height: 100vh;
   display: flex;
-  background: var(--dark);
+  background: var(--card);
   font-family: var(--font-u);
 }
 
@@ -257,12 +258,22 @@ const CSS = `
 .auth-left {
   display: none;
   flex: 1;
-  background: linear-gradient(160deg, #052e16 0%, #14532d 60%, #166534 100%);
+  background: var(--blue);
   padding: 60px 56px;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   overflow: hidden;
+}
+.auth-left::before {
+  content: ""; position: absolute; top: -10%; left: -8%;
+  width: 60%; height: 130%; background: rgba(255,255,255,.06);
+  transform: skewX(-14deg); pointer-events: none;
+}
+.auth-left::after {
+  content: ""; position: absolute; top: 0; left: 24%;
+  width: 26%; height: 130%; background: rgba(255,255,255,.05);
+  transform: skewX(-14deg); pointer-events: none;
 }
 .auth-left-grid {
   position: absolute; inset: 0;
@@ -278,13 +289,14 @@ const CSS = `
 }
 .auth-left-title {
   font-family: var(--font-d);
-  font-size: 38px;
+  font-size: 44px;
   font-weight: 800;
   color: #fff;
-  line-height: 1.1;
+  line-height: 1.04;
   letter-spacing: -0.04em;
   margin-bottom: 20px;
 }
+.auth-left-title em { font-style: italic; color: var(--lime); }
 .auth-left-sub {
   font-size: 16px;
   color: rgba(255,255,255,.6);
@@ -294,7 +306,7 @@ const CSS = `
 .auth-stat-num {
   font-size: 28px;
   font-weight: 800;
-  color: var(--g5);
+  color: var(--lime);
   font-family: var(--font-d);
 }
 .auth-stat-lbl {
@@ -309,7 +321,7 @@ const CSS = `
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
-  background: var(--dark);
+  background: var(--card);
 }
 .auth-form-wrap {
   width: 100%;
@@ -322,21 +334,30 @@ const CSS = `
   margin-bottom: 36px;
 }
 
+.auth-eyebrow {
+  display: inline-block;
+  font-family: var(--font-u);
+  font-size: 13px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 10px;
+}
 .auth-h1 {
   font-family: var(--font-d);
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 800;
-  color: #fff;
+  color: var(--ink);
   letter-spacing: -0.03em;
-  margin-bottom: 6px;
+  line-height: 1.05;
+  margin-bottom: 8px;
 }
+.auth-h1 em { font-style: italic; color: var(--blue); }
 .auth-tagline {
   font-size: 14px;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   margin-bottom: 32px;
 }
 .auth-link-green {
-  color: var(--g4);
+  color: var(--blue);
   font-weight: 600;
   text-decoration: none;
 }
@@ -346,8 +367,8 @@ const CSS = `
 
 .auth-success {
   display: flex; align-items: center; gap: 10px;
-  background: rgba(74,222,128,.08);
-  border: 1px solid rgba(74,222,128,.25);
+  background: rgba(58,91,240,.08);
+  border: 1px solid rgba(58,91,240,.25);
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 20px;
@@ -374,7 +395,7 @@ const CSS = `
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   margin-bottom: 6px;
 }
 .auth-label-row {
@@ -387,31 +408,31 @@ const CSS = `
 
 .auth-input {
   width: 100%;
-  padding: 11px 14px;
+  padding: 13px 16px;
   font-size: 14px;
-  border-radius: 11px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
   outline: none;
   font-family: inherit;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
 .auth-input::placeholder {
-  color: rgba(255,255,255,.3);
+  color: var(--faint);
 }
 .auth-input:focus {
-  border-color: var(--g4);
-  background: rgba(255,255,255,.06);
-  box-shadow: 0 0 0 3px rgba(74,222,128,.12);
+  border-color: var(--blue);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(58,91,240,.14);
 }
 .auth-input--error {
   border-color: #ef4444 !important;
 }
 .auth-input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 30px rgba(8,14,10,.95) inset !important;
-  -webkit-text-fill-color: #fff !important;
-  caret-color: #fff !important;
+  -webkit-box-shadow: 0 0 0 30px #fff inset !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  caret-color: var(--ink) !important;
 }
 
 .pass-toggle {
@@ -422,7 +443,7 @@ const CSS = `
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255,255,255,.4);
+  color: var(--faint);
   display: flex;
   align-items: center;
   padding: 2px;
@@ -430,7 +451,7 @@ const CSS = `
   transition: color .15s;
 }
 .pass-toggle:hover {
-  color: rgba(255,255,255,.85);
+  color: var(--ink2);
 }
 
 .auth-field-error {
@@ -441,28 +462,29 @@ const CSS = `
 
 .submit-btn {
   width: 100%;
-  padding: 13px;
-  border-radius: 12px;
+  padding: 15px;
+  border-radius: 99px;
   border: none;
   color: #fff;
   font-size: 15px;
   font-weight: 700;
-  font-family: var(--font-d);
+  font-family: var(--font-u);
   cursor: pointer;
   margin-top: 24px;
   transition: all .15s;
 }
 .submit-btn--active {
-  background: linear-gradient(135deg, var(--g6), var(--g7));
-  box-shadow: 0 4px 16px rgba(34,197,94,.25);
+  background: var(--blue);
+  box-shadow: 0 8px 22px rgba(58,91,240,.28);
 }
 .submit-btn--active:hover {
+  background: var(--blue2);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(34,197,94,.35);
+  box-shadow: 0 12px 28px rgba(58,91,240,.35);
 }
 .submit-btn--disabled {
-  background: rgba(255,255,255,.08);
-  color: rgba(255,255,255,.4);
+  background: #e7ebf3;
+  color: var(--faint);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -470,11 +492,11 @@ const CSS = `
 .auth-footer-text {
   text-align: center;
   font-size: 12px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   margin-top: 28px;
 }
 .auth-footer-text a {
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   text-decoration: underline;
 }
 

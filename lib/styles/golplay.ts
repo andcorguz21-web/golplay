@@ -3,21 +3,24 @@
 // Eventualmente mover a pages/_app.tsx para evitar duplicación.
 
 export const GOLPLAY_BASE_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --ink: #0a0f0d; --ink2: #1a2420; --muted: #6e7a72; --faint: #b8c2bc;
-  --bone: #f2f0eb; --white: #ffffff; --bd: #e2e6e0; --bd2: #d1d9cd;
-  --g9: #021008; --g8: #062918; --g7: #0d4f28; --g6: #16a34a; --g5: #22c55e;
-  --g4: #4ade80; --g3: #86efac; --g1: #dcfce7; --g0: #f0fdf4;
-  --dark: #080e0a; --dark2: #101810; --dark3: #172214;
+  --ink: #141a33; --ink2: #242c44; --muted: #6b7385; --faint: #aab2c4;
+  --bone: #f4f6fb; --white: #ffffff; --bd: #e7ebf3; --bd2: #d7dce8;
+  --g9: #0f1430; --g8: #1a2350; --g7: #26379e; --g6: #3a5bf0; --g5: #4a68f5;
+  --g4: #d4f24d; --g3: #e3f77d; --g1: #e8ecff; --g0: #f4f6fb;
+  --dark: #141a33; --dark2: #1a2350; --dark3: #202a5c;
   --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 26px;
   --sh-xs: 0 1px 3px rgba(0,0,0,.05), 0 3px 10px rgba(0,0,0,.06);
   --sh-sm: 0 2px 8px rgba(0,0,0,.07), 0 8px 24px rgba(0,0,0,.07);
   --sh-md: 0 4px 16px rgba(0,0,0,.10), 0 16px 40px rgba(0,0,0,.09);
   --sh-lg: 0 8px 32px rgba(0,0,0,.14), 0 24px 64px rgba(0,0,0,.11);
-  --font-d: 'Syne', system-ui, sans-serif;
-  --font-u: 'DM Sans', system-ui, sans-serif;
+  --font-d: 'Poppins', system-ui, sans-serif;
+  --font-u: 'Inter', system-ui, sans-serif;
+  --blue: #3a5bf0; --blue2: #2c46cf; --blue-d: #26379e;
+  --lime: #d4f24d; --lime2: #c7ea38; --limeink: #1c2a0a;
+  --paper: #f4f6fb; --card: #ffffff; --line: #e7ebf3; --navy: #141a33;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,7 +37,7 @@ body {
 @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-@keyframes pulseDot { 0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.5)} 50%{box-shadow:0 0 0 7px rgba(74,222,128,0)} }
+@keyframes pulseDot { 0%,100%{box-shadow:0 0 0 0 rgba(58,91,240,.5)} 50%{box-shadow:0 0 0 7px rgba(58,91,240,0)} }
 @keyframes popIn { from{opacity:0;transform:scale(.97) translateY(-4px)} to{opacity:1;transform:none} }
 @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
 
@@ -70,7 +73,7 @@ body {
   padding: 8px 18px; border-radius: var(--r-sm);
   font-size: 13.5px; font-weight: 700;
   background: var(--g6); color: #fff; text-decoration: none;
-  box-shadow: 0 2px 10px rgba(22,163,74,.3); transition: all .14s;
+  box-shadow: 0 2px 10px rgba(58,91,240,.3); transition: all .14s;
 }
 .nav__cta:hover { background: var(--g7); transform: translateY(-1px); }
 .nav__mcta {
@@ -108,7 +111,7 @@ body {
 .h2--lt em { color: var(--g4); }
 
 .sk {
-  background: linear-gradient(90deg, #eaede8 25%, #f4f6f2 50%, #eaede8 75%);
+  background: linear-gradient(90deg, #eef1f8 25%, #f4f6fb 50%, #eef1f8 75%);
   background-size: 400% 100%; animation: shimmer 1.6s infinite; border-radius: 8px;
 }
 `;

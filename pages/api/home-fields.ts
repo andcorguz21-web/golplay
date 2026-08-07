@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
@@ -21,7 +21,7 @@ export default async function handler(
     if (fieldsError) throw fieldsError
 
     const { data: images } = await supabase
-      .from('fields_images')
+      .from('field_images')
       .select('field_id, url')
       .order('is_main', { ascending: false })
 

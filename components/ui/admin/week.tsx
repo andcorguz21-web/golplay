@@ -25,7 +25,7 @@ type Props = {
   fieldSlotDurations?: Record<string, number>
 }
 
-const DEFAULT_FIELD_COLOR = '#3B82F6'
+const DEFAULT_FIELD_COLOR = '#4a68f5'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HOURS = [
@@ -150,7 +150,7 @@ function BookingCell({
 function OccupationBar({ count, date }: { count: number; date: string }) {
   const max = 5
   const pct = Math.min((count / max) * 100, 100)
-  const color = pct >= 80 ? '#dc2626' : pct >= 50 ? '#d97706' : '#16a34a'
+  const color = pct >= 80 ? '#dc2626' : pct >= 50 ? '#d97706' : '#3a5bf0'
   return (
     <div title={`${count} reserva${count !== 1 ? 's' : ''}`} style={{ marginTop: 4, height: 3, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
       <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 999, transition: 'width 0.4s ease' }} />

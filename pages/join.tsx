@@ -228,8 +228,8 @@ const CSS = `
 
 /* ===== CTA ===== */
 .jn-cta {
-  background: linear-gradient(135deg, var(--g6), var(--g7));
-  color: #fff;
+  background: var(--blue);
+  color:#fff;
   border-radius: 30px;
   padding: 50px 30px;
   text-align: center;
@@ -238,7 +238,7 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 30px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 10px;
 }
 .jn-cta__text {
@@ -266,7 +266,7 @@ const CSS = `
 /* ===== FOOTER ===== */
 .jn-footer {
   background: var(--dark);
-  color: #fff;
+  color:var(--ink);
   padding: 50px 20px;
   margin-top: 80px;
 }
@@ -281,35 +281,35 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 20px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 8px;
 }
 .jn-footer__heading {
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 4px;
 }
 .jn-footer__text {
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin: 0;
   line-height: 1.6;
 }
 .jn-footer__link {
   display: block;
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin-top: 8px;
   text-decoration: none;
   transition: color .15s;
 }
-.jn-footer__link:hover { color: var(--g4); }
+.jn-footer__link:hover { color: var(--blue); }
 .jn-footer__copy {
   text-align: center;
   margin: 30px 0 0;
   font-size: 13px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
 }
 
 @media (min-width: 768px) {

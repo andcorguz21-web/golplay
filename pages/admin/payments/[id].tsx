@@ -172,7 +172,7 @@ const Info = ({ label, value }: any) => (
 
 const StatusBadge = ({ status }: { status: string }) => {
   const map: any = {
-    paid: { text: 'Pagado', bg: '#16a34a' },
+    paid: { text: 'Pagado', bg: '#3a5bf0' },
     pending: { text: 'Pendiente', bg: '#f59e0b' },
     overdue: { text: 'Moroso', bg: '#dc2626' },
   };
@@ -250,7 +250,7 @@ const payBtn = {
   padding: '14px 16px',
   borderRadius: 14,
   border: 'none',
-  background: '#2563eb',
+  background: '#3a5bf0',
   color: 'white',
   fontSize: 15,
   cursor: 'pointer',

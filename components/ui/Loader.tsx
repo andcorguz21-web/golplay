@@ -20,7 +20,7 @@ export default function Loader({
             height: 42,
             borderRadius: '50%',
             border: '4px solid #e5e7eb',
-            borderTopColor: '#16a34a',
+            borderTopColor: '#3a5bf0',
             animation: 'spin 1s linear infinite',
           }}
         />

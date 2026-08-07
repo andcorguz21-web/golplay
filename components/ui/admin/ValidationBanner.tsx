@@ -480,7 +480,7 @@ const S: Record<string, any> = {
   footerLink: {
     background: 'none',
     border: 'none',
-    color: '#2563eb',
+    color: '#3a5bf0',
     cursor: 'pointer',
     fontSize: 10,
     fontWeight: 600,

@@ -32,8 +32,8 @@ type FavoriteField = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPORT_META: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
-  futbol5:  { label: 'Fútbol 5',  emoji: '⚽',  color: '#4ade80', bg: 'rgba(74,222,128,.12)' },
-  futbol7:  { label: 'Fútbol 7',  emoji: '⚽',  color: '#4ade80', bg: 'rgba(74,222,128,.12)' },
+  futbol5:  { label: 'Fútbol 5',  emoji: '⚽',  color: '#d4f24d', bg: 'rgba(58,91,240,.12)' },
+  futbol7:  { label: 'Fútbol 7',  emoji: '⚽',  color: '#d4f24d', bg: 'rgba(58,91,240,.12)' },
   padel:    { label: 'Pádel',     emoji: '🎾',  color: '#67e8f9', bg: 'rgba(103,232,249,.12)' },
   tenis:    { label: 'Tenis',     emoji: '🎾',  color: '#fbbf24', bg: 'rgba(251,191,36,.12)' },
   basquet:  { label: 'Básquet',   emoji: '🏀',  color: '#fb923c', bg: 'rgba(251,146,60,.12)' },
@@ -120,8 +120,8 @@ export default function FavoritesPage() {
       </Head>
       <style>{CSS}</style>
 
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         <div className="fv-content">
           <div className="fv-page-header">
@@ -227,17 +227,17 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 10px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase;
-  color: var(--g4); margin-bottom: 6px;
+  color: var(--blue); margin-bottom: 6px;
 }
 .fv-title {
   font-family: var(--font-d);
   font-size: clamp(26px, 4vw, 36px);
-  font-weight: 800; color: #fff;
+  font-weight: 800; color: var(--ink);
   letter-spacing: -.02em;
 }
 .fv-title em {
-  font-style: normal;
-  color: var(--g4);
+  font-style: italic;
+  color: var(--blue);
 }
 
 .fv-grid {
@@ -249,17 +249,18 @@ const CSS = `
 .fv-skel {
   height: 320px;
   border-radius: 16px;
-  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%);
+  background: linear-gradient(90deg, var(--paper) 25%, #eef1f8 50%, var(--paper) 75%);
   background-size: 400% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .fv-empty {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: var(--card);
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: 60px 24px;
   text-align: center;
+  box-shadow: 0 12px 30px rgba(20,26,51,.06);
   animation: fadeUp .5s ease both;
 }
 .fv-empty > span {
@@ -268,32 +269,32 @@ const CSS = `
 .fv-empty h3 {
   font-family: var(--font-d);
   font-size: 20px; font-weight: 800;
-  color: #fff; margin-bottom: 8px;
+  color: var(--ink); margin-bottom: 8px;
 }
 .fv-empty p {
   font-size: 14px;
-  color: rgba(255,255,255,.45);
+  color: var(--muted);
   margin-bottom: 24px;
   line-height: 1.6;
 }
 
 .fv-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 10px 20px;
-  border-radius: 12px;
+  padding: 12px 24px;
+  border-radius: 99px;
   font-size: 13px; font-weight: 700;
-  font-family: var(--font-d);
-  background: var(--g6); color: #fff;
+  font-family: var(--font-u);
+  background: var(--blue); color: #fff;
   border: none; cursor: pointer;
-  box-shadow: 0 3px 14px rgba(22,163,74,.35);
+  box-shadow: 0 8px 20px rgba(58,91,240,.28);
   transition: all .15s;
 }
-.fv-btn:hover { background: var(--g7); }
+.fv-btn:hover { background: var(--blue2); transform: translateY(-1px); }
 
 .fv-card {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
   transition: transform .2s, box-shadow .2s, border-color .2s;
@@ -301,8 +302,8 @@ const CSS = `
 }
 .fv-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0,0,0,.3);
-  border-color: rgba(74,222,128,.3);
+  box-shadow: 0 18px 40px rgba(20,26,51,.12);
+  border-color: var(--blue);
 }
 
 .fv-card-img {
@@ -310,7 +311,7 @@ const CSS = `
   background-size: cover;
   background-position: center;
   position: relative;
-  background-color: rgba(22,163,74,.1);
+  background-color: rgba(58,91,240,.1);
 }
 .fv-card-overlay {
   position: absolute; inset: 0;
@@ -351,12 +352,12 @@ const CSS = `
 .fv-card-name {
   font-family: var(--font-d);
   font-size: 15px; font-weight: 700;
-  color: #fff; margin-bottom: 4px;
+  color: var(--ink); margin-bottom: 4px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fv-card-loc {
   font-size: 12px;
-  color: rgba(255,255,255,.45);
+  color: var(--muted);
   margin-bottom: 12px;
 }
 
@@ -371,8 +372,8 @@ const CSS = `
   text-align: center;
 }
 .fv-price--day {
-  background: rgba(74,222,128,.08);
-  border: 1px solid rgba(74,222,128,.15);
+  background: rgba(58,91,240,.08);
+  border: 1px solid rgba(58,91,240,.15);
 }
 .fv-price--night {
   background: rgba(167,139,250,.08);
@@ -385,20 +386,20 @@ const CSS = `
   letter-spacing: .06em; text-transform: uppercase;
   margin-bottom: 3px;
 }
-.fv-price--day   .fv-price-lbl { color: var(--g4); }
-.fv-price--night .fv-price-lbl { color: #a78bfa; }
+.fv-price--day   .fv-price-lbl { color: var(--blue); }
+.fv-price--night .fv-price-lbl { color: #7c3aed; }
 .fv-price-val {
   font-family: var(--font-d);
   font-size: 14px; font-weight: 800;
 }
-.fv-price--day   .fv-price-val { color: var(--g4); }
-.fv-price--night .fv-price-val { color: #a78bfa; }
+.fv-price--day   .fv-price-val { color: var(--blue); }
+.fv-price--night .fv-price-val { color: #7c3aed; }
 
 .fv-cta {
   width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--g6), var(--g7));
+  padding: 12px;
+  border-radius: 99px;
+  background: var(--blue);
   color: #fff;
   font-family: var(--font-d);
   font-weight: 700;
@@ -407,12 +408,12 @@ const CSS = `
   text-transform: uppercase;
   border: none;
   cursor: pointer;
-  box-shadow: 0 3px 12px rgba(22,163,74,.3);
+  box-shadow: 0 3px 12px rgba(58,91,240,.3);
   transition: all .15s;
 }
 .fv-cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 5px 18px rgba(22,163,74,.4);
+  box-shadow: 0 5px 18px rgba(58,91,240,.4);
 }
 
 @media (max-width: 640px) {

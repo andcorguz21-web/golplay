@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Temporales del sistema de archivos montado (FUSE) — no son código
+.fuse_hidden*
+
+# Respaldos del rediseño
+.backup_predesign/
+node_modules
+.next
+design-mockups/

@@ -163,16 +163,16 @@ const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 /* ============== PAGE ============== */
-.pv{min-height:100vh;background:#0C0D0B;font-family:'DM Sans',system-ui,sans-serif;color:#e2e8e0;padding:40px 20px 80px}
+.pv{min-height:100vh;background:#121628;font-family:'DM Sans',system-ui,sans-serif;color:#e7ebf3;padding:40px 20px 80px}
 .pv-content{max-width:1200px;margin:0 auto}
 .pv-title{font-family:'Bebas Neue',sans-serif;font-size:56px;color:#fff;letter-spacing:.02em;margin-bottom:8px;line-height:1}
 .pv-subtitle{font-size:14px;color:#9ca3af;margin-bottom:40px}
-.pv-subtitle b{color:#4ade80;font-weight:600}
+.pv-subtitle b{color:#d4f24d;font-weight:600}
 .pv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:40px;justify-items:center}
 .pv-case{display:flex;flex-direction:column;gap:14px;align-items:flex-start;width:100%}
 .pv-case-head{padding-bottom:6px}
-.pv-case-label{font-family:'Inter',sans-serif;font-size:12px;font-weight:800;color:#4ade80;text-transform:uppercase;letter-spacing:.08em}
-.pv-case-desc{font-size:12px;color:#6b7569;margin-top:4px;line-height:1.4}
+.pv-case-label{font-family:'Inter',sans-serif;font-size:12px;font-weight:800;color:#d4f24d;text-transform:uppercase;letter-spacing:.08em}
+.pv-case-desc{font-size:12px;color:#6b7385;margin-top:4px;line-height:1.4}
 
 /* ============== SHADOW WRAPPER ============== */
 .pc-shadow{

@@ -3,10 +3,10 @@
  * Detalle del reto (público + panel privado vía ?ref=token)
  *
  * Migrado al DS oficial:
- *   - Theme: dark (envuelto en <div className="theme-dark">).
- *   - Navbar: <Navbar dark={true} /> reemplaza el header inline.
+ *   - Theme: dark (envuelto en <div className="theme-light">).
+ *   - Navbar: <Navbar /> reemplaza el header inline.
  *   - Tipografía: Syne (var(--font-d)) + DM Sans (body default).
- *   - Tokens CSS: var(--g4), var(--g6), var(--g7), var(--dark).
+ *   - Tokens CSS: var(--blue), var(--g6), var(--g7), var(--dark).
  *   - Back link "← Todos los retos" arriba (entrada al detalle).
  *   - Bug fix: useState(publicUrl) + useEffect movidos arriba del early return.
  *
@@ -93,10 +93,10 @@ interface Props {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPORT_META: Record<string, { label: string; emoji: string; color: string }> = {
-  futbol5:  { label: 'Fútbol 5',  emoji: '⚽',  color: '#16a34a' },
-  futbol7:  { label: 'Fútbol 7',  emoji: '⚽',  color: '#16a34a' },
-  futbol8:  { label: 'Fútbol 8',  emoji: '⚽',  color: '#16a34a' },
-  futbol11: { label: 'Fútbol 11', emoji: '⚽',  color: '#16a34a' },
+  futbol5:  { label: 'Fútbol 5',  emoji: '⚽',  color: '#3a5bf0' },
+  futbol7:  { label: 'Fútbol 7',  emoji: '⚽',  color: '#3a5bf0' },
+  futbol8:  { label: 'Fútbol 8',  emoji: '⚽',  color: '#3a5bf0' },
+  futbol11: { label: 'Fútbol 11', emoji: '⚽',  color: '#3a5bf0' },
   padel:    { label: 'Pádel',     emoji: '🎾',  color: '#eab308' },
   tenis:    { label: 'Tenis',     emoji: '🎾',  color: '#eab308' },
   basquet:  { label: 'Básquet',   emoji: '🏀',  color: '#f97316' },
@@ -104,12 +104,12 @@ const SPORT_META: Record<string, { label: string; emoji: string; color: string }
 }
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  open:      { label: 'Buscando rival', color: '#4ade80',              bg: 'rgba(74,222,128,.1)'  },
+  open:      { label: 'Buscando rival', color: '#d4f24d',              bg: 'rgba(58,91,240,.1)'  },
   matched:   { label: 'Rival aceptó',   color: '#fbbf24',              bg: 'rgba(251,191,36,.1)'  },
-  confirmed: { label: 'Confirmado',     color: '#4ade80',              bg: 'rgba(74,222,128,.15)' },
+  confirmed: { label: 'Confirmado',     color: '#d4f24d',              bg: 'rgba(58,91,240,.15)' },
   finished:  { label: 'Jugado',         color: '#a78bfa',              bg: 'rgba(167,139,250,.1)' },
   cancelled: { label: 'Cancelado',      color: '#f87171',              bg: 'rgba(248,113,113,.1)' },
-  expired:   { label: 'Expirado',       color: 'rgba(255,255,255,.5)', bg: 'rgba(255,255,255,.06)' },
+  expired:   { label: 'Expirado',       color: 'var(--muted)', bg: 'var(--line)' },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -456,8 +456,8 @@ export default function ChallengeDetailPage({ challenge, viewerRole, acceptanceT
       <>
         <Head><title>Reto no encontrado · GolPlay</title></Head>
         <style>{CSS}</style>
-        <div className="theme-dark">
-          <Navbar dark={true} />
+        <div className="theme-light">
+          <Navbar />
           <div className="rd-404">
             <span className="rd-404__emoji">⚔️</span>
             <h1 className="rd-404__title">Reto no encontrado</h1>
@@ -541,8 +541,8 @@ export default function ChallengeDetailPage({ challenge, viewerRole, acceptanceT
         </div>
       )}
 
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         <div className="rd">
           <div className="rd-top">
@@ -864,12 +864,12 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 32px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0;
 }
 .rd-404__sub {
   font-size: 14px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   max-width: 400px;
   line-height: 1.6;
   margin: 0 0 20px;
@@ -885,19 +885,19 @@ const CSS = `
 }
 .rd-top__back {
   font-size: 13px;
-  color: rgba(255,255,255,.6);
+  color: var(--ink2);
   text-decoration: none;
   font-weight: 500;
   transition: color .15s;
 }
-.rd-top__back:hover { color: var(--g4); }
+.rd-top__back:hover { color: var(--blue); }
 
 /* — Hero ─────────────────────────────────────────────────────── */
 .rd-hero {
   max-width: 720px;
   margin: 8px auto 24px;
   padding: 24px 22px;
-  background: linear-gradient(160deg, #052e16 0%, #0B4D2C 100%);
+  background: linear-gradient(160deg, #141a33 0%, #26379e 100%);
   border-radius: 22px;
 }
 .rd-hero__head {
@@ -932,20 +932,20 @@ const CSS = `
   width: 60px;
   height: 60px;
   border-radius: 18px;
-  background: rgba(74,222,128,.2);
-  border: 2px solid rgba(74,222,128,.4);
+  background: rgba(58,91,240,.2);
+  border: 2px solid rgba(58,91,240,.4);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
   font-weight: 800;
-  color: var(--g4);
+  color: var(--blue);
   font-family: var(--font-d);
 }
 .rd-hero__avatar--empty {
-  background: rgba(255,255,255,.06);
-  border: 2px dashed rgba(255,255,255,.2);
-  color: rgba(255,255,255,.4);
+  background: var(--line);
+  border: 2px dashed var(--faint);
+  color: var(--muted);
 }
 .rd-hero__avatar--matched {
   background: rgba(251,191,36,.18);
@@ -955,7 +955,7 @@ const CSS = `
 .rd-hero__team-name {
   font-size: 14px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0;
   max-width: 130px;
   overflow: hidden;
@@ -963,14 +963,14 @@ const CSS = `
   white-space: nowrap;
   text-align: center;
 }
-.rd-hero__team-name--empty { color: rgba(255,255,255,.4); font-weight: 500; }
+.rd-hero__team-name--empty { color: var(--muted); font-weight: 500; }
 .rd-hero__score { font-size: 11px; color: #fbbf24; font-weight: 600; }
-.rd-hero__score--new { color: rgba(255,255,255,.4); font-weight: 500; }
+.rd-hero__score--new { color: var(--muted); font-weight: 500; }
 .rd-hero__vs {
   font-family: var(--font-d);
   font-size: 24px;
   font-weight: 800;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   letter-spacing: .05em;
 }
 
@@ -980,12 +980,12 @@ const CSS = `
   margin: 0 auto 22px;
   padding: 22px;
   border-radius: 18px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.1);
+  background: #fff;
+  border: 1px solid var(--line);
 }
 .rd-panel--acceptor {
-  border-color: rgba(74,222,128,.3);
-  background: linear-gradient(160deg, rgba(74,222,128,.04), rgba(74,222,128,.08));
+  border-color: rgba(58,91,240,.3);
+  background: linear-gradient(160deg, rgba(58,91,240,.04), rgba(58,91,240,.08));
 }
 .rd-panel--publisher {
   border-color: rgba(251,191,36,.3);
@@ -994,7 +994,7 @@ const CSS = `
 .rd-panel__eyebrow {
   font-size: 10px;
   font-weight: 700;
-  color: var(--g4);
+  color: var(--blue);
   letter-spacing: .12em;
   margin: 0 0 6px;
 }
@@ -1003,12 +1003,12 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 24px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 8px;
 }
 .rd-panel__sub {
   font-size: 14px;
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   line-height: 1.5;
   margin: 0 0 16px;
 }
@@ -1019,8 +1019,8 @@ const CSS = `
   align-items: center;
   gap: 14px;
   padding: 16px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.1);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 14px;
   margin-bottom: 16px;
 }
@@ -1028,14 +1028,14 @@ const CSS = `
   width: 50px;
   height: 50px;
   border-radius: 14px;
-  background: rgba(74,222,128,.18);
-  border: 2px solid rgba(74,222,128,.3);
+  background: rgba(58,91,240,.18);
+  border: 2px solid rgba(58,91,240,.3);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
   font-weight: 800;
-  color: var(--g4);
+  color: var(--blue);
   flex-shrink: 0;
   font-family: var(--font-d);
 }
@@ -1043,17 +1043,17 @@ const CSS = `
 .rd-contact__name {
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 3px;
 }
 .rd-contact__role {
   font-size: 12px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin: 0 0 4px;
 }
 .rd-contact__phone {
   font-size: 14px;
-  color: var(--g4);
+  color: var(--blue);
   font-weight: 600;
   margin: 0;
 }
@@ -1071,14 +1071,14 @@ const CSS = `
 
 .rd-link-box {
   padding: 12px 14px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 10px;
   margin-bottom: 12px;
 }
 .rd-link {
   font-size: 12px;
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   font-family: ui-monospace, monospace;
   word-break: break-all;
 }
@@ -1099,7 +1099,7 @@ const CSS = `
 }
 .rd-cta__sub {
   font-size: 12px;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   margin: 12px 0 0;
 }
 .rd-cta-closed {
@@ -1107,8 +1107,8 @@ const CSS = `
   margin: 0 auto 22px;
   padding: 18px 22px;
   text-align: center;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 14px;
 }
 .rd-cta-closed span {
@@ -1119,7 +1119,7 @@ const CSS = `
 }
 .rd-cta-closed p {
   font-size: 14px;
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   margin: 0;
 }
 
@@ -1133,14 +1133,14 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 22px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 14px;
 }
 .rd-details {
   display: flex;
   flex-direction: column;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -1149,7 +1149,7 @@ const CSS = `
   align-items: flex-start;
   gap: 14px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--line);
 }
 .rd-detail:last-child { border-bottom: none; }
 .rd-detail__icon {
@@ -1161,21 +1161,21 @@ const CSS = `
 .rd-detail__label {
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .06em;
   margin: 0 0 4px;
 }
 .rd-detail__value {
   font-size: 14px;
-  color: #fff;
+  color:var(--ink);
   font-weight: 500;
   margin: 0 0 2px;
   line-height: 1.4;
 }
 .rd-detail__sub {
   font-size: 12.5px;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   margin: 0;
   line-height: 1.4;
 }
@@ -1193,18 +1193,18 @@ const CSS = `
   margin: 50px auto 0;
   padding: 30px 24px;
   text-align: center;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid var(--line);
 }
 .rd-foot__brand {
   font-family: var(--font-d);
   font-size: 18px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 4px;
 }
 .rd-foot__sub {
   font-size: 12px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   margin: 0;
 }
 
@@ -1228,23 +1228,23 @@ const CSS = `
 .rd-btn--big  { padding: 16px 28px; font-size: 15px; }
 .rd-btn--sm   { padding: 8px 14px; font-size: 12px; }
 .rd-btn--primary {
-  background: linear-gradient(135deg, var(--g6), var(--g7));
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(22,163,74,.3);
+  background: var(--blue);
+  color:#fff;
+  box-shadow: 0 4px 16px rgba(58,91,240,.3);
 }
 .rd-btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(22,163,74,.4);
+  box-shadow: 0 8px 24px rgba(58,91,240,.4);
 }
 .rd-btn--primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 .rd-btn--ghost {
-  background: rgba(255,255,255,.08);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.12);
+  background: var(--line);
+  color:var(--ink);
+  border: 1px solid var(--line);
 }
 .rd-btn--ghost:hover { background: rgba(255,255,255,.14); }
-.rd-btn--whatsapp { background: #25D366; color: #fff; }
-.rd-btn--whatsapp:hover { background: #1ebe5b; transform: translateY(-1px); }
+.rd-btn--whatsapp { background: #25D366; color:var(--ink); }
+.rd-btn--whatsapp:hover { background: #4a68f5; transform: translateY(-1px); }
 .rd-btn--danger {
   background: rgba(248,113,113,.1);
   color: #f87171;
@@ -1254,7 +1254,7 @@ const CSS = `
 
 .rd-hint {
   font-size: 12px;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   line-height: 1.5;
   margin: 8px 0;
 }
@@ -1269,15 +1269,15 @@ const CSS = `
   border-radius: 11px;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 8px 28px rgba(0,0,0,.4);
+  box-shadow: 0 8px 28px rgba(20,26,51,.12);
   animation: rdSlideIn .25s ease;
 }
 @keyframes rdSlideIn {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: none; }
 }
-.rd-toast--ok  { background: var(--g7); color: #fff; }
-.rd-toast--err { background: #b91c1c; color: #fff; }
+.rd-toast--ok  { background: var(--g7); color:var(--ink); }
+.rd-toast--err { background: #b91c1c; color:var(--ink); }
 
 /* — Modal ────────────────────────────────────────────────────── */
 .rd-modal-bg {
@@ -1294,8 +1294,8 @@ const CSS = `
 }
 @keyframes rdFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .rd-modal {
-  background: var(--dark2);
-  border: 1px solid rgba(255,255,255,.1);
+  background:#fff;
+  border: 1px solid var(--line);
   border-radius: 22px;
   width: 100%;
   max-width: 480px;
@@ -1311,7 +1311,7 @@ const CSS = `
 }
 .rd-modal__header {
   padding: 22px 24px 20px;
-  background: linear-gradient(160deg, #052e16, #0B4D2C);
+  background: linear-gradient(160deg, #141a33, #26379e);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1321,7 +1321,7 @@ const CSS = `
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .12em;
-  color: rgba(255,255,255,.55);
+  color: var(--muted);
   text-transform: uppercase;
   margin: 0 0 4px;
 }
@@ -1329,13 +1329,13 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 18px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 0;
 }
 .rd-modal__close {
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.15);
-  color: rgba(255,255,255,.7);
+  background: var(--line);
+  border: 1px solid var(--line);
+  color: var(--ink2);
   width: 32px;
   height: 32px;
   border-radius: 10px;
@@ -1343,7 +1343,7 @@ const CSS = `
   font-size: 14px;
   flex-shrink: 0;
 }
-.rd-modal__close:hover { background: rgba(255,255,255,.2); color: #fff; }
+.rd-modal__close:hover { background: var(--faint); color:var(--ink); }
 .rd-modal__body {
   padding: 20px 24px 24px;
   overflow-y: auto;
@@ -1359,13 +1359,13 @@ const CSS = `
 .rd-label {
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255,255,255,.85);
+  color: var(--ink);
   text-transform: uppercase;
   letter-spacing: .04em;
 }
 .rd-label-sub {
   font-weight: 500;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -1373,17 +1373,17 @@ const CSS = `
   width: 100%;
   padding: 12px 14px;
   border-radius: 11px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color:var(--ink);
   font-family: inherit;
   font-size: 14px;
   outline: none;
   transition: all .15s;
   box-sizing: border-box;
 }
-.rd-input:focus { border-color: var(--g4); background: rgba(255,255,255,.06); }
-.rd-input::placeholder { color: rgba(255,255,255,.3); }
+.rd-input:focus { border-color: var(--blue); background: var(--line); }
+.rd-input::placeholder { color: var(--faint); }
 .rd-error {
   padding: 10px 14px;
   border-radius: 9px;

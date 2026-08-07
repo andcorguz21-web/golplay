@@ -3,10 +3,10 @@
  * Form público para publicar un reto
  *
  * Migrado al DS oficial:
- *   - Theme: dark (envuelto en <div className="theme-dark">).
- *   - Navbar: <Navbar dark={true} /> reemplaza el header inline.
+ *   - Theme: dark (envuelto en <div className="theme-light">).
+ *   - Navbar: <Navbar /> reemplaza el header inline.
  *   - Tipografía: Syne (var(--font-d)) + DM Sans (body default).
- *   - Tokens CSS: var(--g4), var(--g6), var(--g7).
+ *   - Tokens CSS: var(--blue), var(--g6), var(--g7).
  *   - Back link "← Volver al feed" movido arriba del título (entrada al flujo).
  *
  * Sin cambios:
@@ -260,8 +260,8 @@ export default function PublicarRetoPage({ complexes, fields }: Props) {
       </Head>
       <style>{CSS}</style>
 
-      <div className="theme-dark">
-        <Navbar dark={true} />
+      <div className="theme-light">
+        <Navbar />
 
         <div className="pb-wrap">
           <div className="pb-stage">
@@ -608,19 +608,19 @@ const CSS = `
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: rgba(255,255,255,.6);
+  color: var(--ink2);
   text-decoration: none;
   font-weight: 500;
   padding: 6px 0;
   margin-bottom: 20px;
   transition: color .15s;
 }
-.pb-back:hover { color: var(--g4); }
+.pb-back:hover { color: var(--blue); }
 
 .pb-eyebrow {
   font-size: 11px;
   font-weight: 700;
-  color: var(--g4);
+  color: var(--blue);
   text-transform: uppercase;
   letter-spacing: .12em;
   margin: 0 0 12px;
@@ -632,13 +632,13 @@ const CSS = `
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -.02em;
-  color: #fff;
+  color:var(--ink);
   margin: 0 0 14px;
 }
 
 .pb-lead {
   font-size: 15px;
-  color: rgba(255,255,255,.7);
+  color: var(--ink2);
   line-height: 1.6;
   margin: 0 0 32px;
 }
@@ -647,7 +647,7 @@ const CSS = `
   font-family: var(--font-d);
   font-size: 22px;
   font-weight: 800;
-  color: #fff;
+  color:var(--ink);
   margin: 32px 0 16px;
 }
 .pb-section:first-of-type { margin-top: 0; }
@@ -669,19 +669,19 @@ const CSS = `
 .pb-label {
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255,255,255,.85);
+  color: var(--ink);
   text-transform: uppercase;
   letter-spacing: .04em;
 }
 .pb-label-sub {
   font-weight: 500;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   text-transform: none;
   letter-spacing: 0;
 }
 .pb-hint {
   font-size: 11.5px;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   margin: 4px 0 0;
   line-height: 1.5;
 }
@@ -690,9 +690,9 @@ const CSS = `
   width: 100%;
   padding: 13px 16px;
   border-radius: 12px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color:var(--ink);
   font-family: inherit;
   font-size: 15px;
   outline: none;
@@ -700,11 +700,11 @@ const CSS = `
   box-sizing: border-box;
 }
 .pb-input:focus {
-  border-color: var(--g4);
-  background: rgba(255,255,255,.06);
+  border-color: var(--blue);
+  background: var(--line);
 }
 .pb-input::placeholder {
-  color: rgba(255,255,255,.3);
+  color: var(--faint);
 }
 
 .pb-chips {
@@ -715,9 +715,9 @@ const CSS = `
 .pb-chip {
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1.5px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: rgba(255,255,255,.7);
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink2);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -725,13 +725,13 @@ const CSS = `
   transition: all .15s;
 }
 .pb-chip:hover {
-  color: #fff;
-  border-color: rgba(255,255,255,.3);
+  color:var(--ink);
+  border-color: var(--faint);
 }
 .pb-chip--sel {
-  border-color: var(--g4);
-  background: rgba(74,222,128,.12);
-  color: var(--g4);
+  border-color: var(--blue);
+  background: rgba(58,91,240,.12);
+  color: var(--blue);
   font-weight: 700;
 }
 
@@ -747,31 +747,31 @@ const CSS = `
   gap: 12px;
   padding: 14px 16px;
   border-radius: 12px;
-  border: 1.5px solid rgba(255,255,255,.1);
-  background: rgba(255,255,255,.04);
+  border: 1.5px solid var(--line);
+  background: #fff;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
   transition: all .15s;
 }
 .pb-venue-tab:hover {
-  border-color: rgba(255,255,255,.25);
+  border-color: var(--faint);
 }
 .pb-venue-tab--sel {
-  border-color: var(--g4);
-  background: rgba(74,222,128,.06);
+  border-color: var(--blue);
+  background: rgba(58,91,240,.06);
 }
 .pb-venue-tab span { font-size: 22px; }
 .pb-venue-tab strong {
   display: block;
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color:var(--ink);
   margin-bottom: 2px;
 }
 .pb-venue-tab small {
   font-size: 12px;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
 }
 
 .pb-suggestions {
@@ -781,8 +781,8 @@ const CSS = `
   margin-top: 6px;
   max-height: 280px;
   overflow-y: auto;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.08);
+  background: var(--line);
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 6px;
 }
@@ -794,21 +794,21 @@ const CSS = `
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: #fff;
+  color:var(--ink);
   font-family: inherit;
   font-size: 13px;
   cursor: pointer;
   transition: all .12s;
 }
 .pb-suggestion:hover {
-  background: rgba(74,222,128,.1);
+  background: rgba(58,91,240,.1);
 }
 .pb-suggestion strong { font-weight: 700; }
-.pb-suggestion span { color: rgba(255,255,255,.5); }
+.pb-suggestion span { color: var(--muted); }
 
 .pb-no-results {
   font-size: 12.5px;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   padding: 10px 12px;
   margin: 0;
 }
@@ -818,24 +818,24 @@ const CSS = `
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: rgba(74,222,128,.08);
-  border: 1px solid rgba(74,222,128,.2);
+  background: rgba(58,91,240,.08);
+  border: 1px solid rgba(58,91,240,.2);
   border-radius: 10px;
   font-size: 13px;
-  color: var(--g4);
+  color: var(--blue);
   font-weight: 600;
 }
 .pb-selected button {
   margin-left: auto;
   background: none;
   border: none;
-  color: rgba(255,255,255,.6);
+  color: var(--ink2);
   font-size: 11px;
   cursor: pointer;
   text-decoration: underline;
   font-family: inherit;
 }
-.pb-selected button:hover { color: #fff; }
+.pb-selected button:hover { color:var(--ink); }
 
 .pb-error {
   padding: 12px 16px;
@@ -864,13 +864,13 @@ const CSS = `
 }
 .pb-btn--full { width: 100%; }
 .pb-btn--primary {
-  background: linear-gradient(135deg, var(--g6), var(--g7));
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(22,163,74,.3);
+  background: var(--blue);
+  color:#fff;
+  box-shadow: 0 4px 18px rgba(58,91,240,.3);
 }
 .pb-btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(22,163,74,.4);
+  box-shadow: 0 8px 28px rgba(58,91,240,.4);
 }
 .pb-btn--primary:disabled {
   opacity: .4;
@@ -880,7 +880,7 @@ const CSS = `
 
 .pb-fineprint {
   font-size: 11px;
-  color: rgba(255,255,255,.4);
+  color: var(--muted);
   text-align: center;
   line-height: 1.6;
   margin: 14px 0 0;

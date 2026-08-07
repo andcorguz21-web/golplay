@@ -387,7 +387,7 @@ export default function AdminDashboard() {
         <section className="gp-kpis">
 
           <KpiCard id="today" loading={loading} expanded={expanded} onExpand={setExpanded}
-            accent="#3b82f6"
+            accent="#4a68f5"
             label="Reservas hoy"
             value={kpis?.todayCount ?? 0}
             trend={kpis?.countChange} trendLabel="vs período ant."
@@ -554,11 +554,11 @@ export default function AdminDashboard() {
                         ),
                         datasets: [{
                           data:               charts.dayCount,
-                          borderColor:        '#a3e635',
+                          borderColor:        '#d4f24d',
                           borderWidth:        2,
                           pointRadius:        0,
                           pointHoverRadius:   4,
-                          pointHoverBackgroundColor: '#a3e635',
+                          pointHoverBackgroundColor: '#d4f24d',
                           pointHoverBorderColor:     '#000',
                           pointHoverBorderWidth:     2,
                           tension:            0.4,
@@ -1034,7 +1034,7 @@ const CSS = `
   display: flex; align-items: center; gap: 6px;
   padding: 7px 13px; border-radius: 8px;
   font-family: inherit; font-size: 12px; font-weight: 600;
-  cursor: pointer; background: #111827; color: #fff; border: none; transition: all .15s;
+  cursor: pointer; background:#3a5bf0; color: #fff; border: none; transition: all .15s;
 }
 .gp-btn-export:hover { background: #1f2937; }
 
@@ -1127,7 +1127,7 @@ const CSS = `
   font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 999px;
   font-family: 'Geist Mono', monospace; letter-spacing: .02em;
 }
-.gp-kpi__trend--up { background: #d1fae5; color: #065f46; }
+.gp-kpi__trend--up { background: #e8ecff; color: #065f46; }
 .gp-kpi__trend--dn { background: #fee2e2; color: #991b1b; }
 .gp-kpi__toggle {
   font-size: 7px; color: #d1d5db;
@@ -1145,7 +1145,7 @@ const CSS = `
   font-size: 10px; color: #9ca3af; line-height: 1.5; margin: 0;
 }
 .gp-kpi__link {
-  font-size: 11px; font-weight: 600; color: #3b82f6;
+  font-size: 11px; font-weight: 600; color: #4a68f5;
   background: none; border: none; cursor: pointer; font-family: inherit;
   padding: 0; text-align: left; margin-top: 2px; transition: opacity .15s;
 }
@@ -1205,7 +1205,7 @@ const CSS = `
 .gp-card__legend { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .gp-legend-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: #3b82f6;
+  background: #4a68f5;
   box-shadow: 0 0 0 3px rgba(59,130,246,.15);
 }
 .gp-legend-lbl { font-size: 10px; color: #9ca3af; }
@@ -1227,7 +1227,7 @@ const CSS = `
 .gp-heat-legend span { font-size: 9px; color: #9ca3af; }
 .gp-heat-legend__bar {
   width: 44px; height: 4px; border-radius: 99px;
-  background: linear-gradient(90deg, #dbeafe, #3b82f6, #f59e0b, #ef4444);
+  background: linear-gradient(90deg, #dfe6ff, #4a68f5, #f59e0b, #ef4444);
 }
 
 /* Heatmap */
@@ -1250,7 +1250,7 @@ const CSS = `
 .gp-bk:hover { background: #fafbfc; }
 .gp-bk__av {
   width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #4a68f5, #3a5bf0);
   color: #fff; font-size: 12px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Geist Mono', monospace;
@@ -1264,18 +1264,18 @@ const CSS = `
   background: #f3f4f6; padding: 2px 7px; border-radius: 5px;
   font-family: 'Geist Mono', monospace;
 }
-.gp-bk__date--today  { background: #dcfce7; color: #15803d; }
-.gp-bk__date--future { background: #dbeafe; color: #1d4ed8; }
+.gp-bk__date--today  { background: #e8ecff; color: #2c46cf; }
+.gp-bk__date--future { background: #dfe6ff; color: #2c46cf; }
 
 /* Status badge */
 .gp-badge {
   font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
   text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
 }
-.gp-badge--ok     { background: #dcfce7; color: #15803d; }
+.gp-badge--ok     { background: #e8ecff; color: #2c46cf; }
 .gp-badge--warn   { background: #fef9c3; color: #854d0e; }
 .gp-badge--err    { background: #fee2e2; color: #991b1b; }
-.gp-badge--info   { background: #eff6ff; color: #1d4ed8; }
+.gp-badge--info   { background: #eef2ff; color: #2c46cf; }
 .gp-badge--noshow { background: #fef2f2; color: #b91c1c; }
 
 /* Ranking */
@@ -1289,7 +1289,7 @@ const CSS = `
   font-family: 'Geist Mono', monospace;
 }
 .gp-rank:first-child .gp-rank__num {
-  background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8;
+  background: #eef2ff; border-color: #cdd8ff; color: #2c46cf;
 }
 .gp-rank__body { flex: 1; min-width: 0; }
 .gp-rank__head { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
@@ -1299,7 +1299,7 @@ const CSS = `
 .gp-rank__track { height: 4px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
 .gp-rank__fill {
   height: 100%; width: 0; border-radius: 99px;
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: linear-gradient(90deg, #4a68f5, #3a5bf0);
   animation: gpBar .55s ease forwards;
 }
 
@@ -1321,7 +1321,7 @@ const CSS = `
 .gp-field__right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .gp-field__today { font-size: 10px; font-weight: 600; background: #fef9c3; color: #92400e; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .gp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.gp-dot--on  { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,.2); }
+.gp-dot--on  { background: #4a68f5; box-shadow: 0 0 0 2px rgba(58,91,240,.2); }
 .gp-dot--off { background: #e5e7eb; }
 
 /* ── Skeleton ─────────────────────────────────────────────────────────────── */
@@ -1350,7 +1350,7 @@ const CSS = `
 }
 .gp-toast__icon { font-size: 13px; font-weight: 700; }
 .gp-toast--ok  {
-  background: #111827; color: #fff;
+  background:#3a5bf0; color: #fff;
   box-shadow: 0 8px 32px rgba(0,0,0,.25);
 }
 .gp-toast--err {
@@ -1385,8 +1385,8 @@ const CSS = `
   display: flex; align-items: center; justify-content: center;
 }
 .gp-cal__day:hover      { background: #f3f4f6; color: #111827; }
-.gp-cal__day--tod       { color: #3b82f6; font-weight: 700; }
-.gp-cal__day--sel       { background: #111827 !important; color: #fff !important; font-weight: 700; }
+.gp-cal__day--tod       { color: #4a68f5; font-weight: 700; }
+.gp-cal__day--sel       { background:#3a5bf0 !important; color: #fff !important; font-weight: 700; }
 
 /* ── Animations ───────────────────────────────────────────────────────────── */
 @keyframes gpPop      { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }

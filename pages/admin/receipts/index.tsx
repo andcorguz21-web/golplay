@@ -51,7 +51,7 @@ const METHOD_LABEL: Record<string, string> = {
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   pending:  { label: 'Pendiente', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
-  approved: { label: 'Aprobado',  color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
+  approved: { label: 'Aprobado',  color: '#2c46cf', bg: '#f4f6fb', border: '#dfe6ff' },
   rejected: { label: 'Rechazado', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
 }
 
@@ -287,7 +287,7 @@ export default function ReceiptsPage() {
                     {/* Avatar */}
                     <div style={{
                       width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                      background: r.status === 'pending' ? '#fffbeb' : r.status === 'approved' ? '#f0fdf4' : '#fef2f2',
+                      background: r.status === 'pending' ? '#fffbeb' : r.status === 'approved' ? '#f4f6fb' : '#fef2f2',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
                     }}>
                       {r.status === 'pending' ? '⏳' : r.status === 'approved' ? '✅' : '❌'}
@@ -386,7 +386,7 @@ export default function ReceiptsPage() {
                 {viewing.file_url.endsWith('.pdf') ? (
                   <a href={viewing.file_url} target="_blank" rel="noreferrer" style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 10,
-                    background: '#f8fafc', border: '1px solid #e2e8f0', textDecoration: 'none', color: '#2563eb', fontSize: 13, fontWeight: 600,
+                    background: '#f8fafc', border: '1px solid #e2e8f0', textDecoration: 'none', color: '#3a5bf0', fontSize: 13, fontWeight: 600,
                   }}>
                     <FileText size={18} /> {viewing.file_name ?? 'Abrir PDF'}
                   </a>
@@ -411,9 +411,9 @@ export default function ReceiptsPage() {
                 <button onClick={() => approveReceipt(viewing)} disabled={acting === viewing.id} style={{
                   flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   padding: '12px', borderRadius: 12, border: 'none',
-                  background: 'linear-gradient(135deg, #15803d, #16a34a)', color: '#fff',
+                  background: 'linear-gradient(135deg, #2c46cf, #3a5bf0)', color: '#fff',
                   fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                  boxShadow: '0 2px 8px rgba(22,163,74,.3)',
+                  boxShadow: '0 2px 8px rgba(58,91,240,.3)',
                 }}>
                   {acting === viewing.id ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle size={16} />}
                   Aprobar pago
