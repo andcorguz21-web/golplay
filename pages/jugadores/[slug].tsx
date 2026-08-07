@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/ui/Navbar";
+import PlayerCardFC from "@/components/ui/PlayerCardFC";
 
 type Player = {
   id: string;
@@ -247,65 +248,8 @@ export default function PerfilPublico({ player }: { player: Player | null }) {
 
       <div className="page">
         <div className="content">
-          <div
-            ref={wrapRef}
-            className={`card-wrap card-wrap--${tier}`}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className={`card card--${tier}`}>
-              <div className="card-pattern" />
-              <div className="card-holo" />
-              <div className="card-shine" />
-              <div className="card-sparkles">
-                {SPARKLES.map((s, i) => (
-                  <span key={i} style={{ top: s.top, left: s.left, ['--sp-size' as any]: `${s.size}px` }} />
-                ))}
-              </div>
-              <div className="card-stamp">{stamp}</div>
-              <div className="card-number">#{cardNum}</div>
-
-              <div className="card-inner">
-                <div className="card-top">
-                  <div className="card-meta">
-                    <div className="card-rating">{player.rating}</div>
-                    <div className="card-pos">
-                      {posLabel}
-                      <span className="card-pos-sep">·</span>
-                      <span className="card-pos-alt">{altLabel}</span>
-                    </div>
-                    <div className="card-flag-wrap"><span className="card-flag">🇨🇷</span></div>
-                    <div className="card-country">CRC</div>
-                  </div>
-                  <div className="card-photo">
-                    {player.photo_url ? (
-                      <img src={player.photo_url} alt={cardName} crossOrigin="anonymous" />
-                    ) : (
-                      <div className="card-photo-empty">SIN FOTO</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="card-bottom">
-                  <div className="card-name">{cardName}</div>
-                  <div className="card-divider" />
-                  <div className="card-stats">
-                    {stats.map(([val, lbl], i) => (
-                      <div key={i} className="card-stat">
-                        <div className="card-stat-row">
-                          <span className="card-stat-val">{val}</span>
-                          <span className="card-stat-lbl">{lbl}</span>
-                        </div>
-                        <div className="card-stat-bar">
-                          <div className="card-stat-bar-fill" style={{ width: `${(val / 99) * 100}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="card-footer"><div className="card-club">GP</div></div>
-                </div>
-              </div>
-            </div>
+          <div ref={wrapRef}>
+            <PlayerCardFC player={player} />
           </div>
 
           <div className="share-grid">

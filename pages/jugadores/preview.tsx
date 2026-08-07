@@ -2,6 +2,7 @@
 // Preview standalone. Layout FC EA compacto.
 
 import Head from "next/head";
+import PlayerCardFC from "@/components/ui/PlayerCardFC";
 
 type PlayerCardData = {
   display_name: string;
@@ -148,7 +149,7 @@ export default function PreviewTarjeta() {
                   <div className="pv-case-label">{c.label}</div>
                   <div className="pv-case-desc">{c.description}</div>
                 </div>
-                <PlayerCard player={c.player}/>
+                <PlayerCardFC player={c.player}/>
               </div>
             ))}
           </div>
