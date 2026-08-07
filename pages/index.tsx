@@ -124,7 +124,8 @@ const CSS = `
 /* cancha card */
 .pt-home .fc{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;transition:.16s;cursor:pointer;text-decoration:none;color:inherit;display:block}
 .pt-home .fc:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(20,26,51,.1)}
-.pt-home .fc .img{height:184px;background-size:cover;background-position:center;position:relative;background-color:var(--blue)}
+.pt-home .fc .img{height:184px;background-size:cover;background-position:center;position:relative;background-color:var(--paper)}
+.pt-home .fc .img-ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;color:#c2cbe0;stroke-width:1.6}
 .pt-home .fc .price{position:absolute;top:12px;right:12px;background:#fff;border-radius:99px;padding:6px 13px;font-family:var(--d);font-weight:700;font-size:14px;box-shadow:0 4px 12px rgba(20,26,51,.15)}
 .pt-home .fc-b{padding:16px 18px 18px}
 .pt-home .fc-b h3{font-family:var(--d);font-weight:700;font-size:18px}
@@ -362,6 +363,7 @@ export default function Home() {
               : canchas.map(c => (
                 <Link key={c.id} href={`/reserve/${c.id}`} className="fc">
                   <div className="img" style={c.image ? { backgroundImage: `url('${c.image}')` } : undefined}>
+                    {!c.image && <svg className="img-ph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9" /><path d="M12 7l4.7 3.4-1.8 5.5H9.1L7.3 10.4 12 7z" /></svg>}
                     {c.price != null && <span className="price">{money(c.price)}</span>}
                   </div>
                   <div className="fc-b">
@@ -432,6 +434,7 @@ export default function Home() {
               {torneos.map(t => (
                 <Link key={t.id} href={t.slug ? `/torneos/${t.slug}` : '/torneos'} className="fc">
                   <div className="img" style={t.cover_image_url ? { backgroundImage: `url('${t.cover_image_url}')` } : undefined}>
+                    {!t.cover_image_url && <svg className="img-ph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3" /></svg>}
                     {t.max_teams != null && <span className="price">{t.max_teams} equipos</span>}
                   </div>
                   <div className="fc-b">

@@ -31,14 +31,13 @@ export default function Logo({
 }: LogoProps): ReactElement {
   const img = (
     <img
-      src="/logo-golplay.svg"
+      src={dark ? '/logo-golplay.svg' : '/logo-golplay1.svg'}
       alt="GolPlay"
       style={{
         height,
         width: 'auto',
         display: 'block',
-        filter: dark ? 'brightness(0) invert(1)' : 'none',
-        transition: 'filter .3s',
+        transition: 'opacity .3s',
       }}
     />
   )
