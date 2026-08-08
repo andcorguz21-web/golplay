@@ -133,7 +133,7 @@ const CSS = `
 .pt-home .fc-b .loc .ic{width:15px;height:15px;stroke:var(--blue)}
 .pt-home .fc-b .foot{display:flex;align-items:center;justify-content:space-between;margin-top:15px}
 .pt-home .fc-b .type{background:var(--paper);color:var(--ink2);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:99px}
-.pt-home .fc-b .cta{display:inline-flex;align-items:center;gap:5px;color:var(--blue);font-weight:600;font-size:13.5px}
+.pt-home .fc-b .cta{display:inline-flex;align-items:center;gap:5px;color:var(--blue);font-weight:600;font-size:13.5px;background:none;padding:0;border-radius:0}
 /* feature cards */
 .pt-home .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
 .pt-home .feat-c{border-radius:24px;padding:30px;min-height:220px;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none}
