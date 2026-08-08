@@ -100,6 +100,7 @@ export default function Navbar({ dark = false }: NavbarProps) {
           <Link href="/reserve"             className={linkCls}>Complejos</Link>
           <Link href="/retos"               className={linkCls}>Retos</Link>
           <Link href="/equipos"             className={linkCls}>Equipos</Link>
+          <Link href="/juegos"              className={linkCls}>Juegos</Link>
           <Link href="/jugadores/mi-perfil" className={linkCls}>Mi tarjeta</Link>
           <Link href="/favorites"           className={linkCls}>Favoritos</Link>
           {isOwner && <Link href="/admin" className={linkCls}>Mi negocio</Link>}
@@ -138,6 +139,7 @@ export default function Navbar({ dark = false }: NavbarProps) {
           <Link href="/reserve"             className={linkCls}>Complejos</Link>
           <Link href="/retos"               className={linkCls}>Retos</Link>
           <Link href="/equipos"             className={linkCls}>Equipos</Link>
+          <Link href="/juegos"              className={linkCls}>Juegos</Link>
           <Link href="/jugadores/mi-perfil" className={linkCls}>Mi tarjeta</Link>
           <Link href="/login"               className={keepCls}>Iniciar sesión</Link>
           <Link href="/register"            className={styles.cta}>Registrarse</Link>
@@ -165,6 +167,7 @@ export default function Navbar({ dark = false }: NavbarProps) {
             <Link href="/reserve"             className={styles.mobileItem} onClick={() => setMobileOpen(false)}>🏟️ Complejos</Link>
             <Link href="/retos"               className={styles.mobileItem} onClick={() => setMobileOpen(false)}>⚔️ Retos</Link>
             <Link href="/equipos"             className={styles.mobileItem} onClick={() => setMobileOpen(false)}>🛡️ Equipos</Link>
+            <Link href="/juegos"              className={styles.mobileItem} onClick={() => setMobileOpen(false)}>🎮 Juegos</Link>
             <Link href="/jugadores/mi-perfil" className={styles.mobileItem} onClick={() => setMobileOpen(false)}>🃏 Mi tarjeta</Link>
 
             <div className={styles.mobileSep} />
