@@ -120,16 +120,16 @@ const CSS = `
 .pt-home .sec{padding:78px 0}
 .pt-home .sec.paper{background:var(--paper)}
 .pt-home .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:32px}
-.pt-home .rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:22px}
+.pt-home .rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
 /* cancha card */
 .pt-home .fc{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;transition:.16s;cursor:pointer;text-decoration:none;color:inherit;display:block}
 .pt-home .fc:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(20,26,51,.1)}
-.pt-home .fc .img{height:184px;background-size:cover;background-position:center;position:relative;background-color:var(--paper)}
+.pt-home .fc .img{height:128px;background-size:cover;background-position:center;position:relative;background-color:var(--paper)}
 .pt-home .fc .img-ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;color:#c2cbe0;stroke-width:1.6}
-.pt-home .fc .price{position:absolute;top:12px;right:12px;background:#fff;border-radius:99px;padding:6px 13px;font-family:var(--d);font-weight:700;font-size:14px;box-shadow:0 4px 12px rgba(20,26,51,.15)}
-.pt-home .fc-b{padding:16px 18px 18px}
-.pt-home .fc-b h3{font-family:var(--d);font-weight:700;font-size:18px}
-.pt-home .fc-b .loc{display:flex;align-items:center;gap:6px;color:var(--ink2);font-size:13.5px;margin-top:5px}
+.pt-home .fc .price{position:absolute;top:9px;right:9px;background:#fff;border-radius:99px;padding:4px 10px;font-family:var(--d);font-weight:700;font-size:12.5px;box-shadow:0 4px 12px rgba(20,26,51,.15)}
+.pt-home .fc-b{padding:11px 13px 13px}
+.pt-home .fc-b h3{font-family:var(--d);font-weight:700;font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-home .fc-b .loc{display:flex;align-items:center;gap:5px;color:var(--ink2);font-size:12px;margin-top:3px}
 .pt-home .fc-b .loc .ic{width:15px;height:15px;stroke:var(--blue)}
 .pt-home .fc-b .foot{display:flex;align-items:center;justify-content:space-between;margin-top:15px}
 .pt-home .fc-b .type{background:var(--paper);color:var(--ink2);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:99px}
@@ -369,10 +369,6 @@ export default function Home() {
                   <div className="fc-b">
                     <h3>{c.name}</h3>
                     <div className="loc"><svg className="ic"><use href="#pi-pin" /></svg>{c.city || c.location || 'Costa Rica'}</div>
-                    <div className="foot">
-                      <span className="type">{sportLabel(c.sport)}</span>
-                      <span className="cta">Reservar<svg className="ic"><use href="#pi-arrow" /></svg></span>
-                    </div>
                   </div>
                 </Link>
               ))}
