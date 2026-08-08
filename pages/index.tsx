@@ -466,7 +466,7 @@ export default function Home() {
         {/* ══ FOOTER ══ */}
         <footer className="wrap"><div className="foot">
           <Logo height={64} />
-          <div className="c">La app del fútbol amateur · Costa Rica</div>
+          <div className="c">La app de mejengas · Costa Rica</div>
         </div></footer>
 
         <a className="fab" href="https://wa.me/message/KVBP5AVNH45JL1" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">

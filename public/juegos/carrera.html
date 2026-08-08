@@ -108,6 +108,14 @@
   .flkopt.off{opacity:.26;transform:scale(.93);filter:grayscale(.5)}
   .flkopt.win{box-shadow:0 0 0 2px rgba(58,209,154,.4),0 6px 18px rgba(58,209,154,.25)}
   .rollbox{position:relative;min-height:122px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .tbar{height:9px;border-radius:99px;background:var(--soft2);overflow:hidden;max-width:320px;margin:0 auto;border:1px solid var(--line)}
+  .tbar-f{height:100%;width:100%;background:linear-gradient(90deg,var(--lime),var(--ok))}
+  .ttt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:236px;margin:14px auto 0}
+  .tttc{aspect-ratio:1;border-radius:13px;background:var(--soft);border:1.5px solid var(--line2);display:grid;place-items:center;font-size:32px;cursor:pointer;transition:.12s}
+  .tttc:hover{background:var(--soft2);border-color:var(--blueL)}
+  .oddg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:280px;margin:14px auto 0}
+  .oddc{aspect-ratio:1;border-radius:12px;background:var(--soft);border:1.5px solid var(--line2);display:grid;place-items:center;font-size:26px;cursor:pointer;transition:.12s}
+  .oddc:hover{background:var(--soft2);transform:scale(1.05)}
   @media(max-width:860px){.grid{grid-template-columns:1fr;gap:22px}.idg{grid-template-columns:1fr}.startg{grid-template-columns:1fr}.store{grid-template-columns:1fr}.toppanels{grid-template-columns:1fr}.clubsg{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:560px){
    body{padding:9px 7px}
@@ -208,7 +216,8 @@ const LABELS=['PAC','SHO','PAS','DRI','DEF','PHY'];
 let g=null,dt=null;
 const K2='golplay_dt_v1';
 const rnd=n=>Math.floor(Math.random()*n),pick=a=>a[rnd(a.length)],clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const overall=s=>Math.round((s.PAC+s.SHO+s.PAS+s.DRI+s.DEF+s.PHY)/6);
+const POSW={POR:{DEF:2,PHY:2,PAS:1,PAC:1,DRI:.6,SHO:.4},DFC:{DEF:2.4,PHY:1.8,PAS:1,PAC:1,DRI:.6,SHO:.3},LI:{DEF:1.6,PAC:1.8,PHY:1.2,DRI:1.2,PAS:1.2,SHO:.6},LD:{DEF:1.6,PAC:1.8,PHY:1.2,DRI:1.2,PAS:1.2,SHO:.6},MCD:{DEF:1.8,PAS:1.6,PHY:1.4,DRI:1,PAC:.8,SHO:.6},MC:{PAS:1.8,DRI:1.6,PHY:1,DEF:1,PAC:1,SHO:1},MCO:{PAS:1.8,DRI:1.8,SHO:1.4,PAC:1,PHY:.7,DEF:.4},MI:{PAC:1.7,DRI:1.7,PAS:1.3,SHO:1,PHY:.8,DEF:.6},MD:{PAC:1.7,DRI:1.7,PAS:1.3,SHO:1,PHY:.8,DEF:.6},EI:{PAC:1.9,DRI:1.9,SHO:1.5,PAS:1.1,PHY:.7,DEF:.3},ED:{PAC:1.9,DRI:1.9,SHO:1.5,PAS:1.1,PHY:.7,DEF:.3},DC:{SHO:2.2,PAC:1.7,DRI:1.5,PHY:1.2,PAS:.8,DEF:.3}};
+const overall=(s,pos)=>{const w=POSW[pos||(typeof g!=='undefined'&&g?g.pos:'MC')]||{PAC:1,SHO:1,PAS:1,DRI:1,DEF:1,PHY:1};let sum=0,wt=0;for(const k of ['PAC','SHO','PAS','DRI','DEF','PHY']){const wk=w[k]||1;sum+=s[k]*wk;wt+=wk}return Math.round(sum/wt);};
 const posDef=k=>POS_LIST.find(p=>p.k===k)||POS_LIST[5];
 const tier=o=>o>=80?'gold':o>=70?'silver':'bronze';
 const TIER={bronze:{sq:'linear-gradient(145deg,#e08a2b,#b5651e)',tx:'#fdeecb',pill:'#cf7a2c'},silver:{sq:'linear-gradient(145deg,#cdd6e6,#95a0b6)',tx:'#1b2030',pill:'#aab6cc'},gold:{sq:'linear-gradient(145deg,#f6cf55,#dca617)',tx:'#3d2c00',pill:'#e8bc4a'}};
@@ -352,9 +361,9 @@ function screenStart2(){const lgs=[...new Set(CLUBS.map(c=>c.lg))];const clubs=C
   <div style="display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)"><button class="btn btn-ghost" onclick="screenIdentity()">Volver</button><button class="btn btn-lime ${startPick.club?'':'dis'}" onclick="beginCareer()">Empezar carrera →</button></div>`);
  document.querySelectorAll('.natc[data-l]').forEach(e=>e.onclick=()=>{startPick.lg=e.dataset.l;startPick.club=null;screenStart2()});
  document.querySelectorAll('.offer[data-c]').forEach(e=>e.onclick=()=>{startPick.club=e.dataset.c;screenStart2()});}
-function baseStats(k){const p=posDef(k);const s={PAC:54,SHO:50,PAS:54,DRI:54,DEF:52,PHY:56};p.st.forEach(x=>s[x]+=8);if(k==='DC')s.SHO+=5;if(k==='POR'){s.DEF=64;s.PHY=62}let guard=0;while(overall(s)<58&&guard<50){const kk=pick(p.st);s[kk]=clamp(s[kk]+1,25,82);guard++}return s}
+function baseStats(k){const p=posDef(k);const s={PAC:54,SHO:50,PAS:54,DRI:54,DEF:52,PHY:56};p.st.forEach(x=>s[x]+=8);if(k==='DC')s.SHO+=5;if(k==='POR'){s.DEF=64;s.PHY=62}let guard=0;while(overall(s,k)<58&&guard<60){const kk=pick(p.st);s[kk]=clamp(s[kk]+1,25,82);guard++}return s}
 function beginCareer(){const c=CLUBS.find(x=>x.n===startPick.club);if(!c)return;
- g={nm:draft.nm,num:draft.num,nat:NATS[draft.nat],foot:draft.foot,pos:draft.pos,age:16,st:baseStats(draft.pos),morale:70,club:{n:c.n,lg:c.lg,s:c.s,c:c.c,t:c.t,ext:c.ext,euro:c.euro},origin:{n:c.n,lg:c.lg,s:c.s,c:c.c,t:c.t,ext:c.ext,euro:c.euro},salary:salaryOf(c,overall(baseStats(draft.pos))),money:0,owned:[],history:[],titles:0,titleList:[],awards:[],nat_pj:0,nat_g:0,betrayed:0,homecoming:0,pending:null,retired:false};
+ g={nm:draft.nm,num:draft.num,nat:NATS[draft.nat],foot:draft.foot,pos:draft.pos,age:16,st:baseStats(draft.pos),morale:70,club:{n:c.n,lg:c.lg,s:c.s,c:c.c,t:c.t,ext:c.ext,euro:c.euro},origin:{n:c.n,lg:c.lg,s:c.s,c:c.c,t:c.t,ext:c.ext,euro:c.euro},salary:salaryOf(c,overall(baseStats(draft.pos),draft.pos)),money:0,owned:[],history:[],titles:0,titleList:[],awards:[],nat_pj:0,nat_g:0,betrayed:0,homecoming:0,worldcups:0,pending:null,retired:false};
  save();render(`<div class="grid"><div id="left"></div><div id="right">${timelineHTML()}</div></div>`);seasonFlow();}
 
 function summaryHTML(){const o=overall(g.st),tr=TIER[tier(o)];const t=g.history.reduce((a,h)=>({pj:a.pj+h.pj,g:a.g+h.g,a:a.a+h.a}),{pj:0,g:0,a:0});
@@ -454,7 +463,8 @@ function renderLifeEvent(ev){let title,desc,ico,optA,optB;const o=overall(g.st);
  renderLeft(`<div class="mk"><div class="lbl" style="color:var(--bad)">Decisión de vida · ${g.age} años</div><h2 style="margin-top:6px">${title}</h2><p>${desc}</p>
    <div class="offers"><div class="offer" onclick="window._lifeA()"><div class="ohead">${ico[0]}</div><div class="cn">${optA.l}</div><div class="chances"><div class="chance ${optA.cls}"><span>${optA.sub}</span></div></div></div>
      <div class="offer" onclick="window._lifeB()"><div class="ohead">${ico[1]}</div><div class="cn">${optB.l}</div><div class="chances"><div class="chance ${optB.cls}"><span>${optB.sub}</span></div></div></div></div></div>`);}
-function seasonFlow(){const ev=maybeLifeEvent();if(ev)return renderLifeEvent(ev);
+function seasonFlow(){if(wcDue()){g.pending=null;return wcIntro();}seasonResume();}
+function seasonResume(){const ev=maybeLifeEvent();if(ev)return renderLifeEvent(ev);
  if(Math.random()<.6){const e=pick(DEC);window._dec=e;
    renderLeft(`<div class="mk"><div class="lbl" style="color:var(--blueL)">Decisión · ${g.age} años</div><h2 style="margin-top:6px">${e.t}</h2><p>${e.d}</p>
      <div class="offers">${e.c.map((c,i)=>`<div class="offer" data-i="${i}"><div class="ohead">${e.ico[i]||'⚽'}</div><div class="cn">${c.l}</div><div class="chances">${c.ch.map(x=>`<div class="chance ${x[2]||''}"><span>${x[0]}</span>${x[1]?`<b>${x[1]}</b>`:''}</div>`).join('')}</div></div>`).join('')}</div></div>`);
@@ -476,7 +486,10 @@ function simulate(mod){const o=overall(g.st),cs=g.club.s,p=posDef(g.pos);
  const starter=o>=cs-8;let pj=starter?24+rnd(12):9+rnd(13);if(mod.rest)pj=Math.round(pj*.75);
  let injured=!!mod.injury;const injBase=has('chef')?.06:.12;if(!injured&&Math.random()<injBase)injured=true;if(injured)pj=Math.round(pj*(has('medico')?.7:.5));
  const form=(g.morale-55)*.15,perf=o*.6+form+(starter?4:-3);
- const gRate=p.g*(o/70)*(perf/60),aRate=p.cr*(o/75)*.5;let gg=0,as=0;for(let m=0;m<pj;m++){if(Math.random()<gRate/3)gg++;if(Math.random()<aRate/3)as++}
+ const q=o/78,mm=0.82+(g.morale-55)/110,st=starter?1:.5;
+ const gExp=p.g*q*q*pj*st*mm,aExp=p.cr*q*pj*.6*st*mm;
+ let gg=Math.max(0,Math.round(gExp*(0.78+Math.random()*0.5))),as=Math.max(0,Math.round(aExp*(0.7+Math.random()*0.6)));
+ gg=Math.min(gg,pj+8);as=Math.min(as,pj);if(injured){gg=Math.round(gg*.8);as=Math.round(as*.8)}
  const yrs=g.age-16; // años de carrera: boom los primeros 5, luego dependés de decisiones
  let growth=yrs<=4?(starter?21+rnd(9):17+rnd(8)):g.age<=24?(starter?4+rnd(3):3+rnd(2)):g.age<=29?(starter?2+rnd(3):1+rnd(2)):g.age<=32?rnd(2):-(2+rnd(3));
  if(injured)growth-=has('medico')?1:2;if(mod.slump)growth-=1;
@@ -530,8 +543,8 @@ function endMini(win,detail){document.getElementById('left').innerHTML=`<div cla
 
 function animNum(el,from,to,dur,suf){if(!el)return;const t0=performance.now();const step=now=>{const p=Math.min(1,(now-t0)/dur);el.textContent=Math.round(from+(to-from)*p)+(suf||'');if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
 function finishSeason(champ){const s=window._season;let tp=0,ball=false;if(champ){tp=1;g.titles++;g.morale=clamp(g.morale+8,0,100);g.titleList.push(titleName())}
- if((g.pos==='DC'||g.pos.startsWith('E'))&&s.gg>=Math.max(15,Math.round(s.pj*.7)))g.awards.push(`Botín de Oro '${String(g.age).padStart(2,'0')}`);
- if((champ&&s.newO>=84&&(s.gg+s.as)>=12)||(s.newO>=88&&(s.gg+s.as)>=18)){g.awards.push(`Balón de Oro '${String(g.age).padStart(2,'0')}`);ball=true}
+ if((g.pos==='DC'||g.pos.startsWith('E'))&&s.gg>=25)g.awards.push(`Botín de Oro '${String(g.age).padStart(2,'0')}`);
+ if((s.newO>=86&&(s.gg+s.as)>=30)||(champ&&s.newO>=84&&(s.gg+s.as)>=24)){g.awards.push(`Balón de Oro '${String(g.age).padStart(2,'0')}`);ball=true}
  g.money+=g.salary;g.morale=clamp(g.morale+lifeMorale(),0,100);
  g.history=g.history.filter(h=>h.age!==g.age);g.history.push({age:g.age,club:g.club.n,c:g.club.c,logo:g.club.logo,ovr:s.newO,pj:s.pj,g:s.gg,a:s.as,tp,inj:s.injured?1:0,ball:ball?1:0});
  g.morale=clamp(g.morale+(s.o>=g.club.s-8?3:-4),0,100);
@@ -946,6 +959,40 @@ function dtPromote(){const base=Math.round(dt.reputation),age=16+rnd(3),o=clamp(
  dtRenderLeft(`<div class="mk center"><div class="lbl" style="color:var(--blueL)">Cantera</div><h2 style="margin:8px 0 12px">¿Sale una joya?</h2>
    <div class="rollbox"><div class="lbl" id="rlbl">Evaluando al juvenil…</div><div class="flk"><div class="flkopt good" id="fkA">💎 Es una joya</div><div class="flkopt bad" id="fkB">🌱 Proyecto a futuro</div></div></div><div id="ncont"></div></div>`);
  flickerReveal(gem,'fkA','fkB','rlbl',gem?'¡Joya de la cantera!':'Necesita tiempo',()=>{dt.squad.push(p);save2();dtRefreshRight();document.getElementById('ncont').innerHTML=`<div style="margin-top:12px;padding:12px;border-radius:12px;background:${gem?'rgba(31,174,107,.1)':'var(--soft)'};border:1px solid ${gem?'var(--ok)':'var(--line)'}"><div style="font-weight:800">${p.n} · ${p.pos} · ${p.age} años · OVR ${p.ovr}</div><div class="mini" style="margin-top:3px">${gem?'Promesa con futuro brillante, ya sumado a tu plantel.':'Se suma al plantel para foguearse.'}</div></div><button class="btn btn-lime full" style="margin-top:12px" onclick="dtRoles()">Continuar →</button>`;});}
+
+/* ═══════════════ COPA DEL MUNDO (minijuegos) ═══════════════ */
+const WCROUNDS=['Octavos de final','Cuartos de final','Semifinal','Final'];
+function wcDue(){return !g.retired&&g.age>=18&&(g.age-18)%4===0&&overall(g.st)>=76;}
+function wcIntro(){window._wc={round:0};document.getElementById('left').innerHTML=`<div class="mk center"><div class="lbl" style="color:var(--limeT)">Copa del Mundo</div><h2 style="margin:8px 0 4px">${g.nat[0]} ${g.nat[1]} en el Mundial</h2><p style="max-width:300px;margin:0 auto">Superá las 4 rondas con minijuegos y llevá a tu país a levantar la Copa. ${overall(g.st)>=88?'Sos la gran figura.':'Dependen de vos.'}</p><button class="btn btn-lime full" style="margin-top:16px" onclick="wcPlay()">Jugar ${WCROUNDS[0]} →</button></div>`;}
+function wcPlay(){[wcTrivia,wcGato,wcOdd,wcTrivia][window._wc.round%4]();}
+function wcResult(win){const r=window._wc.round;if(!win)return wcEnd(false,r);window._wc.round++;
+ if(window._wc.round>=WCROUNDS.length)return wcEnd(true,4);
+ document.getElementById('left').innerHTML=`<div class="mk center"><div style="font-size:42px">✅</div><h2 style="margin:6px 0">¡A ${WCROUNDS[window._wc.round]}!</h2><p class="mini">${g.nat[1]} sigue con vida en el Mundial.</p><button class="btn btn-lime full" style="margin-top:14px" onclick="wcPlay()">Jugar ${WCROUNDS[window._wc.round]} →</button></div>`;}
+function wcEnd(win,round){const yy=String(g.age).padStart(2,'0');
+ if(win){g.worldcups=(g.worldcups||0)+1;g.titles++;g.titleList.push('Copa del Mundo');g.awards.push(`Campeón del Mundo '${yy}`);g.morale=clamp(g.morale+14,0,100);g.nat_pj+=7;g.nat_g+=(g.pos==='DC'||g.pos.startsWith('E'))?3+rnd(4):rnd(3);
+   document.getElementById('left').innerHTML=`<div class="mk center"><div style="font-size:48px">🏆🌎</div><h2 style="margin:6px 0">¡CAMPEÓN DEL MUNDO!</h2><p class="mini">Levantaste la Copa con ${g.nat[1]}. Historia pura para tu carrera.</p><button class="btn btn-lime full" style="margin-top:14px" onclick="wcContinue()">Continuar la temporada →</button></div>`;
+ }else{g.nat_pj+=3;g.nat_g+=(g.pos==='DC'||g.pos.startsWith('E'))?rnd(3):rnd(2);g.morale=clamp(g.morale+(round>=2?2:-2),0,100);
+   document.getElementById('left').innerHTML=`<div class="mk center"><div style="font-size:42px">${round>=3?'🥈':'😔'}</div><h2 style="margin:6px 0">${round>=3?'Subcampeones del mundo':'Eliminados en '+WCROUNDS[round]}</h2><p class="mini">${g.nat[1]} quedó en el camino. Habrá revancha en 4 años.</p><button class="btn btn-lime full" style="margin-top:14px" onclick="wcContinue()">Continuar la temporada →</button></div>`;}
+ save();}
+function wcContinue(){seasonResume();}
+/* — Trivia (10s) — */
+const TRIVIA=[['¿Cuántos jugadores tiene un equipo en la cancha?',['9','10','11','12'],2],['¿Cuánto dura cada tiempo reglamentario?',['30 min','40 min','45 min','60 min'],2],['¿Qué país ganó el primer Mundial (1930)?',['Brasil','Uruguay','Argentina','Italia'],1],['¿Cuántos Mundiales ganó Brasil?',['3','4','5','6'],2],['¿Cuántos puntos otorga una victoria?',['1','2','3','4'],2],['¿De qué color es la tarjeta de expulsión?',['Amarilla','Roja','Azul','Verde'],1],['¿Cómo se llama el saque desde la esquina?',['Lateral','Tiro libre','Córner','Penal'],2],['¿A cuántos metros se cobra el penal?',['9 m','11 m','16 m','18 m'],1],['¿Cómo se le dice a meter 3 goles en un partido?',['Doblete','Hat-trick','Póker','Manita'],1],['¿Qué selección ganó el Mundial 2022?',['Francia','Argentina','Brasil','Croacia'],1],['¿Cuántos Mundiales ganó Argentina (hasta 2022)?',['1','2','3','4'],2],['¿Cuántos jugadores puede tener un equipo expulsados antes de perder por default?',['2','3','4','5'],2],['¿Qué se cobra si el balón sale por la línea de fondo tocado por un defensor?',['Saque de meta','Lateral','Córner','Penal'],2],['¿Cuál es la duración del entretiempo (aprox)?',['5 min','15 min','25 min','30 min'],1]];
+function wcTrivia(){const q=pick(TRIVIA);window._tq=q;
+ document.getElementById('left').innerHTML=`<div class="mk center pk"><div class="lbl" style="color:var(--limeT)">Mundial · Trivia · ${WCROUNDS[window._wc.round]}</div><h2 style="margin:6px 0 8px">Respondé en 10s</h2><div class="tbar"><div class="tbar-f" id="tbf"></div></div><p style="font-weight:800;margin:12px 0 10px">${q[0]}</p><div class="moves">${q[1].map((o,i)=>`<div class="move" onclick="wcAns(${i})">${o}</div>`).join('')}</div></div>`;
+ const f=document.getElementById('tbf');let t=10;clearInterval(window._tt);window._tt=setInterval(()=>{t-=.1;if(f)f.style.width=Math.max(0,t/10*100)+'%';else return clearInterval(window._tt);if(t<=0){clearInterval(window._tt);document.querySelectorAll('.move').forEach(m=>m.style.pointerEvents='none');wcResult(false);}},100);}
+function wcAns(i){clearInterval(window._tt);const ok=i===window._tq[2];document.querySelectorAll('.move').forEach((m,k)=>{m.style.pointerEvents='none';if(k===window._tq[2])m.style.borderColor='var(--ok)';if(k===i&&!ok)m.style.borderColor='var(--bad)';});setTimeout(()=>wcResult(ok),450);}
+/* — Gato (tres en raya) — */
+function wcGato(){window._g3={b:Array(9).fill(''),over:false};renderGato('Tu turno ⚽ · alineá 3 para ganar');}
+function renderGato(msg){const b=window._g3.b;document.getElementById('left').innerHTML=`<div class="mk center pk"><div class="lbl" style="color:var(--limeT)">Mundial · Gato · ${WCROUNDS[window._wc.round]}</div><h2 style="margin:6px 0">Ganá o empatá para pasar</h2><div class="ttt">${b.map((v,i)=>`<div class="tttc" onclick="gatoMove(${i})">${v}</div>`).join('')}</div><p class="mini" style="margin-top:10px">${msg}</p></div>`;}
+function gatoWin(b){const L=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];for(const[a,c,d]of L)if(b[a]&&b[a]===b[c]&&b[a]===b[d])return b[a];return '';}
+function gatoBest(b,me){const opp=me==='🧤'?'⚽':'🧤';const tw=who=>{for(let i=0;i<9;i++)if(!b[i]){b[i]=who;const w=gatoWin(b);b[i]='';if(w===who)return i}return -1};let m=tw(me);if(m>=0)return m;m=tw(opp);if(m>=0)return m;if(!b[4])return 4;const cor=[0,2,6,8].filter(i=>!b[i]);if(cor.length)return pick(cor);const ed=[1,3,5,7].filter(i=>!b[i]);return ed.length?pick(ed):-1;}
+function gatoMove(i){const S=window._g3;if(S.over||S.b[i])return;S.b[i]='⚽';let w=gatoWin(S.b);if(w)return gatoEnd(w);if(S.b.every(x=>x))return gatoEnd('');const m=gatoBest(S.b,'🧤');if(m>=0)S.b[m]='🧤';w=gatoWin(S.b);renderGato('Tu turno ⚽');if(w)return gatoEnd(w);if(S.b.every(x=>x))return gatoEnd('');}
+function gatoEnd(w){window._g3.over=true;document.querySelectorAll('.tttc').forEach(c=>c.style.pointerEvents='none');setTimeout(()=>wcResult(w!=='🧤'),600);}
+/* — Ojo rápido (encontrá el diferente) — */
+function wcOdd(){const sets=[['⚽','🏀'],['🟦','🟩'],['🔴','🟠'],['👕','🧤'],['🥅','🚩'],['🟡','🟢'],['🏆','🎽'],['🧤','🧦']];const s=pick(sets),common=s[0],odd=s[1],n=12,pos=rnd(n);const tiles=Array.from({length:n},(_,i)=>i===pos?odd:common);window._odd=pos;
+ document.getElementById('left').innerHTML=`<div class="mk center pk"><div class="lbl" style="color:var(--limeT)">Mundial · Ojo rápido · ${WCROUNDS[window._wc.round]}</div><h2 style="margin:6px 0">Encontrá el diferente</h2><div class="oddg">${tiles.map((t,i)=>`<div class="oddc" onclick="oddPick(${i})">${t}</div>`).join('')}</div><div class="tbar" style="margin-top:12px"><div class="tbar-f" id="tbf"></div></div></div>`;
+ const f=document.getElementById('tbf');let t=6;clearInterval(window._tt);window._tt=setInterval(()=>{t-=.1;if(f)f.style.width=Math.max(0,t/6*100)+'%';else return clearInterval(window._tt);if(t<=0){clearInterval(window._tt);document.querySelectorAll('.oddc').forEach(c=>c.style.pointerEvents='none');wcResult(false);}},100);}
+function oddPick(i){clearInterval(window._tt);document.querySelectorAll('.oddc').forEach(c=>c.style.pointerEvents='none');setTimeout(()=>wcResult(i===window._odd),300);}
 
 screenStart();
 </script></body></html>
