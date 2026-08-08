@@ -566,7 +566,7 @@ function finishSeason(champ){const s=window._season;let tp=0,ball=false;if(champ
  if((g.pos==='DC'||g.pos.startsWith('E'))&&s.gg>=25)g.awards.push(`Botín de Oro '${String(g.age).padStart(2,'0')}`);
  if((s.newO>=86&&(s.gg+s.as)>=30)||(champ&&s.newO>=84&&(s.gg+s.as)>=24)){g.awards.push(`Balón de Oro '${String(g.age).padStart(2,'0')}`);ball=true}
  g.money+=g.salary;g.morale=clamp(g.morale+lifeMorale(),0,100);
- g.history=g.history.filter(h=>h.age!==g.age);g.history.push({age:g.age,club:g.club.n,c:g.club.c,logo:g.club.logo,ovr:s.newO,pj:s.pj,g:s.gg,a:s.as,tp,inj:s.injured?1:0,ball:ball?1:0});
+ g.history=g.history.filter(h=>h.age!==g.age);g.history.push({age:g.age,club:g.club.n,c:g.club.c,logo:g.club.logo,ovr:s.newO,pj:s.pj,g:s.gg,a:s.as,tp,inj:s.injured?1:0,ball:ball?1:0,sal:g.salary});
  g.morale=clamp(g.morale+(s.o>=g.club.s-8?3:-4),0,100);
  const played=g.age;g.age++;save();const tr=TIER[tier(s.newO)];const up=s.newO>=s.o;
  renderLeft(`<div class="mk"><div class="lbl" style="color:var(--blueL)">Temporada ${1990+played} · ${g.club.n} · ${played} años</div>
@@ -604,8 +604,13 @@ function screenFinal(){const o=overall(g.st),tr=TIER[tier(o)];const t=g.history.
 function rrect(x,px,py,w,h,r){x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();}
 function shareCard(){const o=overall(g.st);const t=g.history.reduce((a,h)=>({pj:a.pj+h.pj,g:a.g+h.g,a:a.a+h.a}),{pj:0,g:0,a:0});
  const balon=g.awards.filter(a=>a.includes('Balón')).length,botin=g.awards.filter(a=>a.includes('Botín')).length,nt=(g.natTitles||[]).length;
- const W=1080,H=1350,C=540,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
- const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#141a3a');bg.addColorStop(.55,'#0d1128');bg.addColorStop(1,'#080a18');x.fillStyle=bg;x.fillRect(0,0,W,H);
+ const bcx={};g.history.forEach(h=>{const k=h.club;if(!bcx[k])bcx[k]={club:h.club,pj:0,g:0,a:0,tp:0,earn:0};bcx[k].pj+=h.pj;bcx[k].g+=h.g;bcx[k].a+=h.a;bcx[k].tp+=h.tp||0;bcx[k].earn+=h.sal||0;});
+ const clubs=Object.values(bcx).sort((a,b)=>b.pj-a.pj).slice(0,6);
+ const awl=[];if(balon)awl.push('🥇 Balón de Oro ×'+balon);if(botin)awl.push('👟 Botín ×'+botin);if(nt)awl.push('🌍 Selección ×'+nt);
+ const W=1080,C=540,clubsTop=848,rowH=84,clubsEnd=clubsTop+clubs.length*rowH;
+ const palmY=clubsEnd+46,trophyY=palmY+60,awardsY=trophyY+50,moneyY=(awl.length?awardsY:trophyY)+64,footerY=moneyY+86,subY=footerY+42,H=subY+38;
+ const cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+ const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#141a3a');bg.addColorStop(.5,'#0d1128');bg.addColorStop(1,'#080a18');x.fillStyle=bg;x.fillRect(0,0,W,H);
  const gl=x.createRadialGradient(C,215,40,C,215,640);gl.addColorStop(0,'rgba(212,242,77,.20)');gl.addColorStop(1,'rgba(212,242,77,0)');x.fillStyle=gl;x.fillRect(0,0,W,H);
  x.fillStyle='#d4f24d';x.fillRect(0,0,W,10);x.textBaseline='alphabetic';x.textAlign='center';
  x.fillStyle='#d4f24d';x.font='800 30px Inter,sans-serif';x.fillText('G O L P L A Y',C,68);
@@ -618,15 +623,20 @@ function shareCard(){const o=overall(g.st);const t=g.history.reduce((a,h)=>({pj:
  x.fillStyle='#fff';let nf=78;const nm=g.nm.toUpperCase();x.font='900 '+nf+'px Inter';while(x.measureText(nm).width>950&&nf>40){nf-=4;x.font='900 '+nf+'px Inter';}x.fillText(nm,C,418);
  x.fillStyle='rgba(255,255,255,.62)';x.font='600 32px Inter';x.fillText(`${g.nat[0]} ${g.nat[1]}   ·   #${g.num} ${g.pos}`,C,470);
  x.fillStyle='#c9cfdd';x.font='700 34px Inter';x.fillText('🏟️ '+g.club.n,C,528);
- const sy=576,sh=190;rrect(x,60,sy,960,sh,28);x.fillStyle='rgba(255,255,255,.06)';x.fill();x.lineWidth=1.5;x.strokeStyle='rgba(255,255,255,.10)';x.stroke();
- [['PJ',t.pj],['GOLES',t.g],['ASIST',t.a],['TÍTULOS',g.titles]].forEach((s,i)=>{const cx=60+120+i*240;x.fillStyle='rgba(255,255,255,.5)';x.font='700 26px Inter';x.fillText(s[0],cx,sy+62);x.fillStyle='#fff';x.font='900 74px Inter';x.fillText(''+s[1],cx,sy+142);});
- x.fillStyle='rgba(255,255,255,.5)';x.font='700 22px Inter';x.fillText('P A L M A R É S',C,846);
- x.font='54px Inter';x.fillStyle='#fff';x.fillText('🏆'.repeat(Math.min(g.titles,12))||'—',C,912);
- const awl=[];if(balon)awl.push('🥇 Balón de Oro ×'+balon);if(botin)awl.push('👟 Botín ×'+botin);if(nt)awl.push('🌍 Selección ×'+nt);
- if(awl.length){x.fillStyle='#f9d65a';x.font='700 30px Inter';x.fillText(awl.join('     '),C,972);}
- x.fillStyle='#f9d65a';x.font='900 48px Inter';x.fillText('💰 '+eur(g.money),C,awl.length?1052:1020);
- x.fillStyle='#d4f24d';x.font='800 42px Inter';x.fillText('⚽ ¿Podés superar mi carrera?',C,1266);
- x.fillStyle='rgba(255,255,255,.42)';x.font='600 28px Inter';x.fillText('GolPlay · golplay.app',C,1312);x.textAlign='left';
+ const sy=576,sh=188;rrect(x,60,sy,960,sh,28);x.fillStyle='rgba(255,255,255,.06)';x.fill();x.lineWidth=1.5;x.strokeStyle='rgba(255,255,255,.10)';x.stroke();
+ [['PJ',t.pj],['GOLES',t.g],['ASIST',t.a],['TÍTULOS',g.titles]].forEach((s,i)=>{const cx=60+120+i*240;x.fillStyle='rgba(255,255,255,.5)';x.font='700 26px Inter';x.fillText(s[0],cx,sy+60);x.fillStyle='#fff';x.font='900 72px Inter';x.fillText(''+s[1],cx,sy+140);});
+ x.fillStyle='rgba(255,255,255,.5)';x.font='700 22px Inter';x.fillText('T R A Y E C T O R I A',C,812);
+ clubs.forEach((cl,i)=>{const y=clubsTop+i*rowH;rrect(x,60,y,960,72,16);x.fillStyle='rgba(255,255,255,.05)';x.fill();x.lineWidth=1;x.strokeStyle='rgba(255,255,255,.09)';x.stroke();
+   x.textAlign='left';x.fillStyle='#fff';x.font='800 29px Inter';let cn=cl.club;while(x.measureText(cn).width>430&&cn.length>6){cn=cn.slice(0,-2);}x.fillText(cn===cl.club?cn:cn.trim()+'…',94,y+33);
+   x.fillStyle='rgba(255,255,255,.55)';x.font='600 21px Inter';x.fillText(`${cl.pj} PJ · ${cl.g} G · ${cl.a} A${cl.tp?'   🏆×'+cl.tp:''}`,94,y+59);
+   x.textAlign='right';x.fillStyle='#f9d65a';x.font='800 30px Inter';x.fillText(eur(cl.earn),986,y+48);});
+ x.textAlign='center';
+ x.fillStyle='rgba(255,255,255,.5)';x.font='700 22px Inter';x.fillText('P A L M A R É S',C,palmY);
+ x.font='50px Inter';x.fillStyle='#fff';x.fillText('🏆'.repeat(Math.min(g.titles,12))||'—',C,trophyY);
+ if(awl.length){x.fillStyle='#f9d65a';x.font='700 28px Inter';x.fillText(awl.join('     '),C,awardsY);}
+ x.fillStyle='#f9d65a';x.font='900 46px Inter';x.fillText('💰 Total ganado: '+eur(g.money),C,moneyY);
+ x.fillStyle='#d4f24d';x.font='800 40px Inter';x.fillText('⚽ ¿Podés superar mi carrera?',C,footerY);
+ x.fillStyle='rgba(255,255,255,.42)';x.font='600 27px Inter';x.fillText('GolPlay · golplay.app',C,subY);x.textAlign='left';
  cv.toBlob(async(blob)=>{const file=new File([blob],'golplay-carrera.png',{type:'image/png'});
    const text=`Terminé mi carrera en GolPlay como ${g.nm.toUpperCase()} (${g.nat[2]}): OVR ${o}, ${g.titles} títulos y ${t.g} goles. ⚽ ¿Podés superarme?`;
    try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text,title:'GolPlay Carrera'});return;}}catch(e){}
@@ -1009,7 +1019,26 @@ function wcEnd(win,round){const W=window._wc,yy=String(g.age).padStart(2,'0');
  }
 function wcContinue(){seasonResume();}
 /* — Trivia (10s) — */
-const TRIVIA=[['¿Cuántos jugadores tiene un equipo en la cancha?',['9','10','11','12'],2],['¿Cuánto dura cada tiempo reglamentario?',['30 min','40 min','45 min','60 min'],2],['¿Qué país ganó el primer Mundial (1930)?',['Brasil','Uruguay','Argentina','Italia'],1],['¿Cuántos Mundiales ganó Brasil?',['3','4','5','6'],2],['¿Cuántos puntos otorga una victoria?',['1','2','3','4'],2],['¿De qué color es la tarjeta de expulsión?',['Amarilla','Roja','Azul','Verde'],1],['¿Cómo se llama el saque desde la esquina?',['Lateral','Tiro libre','Córner','Penal'],2],['¿A cuántos metros se cobra el penal?',['9 m','11 m','16 m','18 m'],1],['¿Cómo se le dice a meter 3 goles en un partido?',['Doblete','Hat-trick','Póker','Manita'],1],['¿Qué selección ganó el Mundial 2022?',['Francia','Argentina','Brasil','Croacia'],1],['¿Cuántos Mundiales ganó Argentina (hasta 2022)?',['1','2','3','4'],2],['¿Cuántos jugadores puede tener un equipo expulsados antes de perder por default?',['2','3','4','5'],2],['¿Qué se cobra si el balón sale por la línea de fondo tocado por un defensor?',['Saque de meta','Lateral','Córner','Penal'],2],['¿Cuál es la duración del entretiempo (aprox)?',['5 min','15 min','25 min','30 min'],1]];
+const TRIVIA=[['¿Cuántos jugadores tiene un equipo en la cancha?',['9','10','11','12'],2],['¿Cuánto dura cada tiempo reglamentario?',['30 min','40 min','45 min','60 min'],2],['¿Qué país ganó el primer Mundial (1930)?',['Brasil','Uruguay','Argentina','Italia'],1],['¿Cuántos Mundiales ganó Brasil?',['3','4','5','6'],2],['¿Cuántos puntos otorga una victoria?',['1','2','3','4'],2],['¿De qué color es la tarjeta de expulsión?',['Amarilla','Roja','Azul','Verde'],1],['¿Cómo se llama el saque desde la esquina?',['Lateral','Tiro libre','Córner','Penal'],2],['¿A cuántos metros se cobra el penal?',['9 m','11 m','16 m','18 m'],1],['¿Cómo se le dice a meter 3 goles en un partido?',['Doblete','Hat-trick','Póker','Manita'],1],['¿Qué selección ganó el Mundial 2022?',['Francia','Argentina','Brasil','Croacia'],1],['¿Cuántos Mundiales ganó Argentina (hasta 2022)?',['1','2','3','4'],2],['¿Cuántos jugadores puede tener un equipo expulsados antes de perder por default?',['2','3','4','5'],2],['¿Qué se cobra si el balón sale por la línea de fondo tocado por un defensor?',['Saque de meta','Lateral','Córner','Penal'],2],['¿Cuál es la duración del entretiempo (aprox)?',['5 min','15 min','25 min','30 min'],1],
+['¿Qué país ha ganado más Mundiales?',['Alemania','Italia','Brasil','Argentina'],2],
+['¿Quién ganó el Mundial de 2018?',['Croacia','Francia','Alemania','Brasil'],1],
+['¿En qué país se jugó el Mundial 2010?',['Brasil','Alemania','Sudáfrica','Rusia'],2],
+['¿Cómo se llama el estadio del Real Madrid?',['Camp Nou','Santiago Bernabéu','Wanda','Mestalla'],1],
+['¿Y el estadio del FC Barcelona?',['Camp Nou','San Mamés','Anfield','Bernabéu'],0],
+['¿Quién anotó el gol "de la Mano de Dios"?',['Pelé','Maradona','Batistuta','Kempes'],1],
+['¿Cuál es el clásico del fútbol de Costa Rica?',['Herediano vs Cartaginés','Saprissa vs Alajuelense','Pérez vs Puntarenas','Cartago vs Limón'],1],
+['¿Hasta qué ronda llegó Costa Rica en el Mundial 2014?',['Octavos','Cuartos','Semifinal','Fase de grupos'],1],
+['¿Qué club ha ganado más veces la Champions/Copa de Europa?',['Milan','Bayern','Real Madrid','Liverpool'],2],
+['¿Cuál es el máximo torneo de clubes de Sudamérica?',['Sudamericana','Libertadores','Recopa','Mercosur'],1],
+['¿Cuánto mide de ancho la portería de fútbol 11?',['5,50 m','6,40 m','7,32 m','8,10 m'],2],
+['¿Cuánto pesa aprox. un balón reglamentario?',['200-250 g','300-340 g','410-450 g','500-540 g'],2],
+['¿Qué jugador ganó más Balones de Oro en la historia?',['Cristiano','Messi','Platini','Cruyff'],1],
+['¿En qué Mundial ocurrió "la Mano de Dios"?',['1978','1982','1986','1990'],2],
+['¿Qué selección es "la Azzurra"?',['España','Italia','Francia','Uruguay'],1],
+['¿Cuántos Mundiales ha ganado Uruguay?',['1','2','3','4'],1],
+['¿Cuál es la principal copa de clubes de Concacaf?',['Copa Oro','Concachampions','Copa América','Recopa'],1],
+['¿Cuántos jugadores mínimo debe tener un equipo para no suspender el partido?',['6','7','8','9'],1],
+['¿Qué país inventó el fútbol moderno (reglas 1863)?',['Escocia','Brasil','Inglaterra','Uruguay'],2]];
 function wcTrivia(){const q=pick(TRIVIA);window._tq=q;
  document.getElementById('left').innerHTML=`<div class="mk center pk"><div class="lbl" style="color:var(--limeT)">Mundial · Trivia · ${WCROUNDS[window._wc.round]}</div><h2 style="margin:6px 0 8px">Respondé en 10s</h2><div class="tbar"><div class="tbar-f" id="tbf"></div></div><p style="font-weight:800;margin:12px 0 10px">${q[0]}</p><div class="moves">${q[1].map((o,i)=>`<div class="move" onclick="wcAns(${i})">${o}</div>`).join('')}</div></div>`;
  const f=document.getElementById('tbf');let t=10;clearInterval(window._tt);window._tt=setInterval(()=>{t-=.1;if(f)f.style.width=Math.max(0,t/10*100)+'%';else return clearInterval(window._tt);if(t<=0){clearInterval(window._tt);document.querySelectorAll('.move').forEach(m=>m.style.pointerEvents='none');wcResult(false);}},100);}
